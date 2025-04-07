@@ -1,0 +1,10 @@
+# Environment
+.envrc
+.cache/
+
+# Python
+.venv/
+__pycache__/
+
+# Documentation
+docs/*.png
