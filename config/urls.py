@@ -8,6 +8,7 @@ import debug_toolbar
 urlpatterns = [
     path("", lambda request: redirect("projects:index")),
     path("projects/", include("tab.projects.urls", namespace="projects")),
+    path("api/", include("tab.api.urls")),
     path("admin/", admin.site.urls),
 ]
 if settings.DEBUG:

@@ -14,12 +14,15 @@ package-mode = false
 
 [tool.poetry.dependencies]
 
-# Django
+# Web
 django = "^5.2"
 django-browser-reload = "^1.18"
 django-cors-headers = "*"
 django-debug-toolbar = "^5.1"
 django-extensions = "*"
+
+# API
+django-ninja = "^1.4.0"
 
 # Storage
 dj-database-url = "*"
