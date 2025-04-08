@@ -1,0 +1,21 @@
+[run]
+
+branch = true
+
+omit =
+    .venv/*
+    */migrations/*
+    */management/*
+    */tests/*
+    */admin.py
+    */*sgi.py
+
+data_file = .cache/coverage
+
+[report]
+
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    except DistributionNotFound
+    TYPE_CHECKING

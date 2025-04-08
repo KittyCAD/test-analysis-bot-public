@@ -96,7 +96,7 @@ addopts = """
 
 --fail-on-template-vars
 
---cov=demo_project
+--cov=tab
 --cov-report=html
 --cov-report=term-missing:skip-covered
 --no-cov-on-fail

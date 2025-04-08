@@ -118,7 +118,7 @@ endif
 .PHONY: test-backend-unit
 test-backend-unit: install
 	@ ( mv $(FAILURES) $(FAILURES).bak || true ) > /dev/null 2>&1
-	poetry run pytest $(PYTHON_PACKAGES) tests/unit -m "not django_db" $(PYTEST_OPTIONS)
+	poetry run pytest $(PYTHON_PACKAGES) --markers="not django_db" $(PYTEST_OPTIONS)
 	@ ( mv $(FAILURES).bak $(FAILURES) || true ) > /dev/null 2>&1
 ifndef DISABLE_COVERAGE
 	poetry run coveragespace update unit
@@ -126,16 +126,16 @@ endif
 
 .PHONY: test-backend-integration
 test-backend-integration: install
-	@ if test -e $(FAILURES); then poetry run pytest tests/integration --last-failed; fi
+	@ if test -e $(FAILURES); then poetry run pytest tests --last-failed; fi
 	@ rm -rf $(FAILURES)
-	poetry run pytest tests/integration $(PYTEST_OPTIONS)
+	poetry run pytest tests $(PYTEST_OPTIONS)
 	poetry run coveragespace update integration
 
 .PHONY: test-backend-all
 test-backend-all: install
-	@ if test -e $(FAILURES); then poetry run pytest $(PYTHON_PACKAGES) tests/unit tests/integration  --last-failed; fi
+	@ if test -e $(FAILURES); then poetry run pytest $(PYTHON_PACKAGES) tests --last-failed; fi
 	@ rm -rf $(FAILURES)
-	poetry run pytest $(PYTHON_PACKAGES) tests/unit tests/integration $(PYTEST_OPTIONS)
+	poetry run pytest $(PYTHON_PACKAGES) tests $(PYTEST_OPTIONS)
 	poetry run coveragespace update overall
 
 .PHONY: test-frontend
