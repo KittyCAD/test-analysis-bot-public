@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "django_extensions",
     # First-party
     "tab.api",
+    "tab.core",
     "tab.projects",
 ]
 

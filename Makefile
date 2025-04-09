@@ -10,6 +10,9 @@ dev: install ## CI | Rerun all validation targets in a loop
 
 # SYSTEM DEPENDENCIES #########################################################
 
+.PHONY: setup
+setup: bootstrap doctor reset ## Run the one-time initial setup
+
 .PHONY: bootstrap
 bootstrap: ## Attempt to install system dependencies
 	asdf plugin add python || asdf plugin update python
@@ -69,6 +72,7 @@ migrate: install ## Database | Run database migrations
 
 .PHONY: data
 data: install migrate ## Database | Seed data for manual testing
+	./manage.py gendata
 	# TODO: Load test data and fixtures
 	# ./manage.py loaddata content
 
