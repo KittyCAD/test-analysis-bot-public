@@ -7,7 +7,8 @@ all: check test ## CI | Run all validation targets
 .PHONY: dev
 dev: install ## CI | Rerun all validation targets in a loop
 	@ rm -rf $(FAILURES)
-	poetry run sniffer
+	@ sleep 1 && touch $(PROJECT)/__init__.py &
+	poetry run watchmedo shell-command --command="clear; make test check; echo Done!" --recursive --drop $(PROJECT)
 
 # SYSTEM DEPENDENCIES #########################################################
 
@@ -43,7 +44,7 @@ install: $(BACKEND_DEPENDENCIES) $(FRONTEND_DEPENDENCIES) ## Install project dep
 
 $(BACKEND_DEPENDENCIES): poetry.lock
 	@ poetry config virtualenvs.in-project true
-	poetry install
+	poetry install --without=docs
 	@ touch $@
 
 ifndef CI
@@ -117,9 +118,6 @@ test: test-backend test-frontend ## Run all tests
 
 .PHONY: test-backend
 test-backend: test-backend-all
-ifdef COVERALLS_REPO_TOKEN
-	poetry run coveralls
-endif
 
 .PHONY: test-backend-unit
 test-backend-unit: install
@@ -166,10 +164,12 @@ run-production: .envrc install
 
 .PHONY: uml
 uml: install
+	poetry install --with=docs
+	@ echo
 	poetry run pyreverse $(PROJECT) -p $(PROJECT) -a 1 -f ALL -o png --ignore admin.py,migrations,management,tests
 	mv -f classes_$(PROJECT).png docs/classes.png
-	# mv -f packages_$(PROJECT).png docs/packages.png
-	# ./manage.py graph_models demo_app --group-models --output=docs/tables.png --exclude-models=TimeStampedModel
+	mv -f packages_$(PROJECT).png docs/packages.png
+	./manage.py graph_models --all-applications --group-models --output=docs/tables.png --exclude-models=AbstractUser,AbstractBaseSession,Session
 
 # HELP ########################################################################
 

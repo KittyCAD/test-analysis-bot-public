@@ -51,7 +51,12 @@ pytest-randomly = "*"
 pytest-cov = "*"
 coveragespace = "^6.1"
 
-# Documentation
+# Utilities
+watchdog = "^6.0"
+
+[tool.poetry.group.docs.dependencies]
+
+# UML
 pylint = "*"
 pygraphviz = "*"
 
