@@ -1,4 +1,5 @@
 PROJECT := tab
+DATABASE := test_analysis_bot_dev
 
 .PHONY: all
 all: check test ## CI | Run all validation targets
@@ -11,7 +12,8 @@ dev: install ## CI | Rerun all validation targets in a loop
 # SYSTEM DEPENDENCIES #########################################################
 
 .PHONY: setup
-setup: bootstrap doctor reset ## Run the one-time initial setup
+setup: .envrc bootstrap doctor ## Run the one-time initial setup
+	createdb $(DATABASE)
 
 .PHONY: bootstrap
 bootstrap: ## Attempt to install system dependencies
@@ -25,8 +27,8 @@ doctor: ## Check for required system dependencies
 
 .envrc:
 	echo export DJANGO_SETTINGS_MODULE=config.settings.local >> $@
-	echo export DATABASE_URL=postgresql://localhost/test_analysis_bot_dev >> $@
-	echo export REDIS_URL=redis://127.0.0.1:6379/0 >> $@
+	echo export DATABASE_URL=postgresql://localhost/$(DATABASE) >> $@
+	echo export REDIS_URL=redis://localhost:6379/0 >> $@
 	- direnv allow
 
 # PROJECT DEPENDENCIES ########################################################
@@ -78,8 +80,8 @@ data: install migrate ## Database | Seed data for manual testing
 
 .PHONY: reset
 reset: install ## Database | Create a new database, migrate, and seed it
-	- dropdb test_analysis_bot_dev
-	- createdb test_analysis_bot_dev
+	- dropdb $(DATABASE)
+	createdb $(DATABASE)
 	make data
 
 # VALIDATION TARGETS ##########################################################
