@@ -670,7 +670,7 @@ version = "2.3.1"
 description = "Minimalistic wrapper for Python logging."
 optional = false
 python-versions = "<4.0,>=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "minilog-2.3.1-py3-none-any.whl", hash = "sha256:1a679fefe6140ce1d59c3246adc991f9eb480169e5a6c54d2be9023ee459dc30"},
     {file = "minilog-2.3.1.tar.gz", hash = "sha256:4b602572c3bcdd2d8f00d879f635c0de9e632d5d0307e131c91074be8acf444e"},
@@ -1530,4 +1530,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "2a0ad3b2849e0df2bf0bd5268cd48462dbe510d639ce294b0275c8969feafa77"
+content-hash = "3aea2e56b63d24a56f689b5e33f608713a2dfee2364a41ffe1504f71bc86c596"

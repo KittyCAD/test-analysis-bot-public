@@ -29,6 +29,9 @@ dj-database-url = "*"
 psycopg2-binary = "^2.9.1"
 redis = "^4.0.2"
 
+# Utilities
+minilog = "*"
+
 [tool.poetry.group.dev.dependencies]
 
 # Formatting
@@ -95,6 +98,10 @@ django_settings_module = "config.settings.test"
 
 DJANGO_SETTINGS_MODULE = "config.settings.test"
 
+log_level = "DEBUG"
+
+cache_dir = ".cache/pytest/"
+
 addopts = """
 --strict-markers
 --pdbcls=tests.debugger:Debugger
@@ -109,7 +116,5 @@ addopts = """
 --cov-report=term-missing:skip-covered
 --no-cov-on-fail
 """
-
-cache_dir = ".cache/pytest/"
 
 markers = []
