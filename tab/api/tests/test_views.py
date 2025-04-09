@@ -3,6 +3,8 @@ import json
 import log
 import pytest
 
+from tab.projects.models import Test
+
 
 def post(client, url: str, data: dict):
     log.info(f"POST {url}: {data}")
@@ -25,15 +27,21 @@ def describe_results():
 
     url = "/api/results"
 
-    @pytest.mark.django_db
-    def it_creates_projects_and_tests_automatically(expect, client):
-        data = {
+    @pytest.fixture
+    def payload():
+        return {
             "project": "https://github.com/my-user/my-project",
+            "branch": "main",
+            "commit": "abc123",
             "test": "my test",
+            "status": "passed",
         }
-        response = post(client, url, data)
 
-        expect(response.status_code) == 200
+    @pytest.mark.django_db
+    def it_creates_projects_and_tests_automatically(expect, client, payload):
+        response = post(client, url, payload)
+
+        expect(response.status_code) == 201
         expect(response.json()) == {
             "project": "my-user / my-project",
             "test": "my test",
@@ -47,14 +55,34 @@ def describe_results():
             "my-user/my-project",
         ],
     )
-    def it_rejects_invalid_repositories(expect, client, project):
-        data = {
-            "project": project,
-            "test": "my test",
-        }
-        response = post(client, url, data)
+    def it_rejects_invalid_repositories(expect, client, payload, project):
+        payload["project"] = project
+        response = post(client, url, payload)
 
         expect(response.status_code) == 422
         expect(response.json()) == {
             "detail": f"Invalid repository URL: {project}",
         }
+
+    @pytest.mark.django_db
+    def it_updates_existing_test(expect, client, payload):
+        local_payload = payload.copy()
+        local_payload["branch"] = ""
+        local_payload["commit"] = ""
+        response = post(client, url, local_payload)
+        test = Test.objects.get()
+
+        expect(response.status_code) == 201
+        expect(response.json()) == {
+            "project": "my-user / my-project",
+            "test": "my test",
+        }
+        expect(test.branch) == ""
+        expect(test.commit) == ""
+
+        response = post(client, url, payload)
+        test.refresh_from_db()
+
+        expect(response.status_code) == 200
+        expect(test.branch) == "main"
+        expect(test.commit) == "abc123"

@@ -47,9 +47,11 @@ class Project(models.Model):
 
 
 class Test(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-
     name = models.CharField(max_length=1000)
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    branch = models.CharField(max_length=100, default="")
+    commit = models.CharField(max_length=100, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

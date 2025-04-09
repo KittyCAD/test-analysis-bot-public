@@ -12,7 +12,10 @@ router = Router()
 
 class Result(Schema):
     project: str
+    branch: str
+    commit: str
     test: str
+    status: str
 
 
 class ErrorResponse(Schema):
@@ -26,18 +29,41 @@ class AuthBearer(HttpBearer):
         return True
 
 
-@router.post("/results", auth=AuthBearer(), response={200: dict, 422: ErrorResponse})
+@router.post(
+    "/results",
+    auth=AuthBearer(),
+    response={
+        200: dict,
+        201: dict,
+        422: ErrorResponse,
+    },
+)
 def results(request, result: Result):
     try:
         project = Project.objects.from_repository(result.project)
     except ValueError as e:
         return 422, {"detail": str(e)}
 
-    test, created = Test.objects.get_or_create(project=project, name=result.test)
+    test, created = Test.objects.get_or_create(
+        project=project,
+        name=result.test,
+        defaults=dict(
+            branch=result.branch,
+            commit=result.commit,
+        ),
+    )
     if created:
+        status = 201
         log.info(f"Created test: {test}")
     else:
-        log.info(f"Found test: {test}")
+        status = 200
+        if not all([test.branch, test.commit]) and any([result.branch, result.commit]):
+            test.branch = test.branch or result.branch
+            test.commit = test.commit or result.commit
+            test.save()
+            log.info(f"Updated test: {test}")
+        else:
+            log.info(f"Found test: {test}")
 
     extra = {
         k: v
@@ -46,7 +72,7 @@ def results(request, result: Result):
     }
     log.info(f"Extra parameters: {json.dumps(extra, indent=2)}")
 
-    return {
+    return status, {
         "project": str(project),
         "test": str(test),
     }
