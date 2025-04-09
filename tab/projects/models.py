@@ -9,11 +9,11 @@ class ProjectManager(models.Manager):
     def clean_repository(value: str):
         return value.lower().removesuffix(".git").strip("/")
 
-    def from_repository(self, repository: str):
-        repository = repository.lower().removesuffix(".git").strip("/")
-        if repository.count("/") < 4:
-            raise ValueError(f"Invalid repository: {repository}")
-        project, created = self.get_or_create(repository=repository)
+    def from_repository(self, url: str):
+        cleaned_url = url.lower().removesuffix(".git").strip("/")
+        if "://" not in cleaned_url or cleaned_url.count("/") < 4:
+            raise ValueError(f"Invalid repository URL: {cleaned_url}")
+        project, created = self.get_or_create(repository=cleaned_url)
         if created:
             log.info(f"Created project: {project}")
         else:
@@ -23,10 +23,11 @@ class ProjectManager(models.Manager):
 
 class Project(models.Model):
     repository = models.URLField(unique=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects = ProjectManager()
+    objects: ProjectManager = ProjectManager()
 
     def __str__(self):
         return self.path
@@ -43,3 +44,15 @@ class Project(models.Model):
 
     def _update_repository(self):
         self.repository = ProjectManager.clean_repository(self.repository)
+
+
+class Test(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+    name = models.CharField(max_length=1000)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
