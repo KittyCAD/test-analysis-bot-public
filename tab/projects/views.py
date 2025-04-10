@@ -9,6 +9,6 @@ def index(_request):
 
 
 def detail(_request, path: str):
-    project = get_object_or_404(Project, repository__endswith=path)
-    url = reverse("admin:projects_project_change", args=[project.pk])
+    project = get_object_or_404(Project, repository__iendswith=path)
+    url = reverse("admin:projects_project_change", args=[project.id])
     return redirect(url)

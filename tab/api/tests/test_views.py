@@ -45,6 +45,7 @@ def describe_results():
         expect(response.json()) == {
             "project": "my-user / my-project",
             "test": "my test",
+            "result": "passed",
         }
 
     @pytest.mark.parametrize(
@@ -76,6 +77,7 @@ def describe_results():
         expect(response.json()) == {
             "project": "my-user / my-project",
             "test": "my test",
+            "result": "passed",
         }
         expect(test.original_branch) == ""
         expect(test.original_commit) == ""

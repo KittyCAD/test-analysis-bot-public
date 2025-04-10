@@ -4,7 +4,7 @@ import log
 from ninja import Router, Schema
 from ninja.security import APIKeyHeader
 
-from tab.projects.models import Project, Test
+from tab.projects.models import Project, Result, Test
 
 
 class ApiKey(APIKeyHeader):
@@ -20,12 +20,16 @@ router = Router()
 api_key = ApiKey()
 
 
-class Result(Schema):
+class ResultSchema(Schema):
     project: str
     branch: str
     commit: str
     test: str
     status: str
+
+    @classmethod
+    def get_metadata(cls, request_body: dict) -> dict:
+        return {k: v for k, v in request_body.items() if k not in cls.model_fields}
 
 
 class ErrorResponse(Schema):
@@ -36,29 +40,30 @@ class ErrorResponse(Schema):
     "/results",
     auth=api_key,
     response={
+        # TODO: Define a schema for successful responses
         200: dict,
         201: dict,
         422: ErrorResponse,
     },
 )
-def results(request, result: Result):
+def results(request, payload: ResultSchema):
     try:
-        project = Project.objects.from_repository(result.project)
+        project = Project.objects.from_repository(payload.project)
     except ValueError as e:
         return 422, {"detail": str(e)}
 
     test, created = Test.objects.get_or_create(
         project=project,
-        name=result.test,
+        name=payload.test,
         defaults=dict(
-            original_branch=result.branch,
-            original_commit=result.commit,
+            original_branch=payload.branch,
+            original_commit=payload.commit,
         ),
     )
     if created:
         status = 201
         log.info(f"Created test: {test}")
-    elif test.update_origin(result.branch, result.commit):
+    elif test.update_origin(payload.branch, payload.commit):
         status = 200
         test.save()
         log.info(f"Updated test: {test}")
@@ -66,14 +71,17 @@ def results(request, result: Result):
         status = 200
         log.info(f"Found test: {test}")
 
-    extra = {
-        k: v
-        for k, v in json.loads(request.body).items()
-        if k not in Result.model_fields
-    }
-    log.info(f"Extra parameters: {json.dumps(extra, indent=2)}")
+    metadata = ResultSchema.get_metadata(json.loads(request.body))
+    result = Result.objects.create(
+        test=test,
+        status=payload.status,
+        branch=payload.branch,
+        commit=payload.commit,
+        metadata=metadata,
+    )
 
     return status, {
         "project": str(project),
         "test": str(test),
+        "result": result.status,
     }

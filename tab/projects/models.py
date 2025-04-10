@@ -13,11 +13,12 @@ class ProjectManager(models.Manager):
         cleaned_url = self.clean_repository(url)
         if "://" not in cleaned_url or cleaned_url.count("/") < 4:
             raise ValueError(f"Invalid repository URL: {cleaned_url}")
-        project, created = self.get_or_create(repository__iexact=cleaned_url)
-        if created:
-            log.info(f"Created project: {project}")
-        else:
+        try:
+            project = self.get(repository__iexact=cleaned_url)
             log.info(f"Found project: {project}")
+        except Project.DoesNotExist:
+            project = self.create(repository=cleaned_url)
+            log.info(f"Created project: {project}")
         return project
 
 
@@ -48,9 +49,9 @@ class Project(models.Model):
 
 
 class Test(models.Model):
-    name = models.CharField(max_length=1000)
-
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+    name = models.CharField(max_length=1000)
     original_branch = models.CharField(max_length=100, default="")
     original_commit = models.CharField(max_length=100, default="")
 
@@ -69,3 +70,26 @@ class Test(models.Model):
             self.original_commit = self.original_commit or commit
             updated = True
         return updated
+
+
+class Status(models.TextChoices):
+    PASSED = "passed", "Passed"
+    FAILED = "failed", "Failed"
+    SKIPPED = "skipped", "Skipped"
+
+    TIMED_OUT = "timedOut", "Timed Out"
+    INTERRUPTED = "interrupted", "Interrupted"
+
+
+class Result(models.Model):
+    test = models.ForeignKey(Test, on_delete=models.CASCADE)
+
+    status = models.CharField(max_length=20, choices=Status.choices)
+    branch = models.CharField(max_length=100, default="")
+    commit = models.CharField(max_length=100, default="")
+    metadata = models.JSONField(default=dict)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return Status(self.status).label
