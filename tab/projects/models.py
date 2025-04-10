@@ -23,6 +23,7 @@ class ProjectManager(models.Manager):
 
 class Project(models.Model):
     repository = models.URLField(unique=True)
+    default_branch = models.CharField(max_length=100, default="main")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -50,11 +51,21 @@ class Test(models.Model):
     name = models.CharField(max_length=1000)
 
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    branch = models.CharField(max_length=100, default="")
-    commit = models.CharField(max_length=100, default="")
+    original_branch = models.CharField(max_length=100, default="")
+    original_commit = models.CharField(max_length=100, default="")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+
+    def update_origin(self, branch: str, commit: str) -> bool:
+        updated = False
+        if not all([self.original_branch, self.original_commit]) and any(
+            [branch, commit]
+        ):
+            self.original_branch = self.original_branch or branch
+            self.original_commit = self.original_commit or commit
+            updated = True
+        return updated

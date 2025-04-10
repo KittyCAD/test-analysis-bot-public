@@ -77,12 +77,12 @@ def describe_results():
             "project": "my-user / my-project",
             "test": "my test",
         }
-        expect(test.branch) == ""
-        expect(test.commit) == ""
+        expect(test.original_branch) == ""
+        expect(test.original_commit) == ""
 
         response = post(client, url, payload)
         test.refresh_from_db()
 
         expect(response.status_code) == 200
-        expect(test.branch) == "main"
-        expect(test.commit) == "abc123"
+        expect(test.original_branch) == "main"
+        expect(test.original_commit) == "abc123"

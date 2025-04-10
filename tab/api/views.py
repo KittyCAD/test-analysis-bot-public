@@ -48,22 +48,20 @@ def results(request, result: Result):
         project=project,
         name=result.test,
         defaults=dict(
-            branch=result.branch,
-            commit=result.commit,
+            original_branch=result.branch,
+            original_commit=result.commit,
         ),
     )
     if created:
         status = 201
         log.info(f"Created test: {test}")
+    elif test.update_origin(result.branch, result.commit):
+        status = 200
+        test.save()
+        log.info(f"Updated test: {test}")
     else:
         status = 200
-        if not all([test.branch, test.commit]) and any([result.branch, result.commit]):
-            test.branch = test.branch or result.branch
-            test.commit = test.commit or result.commit
-            test.save()
-            log.info(f"Updated test: {test}")
-        else:
-            log.info(f"Found test: {test}")
+        log.info(f"Found test: {test}")
 
     extra = {
         k: v
