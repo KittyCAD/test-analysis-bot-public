@@ -7,13 +7,13 @@ class ProjectManager(models.Manager):
 
     @staticmethod
     def clean_repository(value: str):
-        return value.lower().removesuffix(".git").strip("/")
+        return value.removesuffix(".git").strip("/")
 
     def from_repository(self, url: str):
-        cleaned_url = url.lower().removesuffix(".git").strip("/")
+        cleaned_url = self.clean_repository(url)
         if "://" not in cleaned_url or cleaned_url.count("/") < 4:
             raise ValueError(f"Invalid repository URL: {cleaned_url}")
-        project, created = self.get_or_create(repository=cleaned_url)
+        project, created = self.get_or_create(repository__iexact=cleaned_url)
         if created:
             log.info(f"Created project: {project}")
         else:
