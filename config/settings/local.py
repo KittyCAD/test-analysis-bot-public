@@ -12,8 +12,13 @@ ALLOWED_HOSTS = [
     ".ngrok.app",
 ]
 
+INTERNAL_IPS = [
+    "127.0.0.1",
+]
+
 INSTALLED_APPS += [
     "django_browser_reload",
+    "debug_toolbar",
 ]
 
 MIDDLEWARE += [

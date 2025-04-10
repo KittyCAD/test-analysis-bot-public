@@ -32,13 +32,13 @@ class Project(models.Model):
     objects: ProjectManager = ProjectManager()
 
     def __str__(self):
-        return self.path
+        return self.name
 
     @property
-    def path(self) -> str:
+    def name(self) -> str:
         self._update_repository()
         parts = self.repository.split("/")
-        return " / ".join(parts[3:])
+        return " › ".join(parts[3:])
 
     def save(self, *args, **kwargs):
         self._update_repository()

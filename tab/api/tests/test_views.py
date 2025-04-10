@@ -33,7 +33,7 @@ def describe_results():
             "project": "https://github.com/my-user/my-project",
             "branch": "main",
             "commit": "abc123",
-            "test": "my test",
+            "test": "my feature › my test",
             "status": "passed",
         }
 
@@ -43,8 +43,8 @@ def describe_results():
 
         expect(response.status_code) == 201
         expect(response.json()) == {
-            "project": "my-user / my-project",
-            "test": "my test",
+            "project": "my-user › my-project",
+            "test": "my feature › my test",
             "result": "passed",
         }
 
@@ -75,8 +75,8 @@ def describe_results():
 
         expect(response.status_code) == 201
         expect(response.json()) == {
-            "project": "my-user / my-project",
-            "test": "my test",
+            "project": "my-user › my-project",
+            "test": "my feature › my test",
             "result": "passed",
         }
         expect(test.original_branch) == ""
