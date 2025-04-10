@@ -26,6 +26,8 @@ class ResultSchema(Schema):
     commit: str
     test: str
     status: str
+    duration: float | None = None
+    message: str | None = None
 
     @classmethod
     def get_metadata(cls, request_body: dict) -> dict:
@@ -77,6 +79,8 @@ def results(request, payload: ResultSchema):
         status=payload.status,
         branch=payload.branch,
         commit=payload.commit,
+        duration=payload.duration,
+        message=payload.message,
         metadata=metadata,
     )
 

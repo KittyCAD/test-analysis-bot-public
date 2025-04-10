@@ -25,8 +25,9 @@ class ResultAdmin(admin.ModelAdmin):
         "id",
         "test__project",
         "test__name",
-        "status",
         "branch",
+        "status",
+        "duration",
         "created_at",
     )
     search_fields = ("test__project__repository", "test__name", "branch", "commit")

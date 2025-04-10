@@ -2,6 +2,8 @@ from django.db import models
 
 import log
 
+from .constants import ANSI_ESCAPE
+
 
 class ProjectManager(models.Manager):
 
@@ -87,9 +89,18 @@ class Result(models.Model):
     status = models.CharField(max_length=20, choices=Status.choices)
     branch = models.CharField(max_length=100, default="")
     commit = models.CharField(max_length=100, default="")
+    duration = models.FloatField(null=True)
+    message = models.TextField(null=True)
     metadata = models.JSONField(default=dict)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return Status(self.status).label
+
+    def save(self, *args, **kwargs):
+        if self.duration:
+            self.duration = round(self.duration, 3)
+        if self.message:
+            self.message = ANSI_ESCAPE.sub("", self.message)
+        super().save(*args, **kwargs)
