@@ -2,12 +2,22 @@ import json
 
 import log
 from ninja import Router, Schema
-from ninja.security import HttpBearer
-from pydantic import HttpUrl
+from ninja.security import APIKeyHeader
 
 from tab.projects.models import Project, Test
 
+
+class ApiKey(APIKeyHeader):
+    param_name = "X-API-Key"
+
+    def authenticate(self, request, key):
+        # TODO: Implement authentication
+        log.info(f"Authenticating with API key: {key}")
+        return True
+
+
 router = Router()
+api_key = ApiKey()
 
 
 class Result(Schema):
@@ -22,16 +32,9 @@ class ErrorResponse(Schema):
     detail: str
 
 
-class AuthBearer(HttpBearer):
-    def authenticate(self, request, token: str):
-        # TODO: Implement authentication
-        log.info(f"Authenticating with token: {token}")
-        return True
-
-
 @router.post(
     "/results",
-    auth=AuthBearer(),
+    auth=api_key,
     response={
         200: dict,
         201: dict,

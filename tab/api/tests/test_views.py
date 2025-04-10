@@ -13,7 +13,7 @@ def post(client, url: str, data: dict):
         data=json.dumps(data),
         content_type="application/json",
         headers={
-            "Authorization": "Bearer my-token",
+            "X-API-Key": "my-api-key",
         },
     )
     try:
