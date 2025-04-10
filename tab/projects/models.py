@@ -96,7 +96,7 @@ class Result(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return Status(self.status).label
+        return f"{Status(self.status).label} after {self.duration or '???'} seconds"
 
     def save(self, *args, **kwargs):
         if self.duration:

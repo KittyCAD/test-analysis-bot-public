@@ -1,54 +1,33 @@
 import json
 
+from django.shortcuts import redirect
+
 import log
-from ninja import Router, Schema
-from ninja.security import APIKeyHeader
+from ninja import NinjaAPI
 
 from tab.projects.models import Project, Result, Test
 
+from .schemas import ApiKey, ErrorResponse, ResultRequest, ResultResponse
 
-class ApiKey(APIKeyHeader):
-    param_name = "X-API-Key"
-
-    def authenticate(self, request, key):
-        # TODO: Implement authentication
-        log.info(f"Authenticating with API key: {key}")
-        return True
-
-
-router = Router()
+api = NinjaAPI()
 api_key = ApiKey()
 
 
-class ResultSchema(Schema):
-    project: str
-    branch: str
-    commit: str
-    test: str
-    status: str
-    duration: float | None = None
-    message: str | None = None
-
-    @classmethod
-    def get_metadata(cls, request_body: dict) -> dict:
-        return {k: v for k, v in request_body.items() if k not in cls.model_fields}
+@api.get("/", include_in_schema=False)
+def index(request):
+    return redirect("/api/docs")
 
 
-class ErrorResponse(Schema):
-    detail: str
-
-
-@router.post(
+@api.post(
     "/results",
     auth=api_key,
     response={
-        # TODO: Define a schema for successful responses
-        200: dict,
-        201: dict,
+        200: ResultResponse,
+        201: ResultResponse,
         422: ErrorResponse,
     },
 )
-def results(request, payload: ResultSchema):
+def results(request, payload: ResultRequest):
     try:
         project = Project.objects.from_repository(payload.project)
     except ValueError as e:
@@ -58,14 +37,14 @@ def results(request, payload: ResultSchema):
         project=project,
         name=payload.test,
         defaults=dict(
-            original_branch=payload.branch,
-            original_commit=payload.commit,
+            original_branch=payload.branch,  # type: ignore[attr-defined]
+            original_commit=payload.commit,  # type: ignore[attr-defined]
         ),
     )
     if created:
         status = 201
         log.info(f"Created test: {test}")
-    elif test.update_origin(payload.branch, payload.commit):
+    elif test.update_origin(payload.branch, payload.commit):  # type: ignore[attr-defined]
         status = 200
         test.save()
         log.info(f"Updated test: {test}")
@@ -73,19 +52,20 @@ def results(request, payload: ResultSchema):
         status = 200
         log.info(f"Found test: {test}")
 
-    metadata = ResultSchema.get_metadata(json.loads(request.body))
+    metadata = ResultRequest.get_metadata(json.loads(request.body))
     result = Result.objects.create(
         test=test,
-        status=payload.status,
-        branch=payload.branch,
-        commit=payload.commit,
-        duration=payload.duration,
-        message=payload.message,
+        status=payload.status,  # type: ignore[attr-defined]
+        branch=payload.branch,  # type: ignore[attr-defined]
+        commit=payload.commit,  # type: ignore[attr-defined]
+        duration=payload.duration,  # type: ignore[attr-defined]
+        message=payload.message,  # type: ignore[attr-defined]
         metadata=metadata,
     )
+    log.info(f"Created result: {result}")
 
-    return status, {
-        "project": str(project),
-        "test": str(test),
-        "result": result.status,
-    }
+    return status, ResultResponse(
+        project=str(project),
+        test=str(test),
+        result=result.status,
+    )
