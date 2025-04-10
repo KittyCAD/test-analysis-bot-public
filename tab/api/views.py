@@ -55,11 +55,7 @@ def results(request, payload: ResultRequest):
     metadata = ResultRequest.get_metadata(json.loads(request.body))
     result = Result.objects.create(
         test=test,
-        status=payload.status,  # type: ignore[attr-defined]
-        branch=payload.branch,  # type: ignore[attr-defined]
-        commit=payload.commit,  # type: ignore[attr-defined]
-        duration=payload.duration,  # type: ignore[attr-defined]
-        message=payload.message,  # type: ignore[attr-defined]
+        **payload.get_model_fields(),
         metadata=metadata,
     )
     log.info(f"Created result: {result}")

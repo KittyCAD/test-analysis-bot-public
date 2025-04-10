@@ -28,10 +28,11 @@ class ResultAdmin(admin.ModelAdmin):
         "branch",
         "status",
         "duration",
+        "platform",
         "created_at",
     )
     search_fields = ("test__project__repository", "test__name", "branch", "commit")
-    list_filter = ("status", "created_at")
+    list_filter = ("status", "platform", "created_at")
     ordering = ("-created_at",)
 
     def get_queryset(self, request):

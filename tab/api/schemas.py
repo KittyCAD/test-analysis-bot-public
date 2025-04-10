@@ -20,11 +20,18 @@ class ResultRequest(ModelSchema):
 
     class Config:
         model = Result
-        model_fields = ["branch", "commit", "status", "duration", "message"]
+        model_fields = ["branch", "commit", "status", "duration", "message", "platform"]
 
     @classmethod
     def get_metadata(cls, request_body: dict) -> dict:
         return {k: v for k, v in request_body.items() if k not in cls.model_fields}
+
+    def get_model_fields(self) -> dict:
+        return {
+            field: getattr(self, field)
+            for field in self.__class__.model_fields
+            if field not in ["project", "test"]
+        }
 
 
 class ResultResponse(Schema):

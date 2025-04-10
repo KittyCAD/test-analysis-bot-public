@@ -83,14 +83,33 @@ class Status(models.TextChoices):
     INTERRUPTED = "interrupted", "Interrupted"
 
 
+class Platform(models.TextChoices):
+    MACOS = "macos", "macOS"
+    WINDOWS = "windows", "Windows"
+    LINUX = "linux", "Linux"
+
+    @classmethod
+    def normalize(cls, value: str) -> str:
+        value = value.lower()
+        if "mac" in value or "darwin" in value:
+            return cls.MACOS.value
+        elif "win" in value:
+            return cls.WINDOWS.value
+        else:
+            assert "linux" in value or "ubuntu" in value, f"Unknown platform: {value}"
+            return cls.LINUX.value
+
+
 class Result(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE)
 
     status = models.CharField(max_length=20, choices=Status.choices)
     branch = models.CharField(max_length=100, default="")
     commit = models.CharField(max_length=100, default="")
+
     duration = models.FloatField(null=True)
     message = models.TextField(null=True)
+    platform = models.CharField(max_length=100, null=True, choices=Platform.choices)
     metadata = models.JSONField(default=dict)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -103,4 +122,6 @@ class Result(models.Model):
             self.duration = round(self.duration, 3)
         if self.message:
             self.message = ANSI_ESCAPE.sub("", self.message)
+        if self.platform:
+            self.platform = Platform.normalize(self.platform)
         super().save(*args, **kwargs)
