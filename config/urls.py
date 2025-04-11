@@ -4,7 +4,8 @@ from django.shortcuts import redirect
 from django.urls import include, path
 
 urlpatterns = [
-    path("", lambda request: redirect("projects:index")),
+    path("", lambda _request: redirect("projects:index")),
+    path("", include("tab.core.urls")),
     path("projects/", include("tab.projects.urls", namespace="projects")),
     path("api/", include("tab.api.urls")),
     path("admin/", admin.site.urls),
