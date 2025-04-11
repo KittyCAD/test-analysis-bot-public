@@ -75,8 +75,7 @@ migrate: install ## Database | Run database migrations
 .PHONY: data
 data: install migrate ## Database | Seed data for manual testing
 	./manage.py gendata
-	# TODO: Load test data and fixtures
-	# ./manage.py loaddata content
+	./manage.py loaddata projects
 
 .PHONY: reset
 reset: install ## Database | Create a new database, migrate, and seed it
