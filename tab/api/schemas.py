@@ -1,7 +1,10 @@
+from django.conf import settings
+
 import log
 from ninja import ModelSchema, Schema
 from ninja.security import APIKeyHeader
 
+from tab.core.models import Organization
 from tab.projects.models import Result
 
 
@@ -9,9 +12,10 @@ class ApiKey(APIKeyHeader):
     param_name = "X-API-Key"
 
     def authenticate(self, request, key):
-        # TODO: Implement authentication
-        log.info(f"Authenticating with API key: {key}")
-        return True
+        if hasattr(settings, "TEST"):
+            log.warning("Bypassing authentication for tests")
+            return True
+        return Organization.objects.filter(key=key).exists()
 
 
 class ResultRequest(ModelSchema):

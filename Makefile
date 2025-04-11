@@ -27,7 +27,6 @@ doctor: ## Check for required system dependencies
 	bin/verchew --exit-code
 
 .envrc:
-	echo export DJANGO_SETTINGS_MODULE=config.settings.local >> $@
 	echo export DATABASE_URL=postgresql://localhost/$(DATABASE) >> $@
 	echo export REDIS_URL=redis://localhost:6379/0 >> $@
 	- direnv allow

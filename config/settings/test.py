@@ -4,7 +4,6 @@ from .default import *  # pylint: disable=wildcard-import,unused-wildcard-import
 # Core
 
 TEST = True
-DEBUG = True
 SECRET_KEY = "test"
 
 ###############################################################################

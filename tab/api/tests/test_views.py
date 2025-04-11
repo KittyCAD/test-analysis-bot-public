@@ -12,9 +12,7 @@ def post(client, url: str, data: dict):
         url,
         data=json.dumps(data),
         content_type="application/json",
-        headers={
-            "X-API-Key": "my-api-key",
-        },
+        headers={"X-API-Key": "my-api-key"},
     )
     try:
         log.info(f"{response.status_code} response: {response.json()}")

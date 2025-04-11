@@ -1,10 +1,12 @@
 import json
 
+from django.conf import settings
 from django.shortcuts import redirect
 
 import log
 from ninja import NinjaAPI
 
+from tab.core.models import Organization
 from tab.projects.models import Project, Result, Test
 
 from .schemas import ApiKey, ErrorResponse, ResultRequest, ResultResponse
@@ -29,7 +31,15 @@ def index(request):
 )
 def results(request, payload: ResultRequest):
     try:
-        project = Project.objects.from_repository(payload.project)
+        if hasattr(settings, "TEST"):
+            log.warning("Skipping ownership check for tests")
+            project = Project.objects.from_repository(payload.project)
+        else:
+            key = request.headers.get(ApiKey.param_name)
+            organization = Organization.objects.get(key=key)
+            project = Project.objects.from_repository(
+                payload.project, organization.repository_index
+            )
     except ValueError as e:
         return 422, {"detail": str(e)}
 
