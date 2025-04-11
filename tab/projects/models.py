@@ -33,7 +33,7 @@ class ProjectManager(models.Manager):
 
 class Project(models.Model):
     repository = models.URLField(unique=True)
-    default_branch = models.CharField(max_length=100, default="main")
+    default_branches = models.JSONField(default=["main"])
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -78,13 +78,16 @@ class Test(models.Model):
 
         results = Result.objects.filter(
             test=self,
-            branch=self.project.default_branch,
+            branch__in=self.project.default_branches,
             duration__gt=0,
             status__in=[Status.PASSED, Status.FAILED],
         ).order_by("-created_at")[:samples]
-        durations = [result.duration for result in results if result.duration]
-        new = round(sum(durations) / len(durations), 3)
 
+        durations = [result.duration for result in results if result.duration]
+        if not durations:
+            return False
+
+        new = round(sum(durations) / len(durations), 3)
         if old == new:
             return False
 
@@ -109,7 +112,8 @@ class Result(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{Status(self.status).label} after {self.duration or '???'} seconds"
+        branch = self.branch or "???"
+        return f"{Status(self.status).label} after {self.duration or '???'} seconds on {branch!r}"
 
     def save(self, *args, **kwargs):
         if self.duration:
