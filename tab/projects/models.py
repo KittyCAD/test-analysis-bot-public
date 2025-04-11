@@ -63,14 +63,34 @@ class Test(models.Model):
     name = models.CharField(max_length=1000)
     original_branch = models.CharField(max_length=100, default="")
     original_commit = models.CharField(max_length=100, default="")
-
     metadata = models.JSONField(default=dict)
+
+    average_duration = models.FloatField(default=-1)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
+
+    def update_average_duration(self, *, samples: int = 100) -> bool:
+        old = self.average_duration
+
+        results = Result.objects.filter(
+            test=self,
+            branch=self.project.default_branch,
+            duration__gt=0,
+            status__in=[Status.PASSED, Status.FAILED],
+        ).order_by("-created_at")[:samples]
+        durations = [result.duration for result in results if result.duration]
+        new = round(sum(durations) / len(durations), 3)
+
+        if old == new:
+            return False
+
+        log.debug(f"Test has new average duration: {old} => {new} seconds")
+        self.average_duration = new
+        return True
 
 
 class Result(models.Model):
@@ -100,4 +120,9 @@ class Result(models.Model):
             self.target = Target.normalize(self.target)
         if self.platform:
             self.platform = Platform.normalize(self.platform)
+
         super().save(*args, **kwargs)
+
+        if self.duration:
+            if self.test.update_average_duration():
+                self.test.save()

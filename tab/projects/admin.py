@@ -17,6 +17,7 @@ class TestAdmin(admin.ModelAdmin):
         "id",
         "project",
         "name",
+        "average_duration",
         "original_branch",
         "created_at",
         "updated_at",

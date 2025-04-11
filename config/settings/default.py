@@ -57,12 +57,18 @@ WSGI_APPLICATION = "config.wsgi.application"
 ###############################################################################
 # Logging
 
-LOGGING = {
+LOGGING: dict = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(levelname)s: %(message)s",
+        },
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
+            "formatter": "standard",
         },
     },
     "root": {
