@@ -20,7 +20,15 @@ class ResultRequest(ModelSchema):
 
     class Config:
         model = Result
-        model_fields = ["branch", "commit", "status", "duration", "message", "platform"]
+        model_fields = [
+            "branch",
+            "commit",
+            "status",
+            "duration",
+            "message",
+            "target",
+            "platform",
+        ]
 
     @classmethod
     def get_metadata(cls, request_body: dict) -> dict:

@@ -3,6 +3,7 @@ from django.db import models
 import log
 
 from .constants import ANSI_ESCAPE
+from .enums import Platform, Status, Target
 
 
 class ProjectManager(models.Manager):
@@ -74,32 +75,6 @@ class Test(models.Model):
         return updated
 
 
-class Status(models.TextChoices):
-    PASSED = "passed", "Passed"
-    FAILED = "failed", "Failed"
-    SKIPPED = "skipped", "Skipped"
-
-    TIMED_OUT = "timedOut", "Timed Out"
-    INTERRUPTED = "interrupted", "Interrupted"
-
-
-class Platform(models.TextChoices):
-    MACOS = "macos", "macOS"
-    WINDOWS = "windows", "Windows"
-    LINUX = "linux", "Linux"
-
-    @classmethod
-    def normalize(cls, value: str) -> str:
-        value = value.lower()
-        if "mac" in value or "darwin" in value:
-            return cls.MACOS.value
-        elif "win" in value:
-            return cls.WINDOWS.value
-        else:
-            assert "linux" in value or "ubuntu" in value, f"Unknown platform: {value}"
-            return cls.LINUX.value
-
-
 class Result(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE)
 
@@ -109,6 +84,7 @@ class Result(models.Model):
 
     duration = models.FloatField(null=True)
     message = models.TextField(null=True)
+    target = models.CharField(max_length=100, null=True, choices=Target.choices)
     platform = models.CharField(max_length=100, null=True, choices=Platform.choices)
     metadata = models.JSONField(default=dict)
 
@@ -122,6 +98,8 @@ class Result(models.Model):
             self.duration = round(self.duration, 3)
         if self.message:
             self.message = ANSI_ESCAPE.sub("", self.message)
+        if self.target:
+            self.target = Target.normalize(self.target)
         if self.platform:
             self.platform = Platform.normalize(self.platform)
         super().save(*args, **kwargs)

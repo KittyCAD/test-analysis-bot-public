@@ -1,22 +1,12 @@
 import pytest
 
-from ..models import Platform, Project, Result
+from ..models import Project, Result
 
 
 def describe_project():
     def it_formats_name(expect):
         project = Project(repository="https://github.com/MyUser/my_repo")
         expect(project.name) == "MyUser › my_repo"
-
-
-def describe_platform():
-    def it_normalizes_values(expect):
-        expect(Platform.normalize("macOS")) == "macos"
-        expect(Platform.normalize("darwin")) == "macos"
-        expect(Platform.normalize("Windows")) == "windows"
-        expect(Platform.normalize("win32")) == "windows"
-        expect(Platform.normalize("linux")) == "linux"
-        expect(Platform.normalize("Ubuntu")) == "linux"
 
 
 def describe_result():
