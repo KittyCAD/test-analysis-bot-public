@@ -1,3 +1,5 @@
+import os
+
 from .default import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
 ###############################################################################
@@ -29,13 +31,18 @@ MIDDLEWARE += [
 ###############################################################################
 # Databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "test_analysis_bot_dev",
-        "HOST": "127.0.0.1",
+if "DATABASE_URL" not in os.environ:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": "test_analysis_bot_dev",
+            "HOST": "127.0.0.1",
+        }
     }
-}
 
-if "DATABASE_URL" in os.environ:
-    DATABASES["default"] = dj_database_url.config()
+###############################################################################
+# Caches
+
+if "REDIS_URL" in os.environ:
+    CACHES["default"]["BACKEND"] = "django.core.cache.backends.redis.RedisCache"
+    CACHES["default"]["LOCATION"] = os.environ["REDIS_URL"]

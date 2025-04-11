@@ -1,3 +1,5 @@
+import os
+
 from .default import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
 ###############################################################################
@@ -17,12 +19,6 @@ DATABASES = {
     }
 }
 
-###############################################################################
-# Caches
-
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
-        "LOCATION": BASE_DIR / ".cache" / "django",
-    }
-}
+if "CI" in os.environ:
+    DATABASES["default"]["USER"] = "postgres"
+    DATABASES["default"]["PASSWORD"] = "postgres"

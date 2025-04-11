@@ -1,7 +1,5 @@
 import os
 
-import dj_database_url
-
 from .default import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
 ###############################################################################
@@ -18,6 +16,16 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://*herokuapp.com",  # TODO: Remove this line and add your custom domain
 ]
+
+###############################################################################
+# Caches
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ["REDIS_URL"],
+    }
+}
 
 ###############################################################################
 # Authentication
