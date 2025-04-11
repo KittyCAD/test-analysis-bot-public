@@ -64,21 +64,13 @@ class Test(models.Model):
     original_branch = models.CharField(max_length=100, default="")
     original_commit = models.CharField(max_length=100, default="")
 
+    metadata = models.JSONField(default=dict)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
-
-    def update_origin(self, branch: str, commit: str) -> bool:
-        updated = False
-        if not all([self.original_branch, self.original_commit]) and any(
-            [branch, commit]
-        ):
-            self.original_branch = self.original_branch or branch
-            self.original_commit = self.original_commit or commit
-            updated = True
-        return updated
 
 
 class Result(models.Model):

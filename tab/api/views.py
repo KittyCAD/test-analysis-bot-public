@@ -37,6 +37,8 @@ def index(request):
     tags=["Tests"],
 )
 def results(request, payload: ResultRequest):
+    assert hasattr(payload, "branch") and hasattr(payload, "commit")  # type hint
+
     try:
         if hasattr(settings, "TEST"):
             log.warning("Skipping ownership check for tests")
@@ -50,26 +52,30 @@ def results(request, payload: ResultRequest):
     except ValueError as e:
         return 422, {"detail": str(e)}
 
+    metadata = ResultRequest.get_metadata(json.loads(request.body))
     test, created = Test.objects.get_or_create(
         project=project,
         name=payload.test,
         defaults=dict(
-            original_branch=payload.branch,  # type: ignore[attr-defined]
-            original_commit=payload.commit,  # type: ignore[attr-defined]
+            original_branch=payload.branch,
+            original_commit=payload.commit,
+            metadata=metadata,
         ),
     )
     if created:
         status = 201
         log.info(f"Created test: {test}")
-    elif test.update_origin(payload.branch, payload.commit):  # type: ignore[attr-defined]
+    elif payload.branch and not test.original_branch:
         status = 200
+        test.original_branch = test.original_branch or payload.branch
+        test.original_commit = test.original_commit or payload.commit
+        test.metadata = test.metadata or metadata
         test.save()
         log.info(f"Updated test: {test}")
     else:
         status = 200
         log.info(f"Found test: {test}")
 
-    metadata = ResultRequest.get_metadata(json.loads(request.body))
     result = Result.objects.create(
         test=test,
         **payload.get_model_fields(),

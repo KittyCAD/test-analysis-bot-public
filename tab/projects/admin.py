@@ -14,8 +14,9 @@ class ProjectAdmin(admin.ModelAdmin):
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
     list_display = (
-        "name",
+        "id",
         "project",
+        "name",
         "original_branch",
         "created_at",
         "updated_at",
