@@ -1,4 +1,5 @@
 import json
+import tomllib
 
 from django.conf import settings
 from django.shortcuts import redirect
@@ -11,7 +12,12 @@ from tab.projects.models import Project, Result, Test
 
 from .schemas import ApiKey, ErrorResponse, ResultRequest, ResultResponse
 
-api = NinjaAPI()
+project = tomllib.load(open("pyproject.toml", "rb"))["project"]
+api = NinjaAPI(
+    title="Test Analysis Bot",
+    version=project["version"],
+    description=project["description"],
+)
 api_key = ApiKey()
 
 
@@ -28,6 +34,7 @@ def index(request):
         201: ResultResponse,
         422: ErrorResponse,
     },
+    tags=["Tests"],
 )
 def results(request, payload: ResultRequest):
     try:
