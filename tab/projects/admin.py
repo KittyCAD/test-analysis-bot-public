@@ -13,7 +13,13 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
-    list_display = ("name", "project", "created_at", "updated_at")
+    list_display = (
+        "name",
+        "project",
+        "original_branch",
+        "created_at",
+        "updated_at",
+    )
     search_fields = ("project__repository", "name")
     list_filter = ("created_at", "updated_at")
     ordering = ("-updated_at",)
@@ -26,6 +32,7 @@ class ResultAdmin(admin.ModelAdmin):
         "test__project",
         "test__name",
         "branch",
+        "_commit",
         "status",
         "duration",
         "target",
@@ -35,6 +42,10 @@ class ResultAdmin(admin.ModelAdmin):
     search_fields = ("test__project__repository", "test__name", "branch", "commit")
     list_filter = ("status", "target", "platform", "created_at", "branch")
     ordering = ("-created_at",)
+
+    @admin.display(description="Commit")
+    def _commit(self, result: Result):
+        return result.commit[:7]
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("test__project")
