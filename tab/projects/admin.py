@@ -22,7 +22,7 @@ class TestAdmin(admin.ModelAdmin):
         "updated_at",
     )
     search_fields = ("project__repository", "name")
-    list_filter = ("created_at", "updated_at")
+    list_filter = ("created_at", "updated_at", "project__repository", "original_branch")
     ordering = ("-updated_at",)
 
 
@@ -41,7 +41,14 @@ class ResultAdmin(admin.ModelAdmin):
         "created_at",
     )
     search_fields = ("test__project__repository", "test__name", "branch", "commit")
-    list_filter = ("status", "target", "platform", "created_at", "branch")
+    list_filter = (
+        "status",
+        "target",
+        "platform",
+        "created_at",
+        "test__project__repository",
+        "branch",
+    )
     ordering = ("-created_at",)
 
     @admin.display(description="Commit")
