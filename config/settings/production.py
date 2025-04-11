@@ -10,11 +10,13 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 ALLOWED_HOSTS = [
     "0.0.0.0",
     "localhost",
-    ".herokuapp.com",  # TODO: Remove this line and add your custom domain
+    "test-analysis-bot.hawk-dinosaur.ts.net",
+    "test-analysis-bot.corp.zoo.dev",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://*herokuapp.com",  # TODO: Remove this line and add your custom domain
+    "https://test-analysis-bot.hawk-dinosaur.ts.net",
+    "https://test-analysis-bot.corp.zoo.dev",
 ]
 
 ###############################################################################
