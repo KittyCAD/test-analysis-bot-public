@@ -1,5 +1,6 @@
 PROJECT := tab
 DATABASE := test_analysis_bot_dev
+IMAGE := test-analysis-bot
 
 .PHONY: all
 all: check test ## CI | Run all validation targets
@@ -154,9 +155,9 @@ run: .envrc install migrate ## Run the application
 	./manage.py runserver
 
 .PHONY: run-production
-run-production: .envrc install
-	./manage.py collectstatic --no-input
-	# TODO: Emulate the production environment
+run-production: .envrc
+	docker build --tag $(IMAGE):latest .
+	docker run --env SECRET_KEY=local --env DATABASE_URL=$(DATABASE_URL) --env REDIS_URL=$(REDIS_URL) --publish=8000:8000 --rm $(IMAGE):latest
 
 # DOCUMENTATION TARGETS #######################################################
 

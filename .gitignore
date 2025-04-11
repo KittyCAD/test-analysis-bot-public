@@ -6,5 +6,8 @@
 .venv/
 __pycache__/
 
+# Django
+staticfiles/
+
 # Documentation
 docs/*.png

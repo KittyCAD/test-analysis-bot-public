@@ -32,6 +32,10 @@ redis = "^4.0.2"
 # Utilities
 minilog = "*"
 
+# Deployment
+gunicorn = "^20.1.0"
+whitenoise = "^6.9.0"
+
 [tool.poetry.group.dev.dependencies]
 
 # Formatting
@@ -62,9 +66,6 @@ watchdog = "^6.0"
 # UML
 pylint = "*"
 pygraphviz = "*"
-
-[tool.poetry.group.deployment.dependencies]
-gunicorn = "^20.1.0"
 
 [tool.black]
 
