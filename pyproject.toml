@@ -63,6 +63,9 @@ watchdog = "^6.0"
 pylint = "*"
 pygraphviz = "*"
 
+[tool.poetry.group.deployment.dependencies]
+gunicorn = "^20.1.0"
+
 [tool.black]
 
 quiet = true
