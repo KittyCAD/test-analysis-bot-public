@@ -27,6 +27,40 @@ class TestAdmin(admin.ModelAdmin):
     list_filter = ("created_at", "updated_at", "project__repository", "original_branch")
     ordering = ("-updated_at",)
 
+    class ResultInline(admin.TabularInline):
+        model = Result
+        can_delete = False
+        max_num = 0
+
+        verbose_name_plural = "Recent Results"
+        fields = readonly_fields = (
+            "branch",
+            "_commit",
+            "status",
+            "duration",
+            "target",
+            "platform",
+            "created_at",
+        )
+
+        @admin.display(description="Commit")
+        def _commit(self, result: Result):
+            return result.commit[:7]
+
+        def get_queryset(self, request):
+            test: Test = self.parent_model.objects.get(
+                id=request.resolver_match.kwargs["object_id"]
+            )
+            return (
+                super()
+                .get_queryset(request)
+                .filter(branch__in=test.relevant_branches)
+                .order_by("-created_at")
+                .select_related("test")
+            )
+
+    inlines = (ResultInline,)
+
 
 @admin.register(Result)
 class ResultAdmin(admin.ModelAdmin):
