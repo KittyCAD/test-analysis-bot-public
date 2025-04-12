@@ -2,7 +2,7 @@ from django.db import models
 
 import log
 
-from .constants import ANSI_ESCAPE
+from .constants import ANSI_ESCAPE, get_default_branches
 from .enums import Platform, Status, Target
 
 
@@ -33,7 +33,7 @@ class ProjectManager(models.Manager):
 
 class Project(models.Model):
     repository = models.URLField(unique=True)
-    default_branches = models.JSONField(default=["main"])
+    default_branches = models.JSONField(default=get_default_branches)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -65,6 +65,7 @@ class Test(models.Model):
     original_commit = models.CharField(max_length=100, default="")
     metadata = models.JSONField(default=dict)
 
+    failure_rate = models.FloatField(default=-1)
     average_duration = models.FloatField(default=-1)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -73,21 +74,42 @@ class Test(models.Model):
     def __str__(self):
         return self.name
 
+    def update_failure_rate(self, *, samples: int = 100) -> bool:
+        old = self.failure_rate
+
+        results = Result.objects.filter(
+            test=self,
+            branch__in=self.project.default_branches,
+            status__in=[Status.PASSED, Status.FAILED],
+        ).order_by("-created_at")[:samples]
+        if not results:
+            return False
+
+        failed = sum(1 for result in results if result.status == Status.FAILED)
+        new = round(failed / len(results), 3)
+
+        if old == new:
+            return False
+
+        log.debug(f"Test has new failure rate: {old*100}% => {new*100}%")
+        self.failure_rate = new
+        return True
+
     def update_average_duration(self, *, samples: int = 100) -> bool:
         old = self.average_duration
 
         results = Result.objects.filter(
             test=self,
             branch__in=self.project.default_branches,
-            duration__gt=0,
             status__in=[Status.PASSED, Status.FAILED],
+            duration__gt=0,
         ).order_by("-created_at")[:samples]
 
         durations = [result.duration for result in results if result.duration]
         if not durations:
             return False
 
-        new = round(sum(durations) / len(durations), 3)
+        new = round(sum(durations) / len(durations), 1)
         if old == new:
             return False
 
@@ -127,6 +149,5 @@ class Result(models.Model):
 
         super().save(*args, **kwargs)
 
-        if self.duration:
-            if self.test.update_average_duration():
-                self.test.save()
+        if self.test.update_failure_rate() or self.test.update_average_duration():
+            self.test.save()
