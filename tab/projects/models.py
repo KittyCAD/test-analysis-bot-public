@@ -3,7 +3,7 @@ from django.utils.functional import cached_property
 
 import log
 
-from .constants import ANSI_ESCAPE, get_default_branches
+from .constants import ANSI_ESCAPE, RELEVANT_SAMPLES, get_default_branches
 from .enums import Platform, Status, Target
 
 
@@ -82,14 +82,14 @@ class Test(models.Model):
             branches.insert(0, self.original_branch)
         return branches
 
-    def update_failure_rate(self, *, samples: int = 100) -> bool:
+    def update_failure_rate(self) -> bool:
         old = self.failure_rate
 
         results = Result.objects.filter(
             test=self,
             branch__in=self.relevant_branches,
             status__in=[Status.PASSED, Status.FAILED],
-        ).order_by("-created_at")[:samples]
+        ).order_by("-created_at")[:RELEVANT_SAMPLES]
         if not results:
             return False
 
@@ -103,7 +103,7 @@ class Test(models.Model):
         self.failure_rate = new
         return True
 
-    def update_average_duration(self, *, samples: int = 100) -> bool:
+    def update_average_duration(self) -> bool:
         old = self.average_duration
 
         results = Result.objects.filter(
@@ -111,7 +111,7 @@ class Test(models.Model):
             branch__in=self.relevant_branches,
             status__in=[Status.PASSED, Status.FAILED],
             duration__gt=0,
-        ).order_by("-created_at")[:samples]
+        ).order_by("-created_at")[:RELEVANT_SAMPLES]
 
         durations = [result.duration for result in results if result.duration]
         if not durations:

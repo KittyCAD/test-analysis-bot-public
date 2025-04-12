@@ -1,6 +1,13 @@
 from django.contrib import admin
+from django.forms.models import BaseInlineFormSet
 
+from .constants import RELEVANT_SAMPLES
 from .models import Project, Result, Test
+
+
+class LimitedInlineFormSet(BaseInlineFormSet):
+    def get_queryset(self):
+        return super().get_queryset()[:RELEVANT_SAMPLES]
 
 
 @admin.register(Project)
@@ -29,6 +36,7 @@ class TestAdmin(admin.ModelAdmin):
 
     class ResultInline(admin.TabularInline):
         model = Result
+        formset = LimitedInlineFormSet
         can_delete = False
         max_num = 0
 
