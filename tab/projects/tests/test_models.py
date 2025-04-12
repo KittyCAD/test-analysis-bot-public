@@ -23,8 +23,10 @@ def describe_test():
 
         @pytest.mark.django_db
         def it_computes_failure_rate(expect, project: Project):
-            test: Test = project.test_set.create(name="my-test")
-            test.result_set.create(test=test, status=Status.PASSED, branch="main")
+            test: Test = project.test_set.create(
+                name="my-test", original_branch="my-branch"
+            )
+            test.result_set.create(test=test, status=Status.PASSED, branch="my-branch")
             test.result_set.create(test=test, status=Status.FAILED, branch="main")
             test.result_set.create(test=test, status=Status.FAILED, branch="main")
             test.result_set.create(test=test, status=Status.FAILED, branch="other")
@@ -41,9 +43,11 @@ def describe_test():
 
         @pytest.mark.django_db
         def it_computes_average_duration(expect, project: Project):
-            test: Test = project.test_set.create(name="my-test")
+            test: Test = project.test_set.create(
+                name="my-test", original_branch="my-branch"
+            )
             test.result_set.create(
-                test=test, status=Status.PASSED, branch="main", duration=2
+                test=test, status=Status.PASSED, branch="my-branch", duration=2
             )
             test.result_set.create(
                 test=test, status=Status.FAILED, branch="main", duration=3

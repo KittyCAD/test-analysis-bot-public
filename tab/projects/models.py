@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.functional import cached_property
 
 import log
 
@@ -74,12 +75,19 @@ class Test(models.Model):
     def __str__(self):
         return self.name
 
+    @cached_property
+    def relevant_branches(self) -> list[str]:
+        branches = self.project.default_branches
+        if self.original_branch:
+            branches.insert(0, self.original_branch)
+        return branches
+
     def update_failure_rate(self, *, samples: int = 100) -> bool:
         old = self.failure_rate
 
         results = Result.objects.filter(
             test=self,
-            branch__in=self.project.default_branches,
+            branch__in=self.relevant_branches,
             status__in=[Status.PASSED, Status.FAILED],
         ).order_by("-created_at")[:samples]
         if not results:
@@ -100,7 +108,7 @@ class Test(models.Model):
 
         results = Result.objects.filter(
             test=self,
-            branch__in=self.project.default_branches,
+            branch__in=self.relevant_branches,
             status__in=[Status.PASSED, Status.FAILED],
             duration__gt=0,
         ).order_by("-created_at")[:samples]
