@@ -20,6 +20,7 @@ django-browser-reload = "^1.18"
 django-cors-headers = "*"
 django-debug-toolbar = "^5.1"
 django-extensions = "*"
+django-tables2 = "^2.7.5"
 
 # API
 django-ninja = "^1.4.0"
@@ -79,6 +80,10 @@ known_django = "django"
 sections = "FUTURE,STDLIB,DJANGO,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
 
 [tool.djlint]
+
+profile="django"
+
+blank_line_after_tag="load,extends,include"
 
 quiet = true
 

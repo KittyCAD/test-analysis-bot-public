@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% load django_tables2 %}
+{% load static %}
+
+{% block title %}
+    {{ project.name }}
+{% endblock title %}
+{% block content %}
+    <div class="container mt-4">
+        <h1 class="mb-4">{{ project.name }}</h1>
+        {% render_table table %}
+    </div>
+{% endblock content %}
+{% block extra_css %}
+    <style>
+    .table td, .table th {
+        white-space: nowrap;
+    }
+    .table td:first-child {
+        white-space: normal;
+    }
+
+    /* Sorting indicators */
+    .table th.asc:after {
+        content: " ↑";
+    }
+    .table th.desc:after {
+        content: " ↓";
+    }
+    </style>
+{% endblock extra_css %}

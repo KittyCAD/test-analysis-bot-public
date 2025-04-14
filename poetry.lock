@@ -513,6 +513,24 @@ django = "*"
 typing-extensions = "*"
 
 [[package]]
+name = "django-tables2"
+version = "2.7.5"
+description = "Table/data-grid framework for Django"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "django_tables2-2.7.5-py3-none-any.whl", hash = "sha256:d9338937797207ffb6f481be2125c5ec3a0bb1858d409c672cc25fc5d654cb22"},
+    {file = "django_tables2-2.7.5.tar.gz", hash = "sha256:fb5dcaa09379cf3947598ec7e1bd5f26ed63aafdee3b23963446763bbeac37bf"},
+]
+
+[package.dependencies]
+django = ">=4.2"
+
+[package.extras]
+tablib = ["tablib"]
+
+[[package]]
 name = "djlint"
 version = "1.36.4"
 description = "HTML Template Linter and Formatter"
@@ -1587,4 +1605,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "7b07c7d52ee504580c70ff417fce8ab0fdf0805f09f0805c108faaa87945b7b0"
+content-hash = "67427e3dba7cde66d0e8b08764316f32d6ffa15120e478a1afa2b070908c186f"
