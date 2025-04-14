@@ -1,4 +1,11 @@
-from ..enums import Platform, Target
+from ..enums import Platform, Status, Target
+
+
+def describe_status():
+    def it_normalizes_values(expect):
+        expect(Status.normalize("failed", annotations=["fail"])) == "xfailed"
+        expect(Status.normalize("passed", annotations=["fail"])) == "xpassed"
+        expect(Status.normalize("failed", annotations=[])) == "failed"
 
 
 def describe_target():

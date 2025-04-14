@@ -6,8 +6,20 @@ class Status(models.TextChoices):
     FAILED = "failed", "Failed"
     SKIPPED = "skipped", "Skipped"
 
-    TIMED_OUT = "timedOut", "Timed Out"
+    ERROR = "error", "Setup Error"
+    TIMEDOUT = "timedOut", "Timed Out"
     INTERRUPTED = "interrupted", "Interrupted"
+
+    XFAILED = "xfailed", "Expected Failure"
+    XPASSED = "xpassed", "Unexpected Pass"
+
+    @classmethod
+    def normalize(cls, value: str, *, annotations: list[str]) -> str:
+        if value == cls.FAILED.value and "fail" in annotations:
+            return cls.XFAILED.value
+        if value == cls.PASSED.value and "fail" in annotations:
+            return cls.XPASSED.value
+        return value
 
 
 class Target(models.TextChoices):

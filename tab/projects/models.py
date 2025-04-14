@@ -88,12 +88,20 @@ class Test(models.Model):
         results = Result.objects.filter(
             test=self,
             branch__in=self.relevant_branches,
-            status__in=[Status.PASSED, Status.FAILED, Status.SKIPPED],
+            status__in=[
+                Status.PASSED,
+                Status.FAILED,
+                Status.SKIPPED,
+                Status.XFAILED,
+                Status.XPASSED,
+            ],
         ).order_by("-created_at")[:RELEVANT_SAMPLES]
         if not results:
             return False
 
-        failed = sum(1 for result in results if result.status == Status.FAILED)
+        failed = sum(
+            1 for result in results if result.status in [Status.FAILED, Status.XPASSED]
+        )
         new = round(failed / len(results), 3)
 
         if old == new:
@@ -109,7 +117,7 @@ class Test(models.Model):
         results = Result.objects.filter(
             test=self,
             branch__in=self.relevant_branches,
-            status__in=[Status.PASSED, Status.FAILED],
+            status__in=[Status.PASSED, Status.FAILED, Status.XPASSED, Status.XFAILED],
             duration__gt=0,
         ).order_by("-created_at")[:RELEVANT_SAMPLES]
 
@@ -146,6 +154,11 @@ class Result(models.Model):
         return f"{Status(self.status).label} after {self.duration or '???'} seconds on {branch!r}"
 
     def save(self, *args, **kwargs):
+        self.status = Status.normalize(
+            self.status,
+            # TODO: Consider making 'annotations' a proper field
+            annotations=self.metadata.get("annotations", []),
+        )
         if self.duration:
             self.duration = round(self.duration, 3)
         if self.message:
