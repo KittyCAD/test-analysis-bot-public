@@ -27,13 +27,13 @@ def describe_test():
                 name="my-test", original_branch="my-branch"
             )
             test.result_set.create(test=test, status=Status.PASSED, branch="my-branch")
-            test.result_set.create(test=test, status=Status.FAILED, branch="main")
+            test.result_set.create(test=test, status=Status.SKIPPED, branch="main")
             test.result_set.create(test=test, status=Status.FAILED, branch="main")
             test.result_set.create(test=test, status=Status.FAILED, branch="other")
 
             test.failure_rate = -1
             expect(test.update_failure_rate()) == True
-            expect(test.failure_rate) == 0.667
+            expect(test.failure_rate) == 0.333
 
     def describe_update_average_duration():
         @pytest.mark.django_db

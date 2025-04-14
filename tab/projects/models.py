@@ -88,7 +88,7 @@ class Test(models.Model):
         results = Result.objects.filter(
             test=self,
             branch__in=self.relevant_branches,
-            status__in=[Status.PASSED, Status.FAILED],
+            status__in=[Status.PASSED, Status.FAILED, Status.SKIPPED],
         ).order_by("-created_at")[:RELEVANT_SAMPLES]
         if not results:
             return False
