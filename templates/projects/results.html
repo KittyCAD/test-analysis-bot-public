@@ -12,7 +12,7 @@
         <h1 class="mb-4">
             {{ project.name }}
             <a href="{% url 'projects:detail' project.path %}"
-               class="btn btn-outline-primary ms-2">←</a>
+               class="btn btn-outline-primary ms-2"><i class="fa-solid fa-arrow-left"></i></a>
         </h1>
         <h2 class="mb-4">{{ test.name }}</h2>
         <div class="card mb-4">
@@ -51,10 +51,14 @@
 
     /* Sorting indicators */
     .table th.asc:after {
-        content: " ↑";
+        content: "\f062";
+        font-family: "Font Awesome 6 Free";
+        margin-left: 0.25rem;
     }
     .table th.desc:after {
-        content: " ↓";
+        content: "\f063";
+        font-family: "Font Awesome 6 Free";
+        margin-left: 0.25rem;
     }
     </style>
 {% endblock extra_css %}

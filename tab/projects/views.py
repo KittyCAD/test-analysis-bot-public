@@ -43,9 +43,15 @@ class TestListView(SingleTableMixin, ListView):
 def test_detail(request, path: str, test_id: int):
     project = get_object_or_404(Project, repository__iendswith=path.strip("/"))
     test = get_object_or_404(Test, project=project, id=test_id)
-    table = ResultTable(test.result_set.filter(branch__in=test.relevant_branches))
+    branch = request.GET.get("branch")
+    if branch == "all":
+        results = test.result_set.all()
+    elif branch:
+        results = test.result_set.filter(branch=branch)
+    else:
+        results = test.result_set.filter(branch__in=test.relevant_branches)
+    table = ResultTable(results)
     RequestConfig(request).configure(table)
-
     return render(
         request,
         "projects/results.html",

@@ -20,7 +20,7 @@
                 {% if search %}
                     <a href="{% url 'projects:detail' project.path %}"
                        class="btn btn-outline-danger"
-                       type="button">✕</a>
+                       type="button"><i class="fa-solid fa-xmark"></i></a>
                 {% endif %}
                 <button class="btn btn-outline-primary" type="submit">Search</button>
             </div>
@@ -48,10 +48,14 @@
 
     /* Sorting indicators */
     .table th.asc:after {
-        content: " ↑";
+        content: "\f062";
+        font-family: "Font Awesome 6 Free";
+        margin-left: 0.25rem;
     }
     .table th.desc:after {
-        content: " ↓";
+        content: "\f063";
+        font-family: "Font Awesome 6 Free";
+        margin-left: 0.25rem;
     }
     </style>
 {% endblock extra_css %}
