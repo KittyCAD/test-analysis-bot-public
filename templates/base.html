@@ -56,9 +56,19 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav">
+                    <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'admin:index' %}">Admin</a>
+                            {% if admin_url %}
+                                <a class="nav-link text-danger" href="{{ admin_url }}" target="_blank">
+                                    <i class="fa-solid fa-table me-1"></i>
+                                    Admin
+                                </a>
+                            {% else %}
+                                <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">
+                                    <i class="fa-solid fa-table me-1"></i>
+                                    Admin
+                                </a>
+                            {% endif %}
                         </li>
                     </ul>
                 </div>

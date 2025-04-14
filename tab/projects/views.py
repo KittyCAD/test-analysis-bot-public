@@ -32,11 +32,15 @@ class TestListView(SingleTableMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["project"] = get_object_or_404(
+        context["project"] = project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
         context["search"] = self.request.GET.get("search", "")
         context["enabled"] = self.request.GET.get("enabled", "true")
+        if self.request.user.is_staff:
+            context["admin_url"] = reverse(
+                "admin:projects_project_change", args=[project.id]
+            )
         return context
 
 
@@ -52,8 +56,7 @@ def test_detail(request, path: str, test_id: int):
         results = test.result_set.filter(branch__in=test.relevant_branches)
     table = ResultTable(results)
     RequestConfig(request).configure(table)
-    return render(
-        request,
-        "projects/results.html",
-        {"project": project, "test": test, "table": table},
-    )
+    context = {"project": project, "test": test, "table": table}
+    if request.user.is_staff:
+        context["admin_url"] = reverse("admin:projects_test_change", args=[test.id])
+    return render(request, "projects/results.html", context)

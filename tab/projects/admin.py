@@ -48,17 +48,18 @@ class TestAdmin(admin.ModelAdmin):
     class ResultInline(admin.TabularInline):
         model = Result
         formset = LimitedInlineFormSet
+        show_change_link = True
         can_delete = False
         max_num = 0
 
         verbose_name_plural = "Recent Results"
         fields = readonly_fields = (
+            "status",
             "branch",
             "_commit",
-            "status",
-            "duration",
             "target",
             "platform",
+            "duration",
             "created_at",
         )
 
