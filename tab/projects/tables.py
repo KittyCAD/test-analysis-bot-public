@@ -9,7 +9,7 @@ from .models import Result, Test
 class TestTable(tables.Table):
     name = tables.LinkColumn(
         "projects:test-detail",
-        args=[A("project.path"), A("id")],
+        args=[A("project__path"), A("id")],
         verbose_name="Test Name",
         attrs={"a": {"class": "text-body text-decoration-none fw-bold"}},
     )
@@ -22,6 +22,7 @@ class TestTable(tables.Table):
         template_name = "django_tables2/bootstrap5.html"
         fields = (
             "name",
+            "enabled",
             "failure_rate",
             "average_duration",
             "updated_at",

@@ -54,6 +54,10 @@ class Project(models.Model):
     def name(self) -> str:
         return self.path.replace("/", " › ")
 
+    @property
+    def default_branch(self) -> str:
+        return self.default_branches[0]
+
     def save(self, *args, **kwargs):
         self._update_repository()
         super().save(*args, **kwargs)
@@ -70,6 +74,7 @@ class Test(models.Model):
     original_commit = models.CharField(max_length=100, default="")
     metadata = models.JSONField(default=dict)
 
+    enabled = models.BooleanField(default=False)
     failure_rate = models.FloatField(default=-1)
     average_duration = models.FloatField(default=-1)
 
@@ -98,9 +103,24 @@ class Test(models.Model):
             branches.insert(0, self.original_branch)
         return branches
 
+    def update_enabled(self) -> bool:
+        old = self.enabled
+        result = (
+            self.result_set.filter(branch=self.project.default_branch)
+            .order_by("-created_at")
+            .first()
+        )
+
+        new = bool(result and result.status != Status.SKIPPED)
+        if old == new:
+            return False
+
+        log.debug(f"Test has new enabled status: {old} => {new}")
+        self.enabled = new
+        return True
+
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
-
         results = Result.objects.filter(
             test=self,
             branch__in=self.relevant_branches,
@@ -129,7 +149,6 @@ class Test(models.Model):
 
     def update_average_duration(self) -> bool:
         old = self.average_duration
-
         results = Result.objects.filter(
             test=self,
             branch__in=self.relevant_branches,
@@ -192,5 +211,9 @@ class Result(models.Model):
 
         super().save(*args, **kwargs)
 
-        if self.test.update_failure_rate() or self.test.update_average_duration():
+        if (
+            self.test.update_enabled()
+            or self.test.update_failure_rate()
+            or self.test.update_average_duration()
+        ):
             self.test.save()

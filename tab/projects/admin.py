@@ -27,6 +27,7 @@ class TestAdmin(admin.ModelAdmin):
         "id",
         "project",
         "name",
+        "enabled",
         "failure_rate",
         "average_duration",
         "original_branch",
@@ -34,7 +35,13 @@ class TestAdmin(admin.ModelAdmin):
         "updated_at",
     )
     ordering = ("-updated_at",)
-    list_filter = ("created_at", "updated_at", "project__repository", "original_branch")
+    list_filter = (
+        "enabled",
+        "created_at",
+        "updated_at",
+        "project__repository",
+        "original_branch",
+    )
 
     readonly_fields = ("created_at", "updated_at")
 
