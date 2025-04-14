@@ -25,6 +25,9 @@ class TestListView(SingleTableMixin, ListView):
         search = self.request.GET.get("search", "")
         if search:
             queryset = queryset.filter(name__icontains=search)
+        enabled = self.request.GET.get("enabled")
+        if enabled is None or enabled == "true":
+            queryset = queryset.filter(enabled=True)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -33,6 +36,7 @@ class TestListView(SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
         context["search"] = self.request.GET.get("search", "")
+        context["enabled"] = self.request.GET.get("enabled", "true")
         return context
 
 

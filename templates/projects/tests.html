@@ -10,7 +10,7 @@
     <div class="container mt-4">
         <h1 class="mb-4">{{ project.name }}</h1>
         <form method="get" class="mb-4">
-            <div class="input-group">
+            <div class="input-group mb-3">
                 <input type="text"
                        name="search"
                        value="{{ search }}"
@@ -23,6 +23,15 @@
                        type="button">✕</a>
                 {% endif %}
                 <button class="btn btn-outline-primary" type="submit">Search</button>
+            </div>
+            <div class="form-check">
+                <input type="hidden" name="enabled" value="{{ enabled }}">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="enabled_checkbox"
+                       {% if enabled != "all" %}checked{% endif %}
+                       onchange="document.querySelector('input[name=enabled]').value = this.checked ? 'true' : 'all'; this.form.submit()">
+                <label class="form-check-label" for="enabled_checkbox">Show only tests enabled on the default branch</label>
             </div>
         </form>
         {% render_table table %}
