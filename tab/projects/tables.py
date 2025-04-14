@@ -53,10 +53,15 @@ class ResultTable(tables.Table):
             "status",
             "branch",
             "commit",
+            "target",
+            "platform",
             "duration",
         )
         per_page = 20
         order_by = "-created_at"
+
+    def render_commit(self, value):
+        return value[:7]
 
     def render_duration(self, value, record):
         return record.duration_humanized
