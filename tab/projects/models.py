@@ -79,6 +79,18 @@ class Test(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def failure_rate_humanized(self) -> str:
+        if self.failure_rate < 0:
+            return "—"
+        return f"{self.failure_rate*100:.1f}%"
+
+    @property
+    def average_duration_humanized(self) -> str:
+        if self.average_duration < 0:
+            return "—"
+        return f"{self.average_duration:.1f}s"
+
     @cached_property
     def relevant_branches(self) -> list[str]:
         branches = self.project.default_branches
@@ -156,6 +168,12 @@ class Result(models.Model):
     def __str__(self):
         branch = self.branch or "???"
         return f"{Status(self.status).label} after {self.duration or '???'} seconds on {branch!r}"
+
+    @property
+    def duration_humanized(self) -> str:
+        if self.duration is None or self.duration < 0:
+            return "—"
+        return f"{self.duration:.1f}s"
 
     def save(self, *args, **kwargs):
         self.status = Status.normalize(

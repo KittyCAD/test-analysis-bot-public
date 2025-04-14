@@ -28,11 +28,11 @@
                     </div>
                     <div class="col">
                         <h5 class="card-title">Failure Rate</h5>
-                        <p class="card-text">{{ test.failure_rate|floatformat:1 }}%</p>
+                        <p class="card-text">{{ test.failure_rate_humanized }}</p>
                     </div>
                     <div class="col">
                         <h5 class="card-title">Average Duration</h5>
-                        <p class="card-text">{{ test.average_duration|floatformat:1 }}s</p>
+                        <p class="card-text">{{ test.average_duration_humanized }}</p>
                     </div>
                 </div>
             </div>

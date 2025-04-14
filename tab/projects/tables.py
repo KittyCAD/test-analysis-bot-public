@@ -31,15 +31,11 @@ class TestTable(tables.Table):
         per_page = 15
         order_by = "-failure_rate"
 
-    def render_failure_rate(self, value):
-        if value < 0:
-            return "—"
-        return f"{value*100:.1f}%"
+    def render_failure_rate(self, value, record):
+        return record.failure_rate_humanized
 
-    def render_average_duration(self, value):
-        if value < 0:
-            return "—"
-        return f"{value:.1f}s"
+    def render_average_duration(self, value, record):
+        return record.average_duration_humanized
 
     def render_updated_at(self, value):
         return naturaltime(value)
@@ -63,10 +59,8 @@ class ResultTable(tables.Table):
         per_page = 20
         order_by = "-created_at"
 
-    def render_duration(self, value):
-        if value < 0:
-            return "—"
-        return f"{value:.1f}s"
+    def render_duration(self, value, record):
+        return record.duration_humanized
 
     def render_created_at(self, value):
         return naturaltime(value)
