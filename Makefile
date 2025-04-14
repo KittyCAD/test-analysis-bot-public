@@ -9,7 +9,7 @@ all: check test ## CI | Run all validation targets
 dev: install ## CI | Rerun all validation targets in a loop
 	@ rm -rf $(FAILURES)
 	@ sleep 1 && touch $(PROJECT)/__init__.py &
-	poetry run watchmedo shell-command --command="clear; make test check; echo Done!" --recursive --drop $(PROJECT)
+	poetry run watchmedo shell-command --command="clear; make test check; echo Done!" --recursive --drop
 
 # SYSTEM DEPENDENCIES #########################################################
 

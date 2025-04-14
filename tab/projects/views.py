@@ -7,8 +7,8 @@ from .models import Project, Test
 from .tables import ResultTable, TestTable
 
 
-def index(_request):
-    return redirect(reverse("admin:index"))
+def index(request):
+    return render(request, "projects/index.html")
 
 
 def detail(request, path: str):

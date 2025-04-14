@@ -35,7 +35,14 @@
     <body>
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
             <div class="container">
-                <a class="navbar-brand" href="{% url 'projects:index' %}">Test Analysis Bot</a>
+                <a class="navbar-brand" href="{% url 'projects:index' %}">
+                    <img src="{% static 'favicon/favicon.svg' %}"
+                         alt="Logo"
+                         width="30"
+                         height="30"
+                         class="d-inline-block align-text-top me-2">
+                    Test Analysis Bot
+                </a>
                 <button class="navbar-toggler"
                         type="button"
                         data-bs-toggle="collapse"
