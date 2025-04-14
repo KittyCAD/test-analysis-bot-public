@@ -6,6 +6,7 @@
 {% block title %}
     {{ project.name }}
 {% endblock title %}
+
 {% block content %}
     <div class="container mt-4">
         <h1 class="mb-4">{{ project.name }}</h1>
@@ -37,25 +38,13 @@
         {% render_table table %}
     </div>
 {% endblock content %}
-{% block extra_css %}
-    <style>
-    .table td, .table th {
-        white-space: nowrap;
-    }
-    .table td:first-child {
-        white-space: normal;
-    }
 
-    /* Sorting indicators */
-    .table th.asc:after {
-        content: "\f062";
-        font-family: "Font Awesome 6 Free";
-        margin-left: 0.25rem;
-    }
-    .table th.desc:after {
-        content: "\f063";
-        font-family: "Font Awesome 6 Free";
-        margin-left: 0.25rem;
-    }
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/tables.css' %}">
+    <style>
+        /* Wrap text in the Test Name column */
+        .table td:first-child {
+            white-space: normal;
+        }
     </style>
 {% endblock extra_css %}

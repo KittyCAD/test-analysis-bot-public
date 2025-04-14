@@ -1,0 +1,20 @@
+/* Prevent column headers from wrapping */
+
+.table td,
+.table th {
+    white-space: nowrap;
+}
+
+/* Show column sorting indicators */
+
+.table th.asc:after {
+    content: "\f062";
+    font-family: "Font Awesome 6 Free";
+    margin-left: 0.25rem;
+}
+
+.table th.desc:after {
+    content: "\f063";
+    font-family: "Font Awesome 6 Free";
+    margin-left: 0.25rem;
+}

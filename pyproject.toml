@@ -81,9 +81,10 @@ sections = "FUTURE,STDLIB,DJANGO,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
 
 [tool.djlint]
 
-profile="django"
+profile = "django"
 
-blank_line_after_tag="load,extends,include"
+blank_line_before_tag = "block"
+blank_line_after_tag = "load,extends,include,endblock"
 
 quiet = true
 
