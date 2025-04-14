@@ -1,7 +1,8 @@
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.generic import ListView
 
-from django_tables2 import RequestConfig
+from django_tables2 import RequestConfig, SingleTableMixin
 
 from .models import Project, Test
 from .tables import ResultTable, TestTable
@@ -11,19 +12,28 @@ def index(request):
     return render(request, "projects/index.html")
 
 
-def detail(request, path: str):
-    project = get_object_or_404(Project, repository__iendswith=path.strip("/"))
-    table = TestTable(project.test_set.all())
-    RequestConfig(request).configure(table)
+class TestListView(SingleTableMixin, ListView):
+    model = Test
+    table_class = TestTable
+    template_name = "projects/tests.html"
 
-    return render(
-        request,
-        "projects/tests.html",
-        {
-            "project": project,
-            "table": table,
-        },
-    )
+    def get_queryset(self):
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        queryset = project.test_set.all()
+        search = self.request.GET.get("search", "")
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        context["search"] = self.request.GET.get("search", "")
+        return context
 
 
 def test_detail(request, path: str, test_id: int):

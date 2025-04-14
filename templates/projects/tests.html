@@ -9,6 +9,22 @@
 {% block content %}
     <div class="container mt-4">
         <h1 class="mb-4">{{ project.name }}</h1>
+        <form method="get" class="mb-4">
+            <div class="input-group">
+                <input type="text"
+                       name="search"
+                       value="{{ search }}"
+                       class="form-control"
+                       placeholder="Filter tests by name..."
+                       aria-label="Filter tests by name">
+                {% if search %}
+                    <a href="{% url 'projects:detail' project.path %}"
+                       class="btn btn-outline-danger"
+                       type="button">✕</a>
+                {% endif %}
+                <button class="btn btn-outline-primary" type="submit">Search</button>
+            </div>
+        </form>
         {% render_table table %}
     </div>
 {% endblock content %}
