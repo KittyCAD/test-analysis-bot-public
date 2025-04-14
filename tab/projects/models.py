@@ -45,10 +45,14 @@ class Project(models.Model):
         return self.name
 
     @property
-    def name(self) -> str:
+    def path(self) -> str:
         self._update_repository()
         parts = self.repository.split("/")
-        return " › ".join(parts[3:])
+        return "/".join(parts[3:])
+
+    @property
+    def name(self) -> str:
+        return self.path.replace("/", " › ")
 
     def save(self, *args, **kwargs):
         self._update_repository()
