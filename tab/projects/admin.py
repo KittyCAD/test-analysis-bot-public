@@ -12,14 +12,17 @@ class LimitedInlineFormSet(BaseInlineFormSet):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ("name", "repository", "created_at", "updated_at")
     search_fields = ("repository",)
-    list_filter = ("created_at", "updated_at")
+    list_display = ("name", "repository", "created_at", "updated_at")
     ordering = ("-updated_at",)
+    list_filter = ("created_at", "updated_at")
+
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
+    search_fields = ("project__repository", "name")
     list_display = (
         "id",
         "project",
@@ -30,9 +33,10 @@ class TestAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
-    search_fields = ("project__repository", "name")
-    list_filter = ("created_at", "updated_at", "project__repository", "original_branch")
     ordering = ("-updated_at",)
+    list_filter = ("created_at", "updated_at", "project__repository", "original_branch")
+
+    readonly_fields = ("created_at", "updated_at")
 
     class ResultInline(admin.TabularInline):
         model = Result
@@ -72,6 +76,7 @@ class TestAdmin(admin.ModelAdmin):
 
 @admin.register(Result)
 class ResultAdmin(admin.ModelAdmin):
+    search_fields = ("test__project__repository", "test__name", "branch", "commit")
     list_display = (
         "id",
         "test__project",
@@ -84,7 +89,7 @@ class ResultAdmin(admin.ModelAdmin):
         "platform",
         "created_at",
     )
-    search_fields = ("test__project__repository", "test__name", "branch", "commit")
+    ordering = ("-created_at",)
     list_filter = (
         "status",
         "target",
@@ -93,7 +98,6 @@ class ResultAdmin(admin.ModelAdmin):
         "test__project__repository",
         "branch",
     )
-    ordering = ("-created_at",)
 
     @admin.display(description="Commit")
     def _commit(self, result: Result):
@@ -101,3 +105,5 @@ class ResultAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("test__project")
+
+    readonly_fields = ("created_at",)
