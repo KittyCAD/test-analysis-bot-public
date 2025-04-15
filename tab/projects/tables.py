@@ -55,10 +55,10 @@ class TestTable(tables.Table):
         color = "success" if value else "danger"
         return mark_safe(f'<i class="fa-solid fa-{icon} text-{color}"></i>')
 
-    def render_failure_rate(self, value, record):
+    def render_failure_rate(self, record):
         return record.failure_rate_humanized
 
-    def render_average_duration(self, value, record):
+    def render_average_duration(self, record):
         return record.average_duration_humanized
 
     def render_updated_at(self, value, record):
@@ -66,7 +66,7 @@ class TestTable(tables.Table):
         # TODO: Consider denormalizing this field to avoid an N+1 query
         status = Status(record.last_result.status)
         return mark_safe(
-            f'{when} <span class="badge text-bg-{status.color} ms-2">{status.label}</span>'
+            f'{when} <span class="badge text-bg-{status.color} ms-1">{status.label}</span>'
         )
 
 
@@ -120,10 +120,10 @@ class ResultTable(tables.Table):
 
     def render_status(self, record: Result):
         status = Status(record.status)
-        html = f'<span class="badge text-bg-{status.color}">{status.label}</span>'
+        html = f'<span class="badge text-bg-{status.color} fs-6">{status.label}</span>'
         if record.message:
             details = render_to_string("projects/_details.html", {"result": record})
-            html += f' <span class="ms-2">{details}</span>'
+            html = f'<div class="d-flex align-items-center gap-1">{html} <span class="ms-1">{details}</span></div>'
         return mark_safe(html)
 
     def render_commit(self, value):
