@@ -29,7 +29,7 @@ class TestTable(tables.Table):
             "average_duration",
             "updated_at",
         )
-        per_page = 15
+        per_page = 12
         order_by = "-failure_rate"
 
     def render_failure_rate(self, value, record):
@@ -59,7 +59,7 @@ class ResultTable(tables.Table):
             "platform",
             "duration",
         )
-        per_page = 20
+        per_page = 15
         order_by = "-created_at"
 
     def render_commit(self, value):
