@@ -1,6 +1,6 @@
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.template.loader import render_to_string
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 import django_tables2 as tables
 from django_tables2 import A
@@ -51,9 +51,9 @@ class TestTable(tables.Table):
         order_by = "-failure_rate"
 
     def render_enabled(self, value):
-        if value:
-            return format_html('<i class="fa-solid fa-check text-success"></i>')
-        return format_html('<i class="fa-solid fa-xmark text-danger"></i>')
+        icon = "check" if value else "xmark"
+        color = "success" if value else "danger"
+        return mark_safe(f'<i class="fa-solid fa-{icon} text-{color}"></i>')
 
     def render_failure_rate(self, value, record):
         return record.failure_rate_humanized
@@ -64,13 +64,20 @@ class TestTable(tables.Table):
     def render_updated_at(self, value, record):
         when = naturaltime(value)
         # TODO: Consider denormalizing this field to avoid an N+1 query
-        status = Status(record.last_result.status).label
-        return f"{when} ({status})"
+        status = Status(record.last_result.status)
+        return mark_safe(
+            f'{when} <span class="badge text-bg-{status.color} ms-2">{status.label}</span>'
+        )
 
 
 class ResultTable(tables.Table):
     status = tables.Column(verbose_name="Status")
-    branch = tables.Column(attrs={"td": {"class": "font-monospace"}})
+    branch = tables.Column(
+        attrs={
+            "td": {"class": "text-center font-monospace"},
+            "th": {"class": "text-center"},
+        }
+    )
     commit = tables.Column(
         attrs={
             "td": {"class": "text-center font-monospace"},
@@ -111,6 +118,14 @@ class ResultTable(tables.Table):
         per_page = 15
         order_by = "-created_at"
 
+    def render_status(self, record: Result):
+        status = Status(record.status)
+        html = f'<span class="badge text-bg-{status.color}">{status.label}</span>'
+        if record.message:
+            details = render_to_string("projects/_details.html", {"result": record})
+            html += f' <span class="ms-2">{details}</span>'
+        return mark_safe(html)
+
     def render_commit(self, value):
         return value[:7]
 
@@ -119,14 +134,3 @@ class ResultTable(tables.Table):
 
     def render_created_at(self, value):
         return naturaltime(value)
-
-    def render_status(self, record: Result):
-        if not record.message:
-            return format_html(
-                '<span class="fw-bold">{}</span>', Status(record.status).label
-            )
-        return format_html(
-            '<span class="fw-bold">{}</span> <span class="ms-2">{}</span>',
-            Status(record.status).label,
-            render_to_string("projects/_details.html", {"result": record}),
-        )

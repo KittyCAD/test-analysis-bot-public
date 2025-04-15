@@ -32,6 +32,20 @@ class Status(models.TextChoices):
                     return cls.ERROR.value
         return value
 
+    @property
+    def color(self):
+        match self:
+            case self.PASSED | self.XFAILED:
+                return "success"
+            case self.FAILED | self.XPASSED:
+                return "danger"
+            case self.ERROR | self.TIMEDOUT:
+                return "warning"
+            case self.SKIPPED | self.INTERRUPTED:
+                return "secondary"
+            case _:
+                return "dark"
+
 
 class Target(models.TextChoices):
     WEB = "web", "Web"
