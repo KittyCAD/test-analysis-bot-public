@@ -18,18 +18,18 @@ def describe_test():
     def describe_update_failure_rate():
         @pytest.mark.django_db
         def it_returns_false_if_no_results(expect, project: Project):
-            test = project.test_set.create(name="my-test")
+            test = project.tests.create(name="my-test")
             expect(test.update_failure_rate()) == False
 
         @pytest.mark.django_db
         def it_computes_failure_rate(expect, project: Project):
-            test: Test = project.test_set.create(
+            test: Test = project.tests.create(
                 name="my-test", original_branch="my-branch"
             )
-            test.result_set.create(test=test, status=Status.PASSED, branch="my-branch")
-            test.result_set.create(test=test, status=Status.SKIPPED, branch="main")
-            test.result_set.create(test=test, status=Status.FAILED, branch="main")
-            test.result_set.create(test=test, status=Status.FAILED, branch="other")
+            test.results.create(test=test, status=Status.PASSED, branch="my-branch")
+            test.results.create(test=test, status=Status.SKIPPED, branch="main")
+            test.results.create(test=test, status=Status.FAILED, branch="main")
+            test.results.create(test=test, status=Status.FAILED, branch="other")
 
             test.failure_rate = -1
             expect(test.update_failure_rate()) == True
@@ -38,21 +38,21 @@ def describe_test():
     def describe_update_average_duration():
         @pytest.mark.django_db
         def it_returns_false_if_no_results(expect, project: Project):
-            test: Test = project.test_set.create(name="my-test")
+            test: Test = project.tests.create(name="my-test")
             expect(test.update_average_duration()) == False
 
         @pytest.mark.django_db
         def it_computes_average_duration(expect, project: Project):
-            test: Test = project.test_set.create(
+            test: Test = project.tests.create(
                 name="my-test", original_branch="my-branch"
             )
-            test.result_set.create(
+            test.results.create(
                 test=test, status=Status.PASSED, branch="my-branch", duration=2
             )
-            test.result_set.create(
+            test.results.create(
                 test=test, status=Status.FAILED, branch="main", duration=3
             )
-            test.result_set.create(
+            test.results.create(
                 test=test, status=Status.FAILED, branch="other", duration=4
             )
 
@@ -67,7 +67,7 @@ def describe_result():
         def it_cleans_message(expect):
             test = Project.objects.create(
                 repository="https://github.com/foo/bar"
-            ).test_set.create(name="test")
+            ).tests.create(name="test")
             result = Result.objects.create(
                 test=test,
                 status="failed",

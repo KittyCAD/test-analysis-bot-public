@@ -83,7 +83,6 @@ class TestAdmin(admin.ModelAdmin):
                     branch__in=test.relevant_branches,
                     created_at__gte=limit,
                 )
-                .order_by("-created_at")
             )
 
     inlines = (ResultInline,)
@@ -104,7 +103,6 @@ class ResultAdmin(admin.ModelAdmin):
         "platform",
         "created_at",
     )
-    ordering = ("-created_at",)
     list_filter = (
         "status",
         "target",

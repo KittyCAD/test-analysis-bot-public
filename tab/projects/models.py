@@ -71,7 +71,7 @@ class Project(models.Model):
 
 
 class Test(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tests")
 
     name = models.CharField(max_length=1000)
     original_branch = models.CharField(max_length=100, default="")
@@ -111,11 +111,7 @@ class Test(models.Model):
 
     @cached_property
     def last_result(self) -> Result | None:
-        return (
-            self.result_set.filter(branch=self.project.default_branch)
-            .order_by("-created_at")
-            .first()
-        )
+        return self.results.filter(branch=self.project.default_branch).first()
 
     @cached_property
     def markers(self) -> list[str]:
@@ -125,11 +121,7 @@ class Test(models.Model):
 
     def update_enabled(self) -> bool:
         old = self.enabled
-        result = (
-            self.result_set.filter(branch=self.project.default_branch)
-            .order_by("-created_at")
-            .first()
-        )
+        result = self.results.filter(branch=self.project.default_branch).first()
 
         new = bool(result and result.status != Status.SKIPPED)
         if old == new:
@@ -151,7 +143,7 @@ class Test(models.Model):
                 Status.XFAILED,
                 Status.XPASSED,
             ],
-        ).order_by("-created_at")[:RELEVANT_SAMPLES]
+        )[:RELEVANT_SAMPLES]
         if not results:
             return False
 
@@ -174,7 +166,7 @@ class Test(models.Model):
             branch__in=self.relevant_branches,
             status__in=[Status.PASSED, Status.FAILED, Status.XPASSED, Status.XFAILED],
             duration__gt=0,
-        ).order_by("-created_at")[:RELEVANT_SAMPLES]
+        )[:RELEVANT_SAMPLES]
 
         durations = [result.duration for result in results if result.duration]
         if not durations:
@@ -190,7 +182,7 @@ class Test(models.Model):
 
 
 class Result(models.Model):
-    test = models.ForeignKey(Test, on_delete=models.CASCADE)
+    test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="results")
 
     status = models.CharField(max_length=20, choices=Status.choices)
     branch = models.CharField(max_length=100, default="")
@@ -203,6 +195,9 @@ class Result(models.Model):
     metadata = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
     def __str__(self):
         branch = self.branch or "???"

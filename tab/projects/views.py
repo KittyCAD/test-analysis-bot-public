@@ -21,7 +21,7 @@ class TestListView(SingleTableMixin, ListView):
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
-        queryset = project.test_set.all()
+        queryset = project.tests.all()
         search = self.request.GET.get("search", "")
         if search:
             queryset = queryset.filter(name__icontains=search)
@@ -49,11 +49,11 @@ def test_detail(request, path: str, test_id: int):
     test = get_object_or_404(Test, project=project, id=test_id)
     branch = request.GET.get("branch")
     if branch == "all":
-        results = test.result_set.all()
+        results = test.results.all()
     elif branch:
-        results = test.result_set.filter(branch=branch)
+        results = test.results.filter(branch=branch)
     else:
-        results = test.result_set.filter(branch__in=test.relevant_branches)
+        results = test.results.filter(branch__in=test.relevant_branches)
     table = ResultTable(results)
     RequestConfig(request).configure(table)
     context = {"project": project, "test": test, "table": table}
