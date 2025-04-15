@@ -38,8 +38,11 @@ class TestTable(tables.Table):
     def render_average_duration(self, value, record):
         return record.average_duration_humanized
 
-    def render_updated_at(self, value):
-        return naturaltime(value)
+    def render_updated_at(self, value, record):
+        when = naturaltime(value)
+        # TODO: Consider denormalizing this field to avoid an N+1 query
+        status = Status(record.last_result.status).label
+        return f"{when} ({status})"
 
 
 class ResultTable(tables.Table):

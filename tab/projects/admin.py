@@ -1,13 +1,9 @@
+from datetime import timedelta
+
 from django.contrib import admin
-from django.forms.models import BaseInlineFormSet
+from django.utils import timezone
 
-from .constants import RELEVANT_SAMPLES
 from .models import Project, Result, Test
-
-
-class LimitedInlineFormSet(BaseInlineFormSet):
-    def get_queryset(self):
-        return super().get_queryset()[:RELEVANT_SAMPLES]
 
 
 @admin.register(Project)
@@ -49,11 +45,10 @@ class TestAdmin(admin.ModelAdmin):
         "original_branch",
     )
 
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("last_result", "created_at", "updated_at")
 
     class ResultInline(admin.TabularInline):
         model = Result
-        formset = LimitedInlineFormSet
         show_change_link = True
         can_delete = False
         max_num = 0
@@ -77,12 +72,15 @@ class TestAdmin(admin.ModelAdmin):
             test: Test = self.parent_model.objects.get(
                 id=request.resolver_match.kwargs["object_id"]
             )
+            limit = timezone.now() - timedelta(days=1)
             return (
                 super()
                 .get_queryset(request)
-                .filter(branch__in=test.relevant_branches)
+                .filter(
+                    branch__in=test.relevant_branches,
+                    created_at__gte=limit,
+                )
                 .order_by("-created_at")
-                .select_related("test")
             )
 
     inlines = (ResultInline,)

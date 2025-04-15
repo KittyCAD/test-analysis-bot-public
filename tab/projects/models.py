@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from django.conf import settings
 from django.db import models
 from django.utils.functional import cached_property
 
@@ -102,14 +105,25 @@ class Test(models.Model):
         branches = self.project.default_branches
         if self.original_branch:
             branches.insert(0, self.original_branch)
+        if settings.DEBUG:
+            branches.insert(0, "")  # unknown local branch
         return branches
 
     @cached_property
+    def last_result(self) -> Result:
+        result = (
+            self.result_set.filter(branch__in=self.relevant_branches)
+            .order_by("-created_at")
+            .first()
+        )
+        assert result is not None, f"Test has no results: {self}"
+        return result
+
+    @cached_property
     def markers(self) -> list[str]:
-        result = self.result_set.order_by("-created_at").first()
-        assert result is not None
+        metadata = self.last_result.metadata
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
-        return result.metadata.get("annotations", []) + result.metadata.get("tags", [])
+        return metadata.get("annotations", []) + metadata.get("tags", [])
 
     def update_enabled(self) -> bool:
         old = self.enabled
