@@ -29,6 +29,7 @@ class TestAdmin(admin.ModelAdmin):
         "id",
         "project",
         "name",
+        "markers",
         "enabled",
         "failure_rate",
         "average_duration",
@@ -45,7 +46,7 @@ class TestAdmin(admin.ModelAdmin):
         "original_branch",
     )
 
-    readonly_fields = ("last_result", "created_at", "updated_at")
+    readonly_fields = ("markers", "last_result", "created_at", "updated_at")
 
     class ResultInline(admin.TabularInline):
         model = Result
@@ -120,4 +121,4 @@ class ResultAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("test__project")
 
-    readonly_fields = ("created_at",)
+    readonly_fields = ("markers", "created_at")
