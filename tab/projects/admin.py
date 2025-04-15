@@ -52,6 +52,7 @@ class TestAdmin(admin.ModelAdmin):
         show_change_link = True
         can_delete = False
         max_num = 0
+        classes = ("collapse",)
 
         verbose_name_plural = "Recent Results"
         fields = readonly_fields = (
