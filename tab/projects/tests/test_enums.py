@@ -3,31 +3,24 @@ from ..enums import Platform, Status, Target
 
 def describe_status():
     def describe_normalize():
-        def it_applies_annotations(expect):
+        def it_detects_expected_failures(expect):
             expect(
                 Status.normalize(
-                    "failed",
-                    markers=["fail"],
-                    message="",
-                    error_indicators=[],
+                    "failed", markers=["fail"], message="", error_indicators=[]
                 )
             ) == "xfailed"
             expect(
                 Status.normalize(
-                    "passed",
-                    markers=["fail"],
-                    message="",
-                    error_indicators=[],
+                    "error", markers=["fixme"], message="", error_indicators=[]
                 )
-            ) == "xpassed"
+            ) == "xfailed"
+
+        def it_detects_unexpected_passes(expect):
             expect(
                 Status.normalize(
-                    "failed",
-                    markers=[],
-                    message="",
-                    error_indicators=[],
+                    "passed", markers=["fail"], message="", error_indicators=[]
                 )
-            ) == "failed"
+            ) == "xpassed"
 
         def it_detects_errors(expect):
             expect(
