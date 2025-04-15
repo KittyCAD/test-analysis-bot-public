@@ -70,9 +70,10 @@ class TestAdmin(admin.ModelAdmin):
             return result.commit[:7]
 
         def get_queryset(self, request):
-            test: Test = self.parent_model.objects.get(
-                id=request.resolver_match.kwargs["object_id"]
-            )
+            test_id = request.resolver_match.kwargs.get("object_id")
+            if not test_id:
+                return super().get_queryset(request)
+            test: Test = self.parent_model.objects.get(id=test_id)
             limit = timezone.now() - timedelta(days=1)
             return (
                 super()

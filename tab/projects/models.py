@@ -76,7 +76,7 @@ class Test(models.Model):
     name = models.CharField(max_length=1000)
     original_branch = models.CharField(max_length=100, default="")
     original_commit = models.CharField(max_length=100, default="")
-    metadata = models.JSONField(default=dict)
+    metadata = models.JSONField(default=dict, blank=True)
 
     enabled = models.BooleanField(default=False)
     failure_rate = models.FloatField(default=-1)
@@ -110,18 +110,16 @@ class Test(models.Model):
         return branches
 
     @cached_property
-    def last_result(self) -> Result:
-        result = (
-            self.result_set.filter(branch__in=self.relevant_branches)
+    def last_result(self) -> Result | None:
+        return (
+            self.result_set.filter(branch=self.project.default_branch)
             .order_by("-created_at")
             .first()
         )
-        assert result is not None, f"Test has no results: {self}"
-        return result
 
     @cached_property
     def markers(self) -> list[str]:
-        metadata = self.last_result.metadata
+        metadata = self.last_result.metadata if self.last_result else {}
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
         return metadata.get("annotations", []) + metadata.get("tags", [])
 
@@ -202,7 +200,7 @@ class Result(models.Model):
     message = models.TextField(null=True)
     target = models.CharField(max_length=100, null=True, choices=Target.choices)
     platform = models.CharField(max_length=100, null=True, choices=Platform.choices)
-    metadata = models.JSONField(default=dict)
+    metadata = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

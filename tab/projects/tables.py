@@ -63,6 +63,8 @@ class TestTable(tables.Table):
 
     def render_updated_at(self, value, record):
         when = naturaltime(value)
+        if not record.last_result:
+            return when
         # TODO: Consider denormalizing this field to avoid an N+1 query
         status = Status(record.last_result.status)
         return mark_safe(

@@ -22,9 +22,10 @@ class Status(models.TextChoices):
         message: str | None,
         error_indicators: list[str],
     ) -> str:
-        if value == cls.FAILED.value and "fail" in annotations:
+        expected_failure = "fail" in annotations or "fixme" in annotations
+        if value == cls.FAILED.value and expected_failure:
             return cls.XFAILED.value
-        if value == cls.PASSED.value and "fail" in annotations:
+        if value == cls.PASSED.value and expected_failure:
             return cls.XPASSED.value
         if message:
             for error_indicator in error_indicators:
