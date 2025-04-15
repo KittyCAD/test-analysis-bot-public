@@ -7,7 +7,7 @@ def describe_status():
             expect(
                 Status.normalize(
                     "failed",
-                    annotations=["fail"],
+                    markers=["fail"],
                     message="",
                     error_indicators=[],
                 )
@@ -15,7 +15,7 @@ def describe_status():
             expect(
                 Status.normalize(
                     "passed",
-                    annotations=["fail"],
+                    markers=["fail"],
                     message="",
                     error_indicators=[],
                 )
@@ -23,7 +23,7 @@ def describe_status():
             expect(
                 Status.normalize(
                     "failed",
-                    annotations=[],
+                    markers=[],
                     message="",
                     error_indicators=[],
                 )
@@ -33,7 +33,7 @@ def describe_status():
             expect(
                 Status.normalize(
                     "failed",
-                    annotations=[],
+                    markers=[],
                     message="Call log:\n  - waiting for getByTestId('overlay-menu')",
                     error_indicators=["waiting for getByTestId('overlay-menu')"],
                 )

@@ -214,11 +214,16 @@ class Result(models.Model):
             return "—"
         return f"{self.duration:.1f}s"
 
+    @cached_property
+    def markers(self) -> list[str]:
+        metadata = self.metadata
+        # TODO: Consider making 'annotations' and/or 'tags' a proper field
+        return metadata.get("annotations", []) + metadata.get("tags", [])
+
     def save(self, *args, **kwargs):
         self.status = Status.normalize(
             self.status,
-            # TODO: Consider making 'annotations' a proper field
-            annotations=self.metadata.get("annotations", []),
+            markers=self.test.markers or self.markers,
             message=self.message,
             error_indicators=self.test.project.error_indicators,
         )

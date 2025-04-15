@@ -18,11 +18,11 @@ class Status(models.TextChoices):
         cls,
         value: str,
         *,
-        annotations: list[str],
+        markers: list[str],
         message: str | None,
         error_indicators: list[str],
     ) -> str:
-        expected_failure = "fail" in annotations or "fixme" in annotations
+        expected_failure = "fail" in markers or "fixme" in markers
         if value == cls.FAILED.value and expected_failure:
             return cls.XFAILED.value
         if value == cls.PASSED.value and expected_failure:
