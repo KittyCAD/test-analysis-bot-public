@@ -15,8 +15,26 @@ class TestTable(tables.Table):
         verbose_name="Test Name",
         attrs={"a": {"class": "text-body text-decoration-none fw-bold"}},
     )
-    failure_rate = tables.Column(verbose_name="Failure Rate")
-    average_duration = tables.Column(verbose_name="Average Duration")
+    enabled = tables.BooleanColumn(
+        attrs={
+            "td": {"class": "text-center"},
+            "th": {"class": "text-center"},
+        },
+    )
+    failure_rate = tables.Column(
+        verbose_name="Failure Rate",
+        attrs={
+            "td": {"class": "text-center"},
+            "th": {"class": "text-center"},
+        },
+    )
+    average_duration = tables.Column(
+        verbose_name="Average Duration",
+        attrs={
+            "td": {"class": "text-center"},
+            "th": {"class": "text-center"},
+        },
+    )
     updated_at = tables.DateTimeColumn(verbose_name="Last Run")
 
     class Meta:
@@ -29,8 +47,13 @@ class TestTable(tables.Table):
             "average_duration",
             "updated_at",
         )
-        per_page = 12
+        per_page = 10
         order_by = "-failure_rate"
+
+    def render_enabled(self, value):
+        if value:
+            return format_html('<i class="fa-solid fa-check text-success"></i>')
+        return format_html('<i class="fa-solid fa-xmark text-danger"></i>')
 
     def render_failure_rate(self, value, record):
         return record.failure_rate_humanized
@@ -48,7 +71,30 @@ class TestTable(tables.Table):
 class ResultTable(tables.Table):
     status = tables.Column(verbose_name="Status")
     branch = tables.Column(attrs={"td": {"class": "font-monospace"}})
-    commit = tables.Column(attrs={"td": {"class": "font-monospace"}})
+    commit = tables.Column(
+        attrs={
+            "td": {"class": "text-center font-monospace"},
+            "th": {"class": "text-center"},
+        }
+    )
+    target = tables.Column(
+        attrs={
+            "td": {"class": "text-center"},
+            "th": {"class": "text-center"},
+        },
+    )
+    platform = tables.Column(
+        attrs={
+            "td": {"class": "text-center"},
+            "th": {"class": "text-center"},
+        },
+    )
+    duration = tables.Column(
+        attrs={
+            "td": {"class": "text-center"},
+            "th": {"class": "text-center"},
+        },
+    )
     created_at = tables.DateTimeColumn(verbose_name="When")
 
     class Meta:
