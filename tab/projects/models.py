@@ -35,6 +35,7 @@ class ProjectManager(models.Manager):
 class Project(models.Model):
     repository = models.URLField(unique=True)
     default_branches = models.JSONField(default=get_default_branches)
+    error_indicators = models.JSONField(default=list)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -206,6 +207,8 @@ class Result(models.Model):
             self.status,
             # TODO: Consider making 'annotations' a proper field
             annotations=self.metadata.get("annotations", []),
+            message=self.message,
+            error_indicators=self.test.project.error_indicators,
         )
         if self.duration:
             self.duration = round(self.duration, 3)

@@ -2,10 +2,42 @@ from ..enums import Platform, Status, Target
 
 
 def describe_status():
-    def it_normalizes_values(expect):
-        expect(Status.normalize("failed", annotations=["fail"])) == "xfailed"
-        expect(Status.normalize("passed", annotations=["fail"])) == "xpassed"
-        expect(Status.normalize("failed", annotations=[])) == "failed"
+    def describe_normalize():
+        def it_applies_annotations(expect):
+            expect(
+                Status.normalize(
+                    "failed",
+                    annotations=["fail"],
+                    message="",
+                    error_indicators=[],
+                )
+            ) == "xfailed"
+            expect(
+                Status.normalize(
+                    "passed",
+                    annotations=["fail"],
+                    message="",
+                    error_indicators=[],
+                )
+            ) == "xpassed"
+            expect(
+                Status.normalize(
+                    "failed",
+                    annotations=[],
+                    message="",
+                    error_indicators=[],
+                )
+            ) == "failed"
+
+        def it_detects_errors(expect):
+            expect(
+                Status.normalize(
+                    "failed",
+                    annotations=[],
+                    message="Call log:\n  - waiting for getByTestId('overlay-menu')",
+                    error_indicators=["waiting for getByTestId('overlay-menu')"],
+                )
+            ) == "error"
 
 
 def describe_target():

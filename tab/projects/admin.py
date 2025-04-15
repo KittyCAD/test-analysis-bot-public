@@ -12,8 +12,14 @@ class LimitedInlineFormSet(BaseInlineFormSet):
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    search_fields = ("repository",)
-    list_display = ("name", "repository", "created_at", "updated_at")
+    search_fields = ("repository", "error_indicators")
+    list_display = (
+        "name",
+        "repository",
+        "default_branch",
+        "created_at",
+        "updated_at",
+    )
     ordering = ("-updated_at",)
     list_filter = ("created_at", "updated_at")
 

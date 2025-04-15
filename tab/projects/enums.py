@@ -14,11 +14,22 @@ class Status(models.TextChoices):
     XPASSED = "xpassed", "Unexpected Pass"
 
     @classmethod
-    def normalize(cls, value: str, *, annotations: list[str]) -> str:
+    def normalize(
+        cls,
+        value: str,
+        *,
+        annotations: list[str],
+        message: str | None,
+        error_indicators: list[str],
+    ) -> str:
         if value == cls.FAILED.value and "fail" in annotations:
             return cls.XFAILED.value
         if value == cls.PASSED.value and "fail" in annotations:
             return cls.XPASSED.value
+        if message:
+            for error_indicator in error_indicators:
+                if error_indicator in message:
+                    return cls.ERROR.value
         return value
 
 
