@@ -15,7 +15,12 @@
             <a href="{% url 'projects:detail' project.path %}"
                class="btn btn-outline-primary ms-2"><i class="fa-solid fa-arrow-left"></i></a>
         </h1>
-        <h2 class="mb-4">{{ test.name }}</h2>
+        <h2 class="mb-4">
+            {{ test.name }}
+            <span class="text-nowrap">
+                {% for marker in test.markers %}<span class="badge rounded-pill bg-secondary me-1">{{ marker }}</span>{% endfor %}
+            </span>
+        </h2>
         <div class="card mb-4">
             <div class="card-body">
                 <div class="row">

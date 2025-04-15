@@ -103,6 +103,13 @@ class Test(models.Model):
             branches.insert(0, self.original_branch)
         return branches
 
+    @cached_property
+    def markers(self) -> list[str]:
+        result = self.result_set.order_by("-created_at").first()
+        assert result is not None
+        # TODO: Consider making 'annotations' and/or 'tags' a proper field
+        return result.metadata.get("annotations", []) + result.metadata.get("tags", [])
+
     def update_enabled(self) -> bool:
         old = self.enabled
         result = (
