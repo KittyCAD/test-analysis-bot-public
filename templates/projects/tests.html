@@ -17,7 +17,8 @@
                        value="{{ search }}"
                        class="form-control"
                        placeholder="Filter tests by name..."
-                       aria-label="Filter tests by name">
+                       aria-label="Filter tests by name"
+                       required>
                 {% if search %}
                     <a href="{% url 'projects:detail' project.path %}"
                        class="btn btn-outline-danger"
