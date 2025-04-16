@@ -137,8 +137,19 @@ class ResultTable(tables.Table):
             html = f'<div class="d-flex align-items-center gap-1">{html} <span class="ms-1">{details}</span></div>'
         return mark_safe(html)
 
-    def render_commit(self, value):
-        return value[:7]
+    def render_branch(self, record):
+        if not record.branch:
+            return ""
+        return mark_safe(
+            f'<a href="{record.branch_url}" target="_blank">{record.branch}</a>'
+        )
+
+    def render_commit(self, record):
+        if not record.commit:
+            return ""
+        return mark_safe(
+            f'<a href="{record.commit_url}" target="_blank">{record.commit_humanized}</a>'
+        )
 
     def render_duration(self, record: Result):
         return record.duration_humanized

@@ -206,7 +206,7 @@ class Result(models.Model):
 
     def __str__(self):
         branch = self.branch or "<local>"
-        commit = self.commit[:7] if self.commit else "<dirty>"
+        commit = self.commit_humanized if self.commit else "<dirty>"
         return f"{Status(self.status).label} after {self.duration or '???'} seconds on {branch!r} at {commit}"
 
     @property
@@ -214,6 +214,24 @@ class Result(models.Model):
         if self.duration is None or self.duration < 0:
             return "—"
         return f"{self.duration:.1f}s"
+
+    @cached_property
+    def branch_url(self) -> str:
+        if not self.branch:
+            return ""
+        return f"{self.test.project.repository}/tree/{self.branch}"
+
+    @cached_property
+    def commit_humanized(self) -> str:
+        if not self.commit:
+            return ""
+        return self.commit[:7]
+
+    @cached_property
+    def commit_url(self) -> str:
+        if not self.commit:
+            return ""
+        return f"{self.test.project.repository}/commit/{self.commit}"
 
     @cached_property
     def markers(self) -> list[str]:

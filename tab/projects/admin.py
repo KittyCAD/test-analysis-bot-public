@@ -68,7 +68,7 @@ class TestAdmin(admin.ModelAdmin):
 
         @admin.display(description="Commit")
         def _commit(self, result: Result):
-            return result.commit[:7]
+            return result.commit_humanized
 
         def get_queryset(self, request):
             test_id = request.resolver_match.kwargs.get("object_id")
@@ -117,7 +117,7 @@ class ResultAdmin(admin.ModelAdmin):
 
     @admin.display(description="Commit")
     def _commit(self, result: Result):
-        return result.commit[:7]
+        return result.commit_humanized
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("test__project")
