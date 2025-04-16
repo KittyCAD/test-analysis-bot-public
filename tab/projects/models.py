@@ -124,7 +124,7 @@ class Test(models.Model):
     @cached_property
     def significant_branches(self) -> list[str]:
         branches = self.project.default_branches
-        if self.original_branch:
+        if self.original_branch and self.original_branch not in branches:
             branches.insert(0, self.original_branch)
         if settings.DEBUG:
             branches.insert(0, "")  # unknown local branch
