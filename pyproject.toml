@@ -128,3 +128,10 @@ addopts = """
 """
 
 markers = []
+
+filterwarnings = [
+    "ignore::pytest.PytestCollectionWarning",
+    "ignore::django.utils.deprecation.RemovedInDjango60Warning",
+    "ignore::DeprecationWarning:pydantic._internal._config:",
+    "ignore::DeprecationWarning:ninja.orm.metaclass:"
+]
