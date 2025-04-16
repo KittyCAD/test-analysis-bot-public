@@ -101,6 +101,12 @@ class Test(models.Model):
         return f"{self.failure_rate*100:.1f}%"
 
     @property
+    def block_rate_humanized(self) -> str:
+        if self.block_rate < 0:
+            return "—"
+        return f"{self.block_rate*100:.1f}%"
+
+    @property
     def average_duration_humanized(self) -> str:
         if self.average_duration < 0:
             return "—"
@@ -309,6 +315,7 @@ class Result(models.Model):
         if (
             self.test.update_failure_rate()
             or self.test.update_average_duration()
+            or self.test.update_block_rate()
             or self.status != Status.SKIPPED
         ):
             self.test.save()

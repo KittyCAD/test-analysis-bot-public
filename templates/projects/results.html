@@ -21,7 +21,7 @@
         </h2>
         <div class="card mb-4">
             <div class="card-body">
-                <div class="row">
+                <div class="row g-3">
                     <div class="col">
                         <h5 class="card-title">Created</h5>
                         <p class="card-text">{{ test.created_at|naturaltime }}</p>
@@ -33,6 +33,10 @@
                     <div class="col">
                         <h5 class="card-title">Failure Rate</h5>
                         <p class="card-text">{{ test.failure_rate_humanized }}</p>
+                    </div>
+                    <div class="col">
+                        <h5 class="card-title">Failure Rate (Retried)</h5>
+                        <p class="card-text">{{ test.block_rate_humanized }}</p>
                     </div>
                     <div class="col">
                         <h5 class="card-title">Average Duration</h5>
