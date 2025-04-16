@@ -135,9 +135,9 @@ class Test(models.Model):
             status__in=[
                 Status.PASSED,
                 Status.FAILED,
-                Status.SKIPPED,
                 Status.XFAILED,
                 Status.XPASSED,
+                Status.SKIPPED,
                 Status.DISABLED,
             ],
         )[:RELEVANT_SAMPLES]
@@ -165,9 +165,9 @@ class Test(models.Model):
             status__in=[
                 Status.PASSED,
                 Status.FAILED,
-                Status.SKIPPED,
                 Status.XFAILED,
                 Status.XPASSED,
+                Status.SKIPPED,
                 Status.DISABLED,
             ],
             final=True,
@@ -176,8 +176,7 @@ class Test(models.Model):
             return False
 
         failed = sum(
-            result.status in {Status.FAILED, Status.XPASSED, Status.DISABLED}
-            for result in results
+            result.status in {Status.FAILED, Status.XPASSED} for result in results
         )
         new = round(failed / len(results), 3)
 
