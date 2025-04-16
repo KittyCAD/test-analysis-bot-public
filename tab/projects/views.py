@@ -22,7 +22,7 @@ class TestListView(SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
 
-        queryset = project.tests.all()
+        queryset = project.tests.all().select_related("last_result")
         search = self.request.GET.get("search", "")
         if search:
             queryset = queryset.filter(name__icontains=search)

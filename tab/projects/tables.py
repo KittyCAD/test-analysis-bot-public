@@ -126,7 +126,7 @@ class ResultTable(tables.Table):
             "platform",
             "duration",
         )
-        per_page = 15
+        per_page = 100
         order_by = "-created_at"
 
     def render_status(self, record: Result):
