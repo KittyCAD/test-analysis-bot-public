@@ -4,7 +4,7 @@ from django.utils.functional import cached_property
 
 import log
 
-from .constants import ANSI_ESCAPE, RESULT_SAMPLE_COUNT, get_default_branches
+from .constants import ANSI_ESCAPE, SAMPLE_COUNT, get_default_branches
 from .enums import Platform, Status, Target
 
 
@@ -138,20 +138,11 @@ class Test(models.Model):
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
-        results = self.results.filter(
-            branch__in=self.significant_branches,
-            status__in=[
-                Status.PASSED,
-                Status.FAILED,
-                Status.XFAILED,
-                Status.XPASSED,
-                Status.SKIPPED,
-                Status.DISABLED,
-            ],
-        )[:RESULT_SAMPLE_COUNT]
-        if not results:
+        results = self.results.filter(branch__in=self.significant_branches)
+        if not results.exists():
             return False
 
+        results = results[:SAMPLE_COUNT]
         failed = sum(
             result.status in {Status.FAILED, Status.XPASSED, Status.DISABLED}
             for result in results
@@ -167,21 +158,11 @@ class Test(models.Model):
 
     def update_block_rate(self) -> bool:
         old = self.block_rate
-        results = self.results.filter(
-            branch__in=self.significant_branches,
-            status__in=[
-                Status.PASSED,
-                Status.FAILED,
-                Status.XFAILED,
-                Status.XPASSED,
-                Status.SKIPPED,
-                Status.DISABLED,
-            ],
-            final=True,
-        )[:RESULT_SAMPLE_COUNT]
-        if not results:
+        results = self.results.filter(branch__in=self.significant_branches, final=True)
+        if not results.exists():
             return False
 
+        results = results[:SAMPLE_COUNT]
         failed = sum(
             result.status in {Status.FAILED, Status.XPASSED} for result in results
         )
@@ -205,8 +186,11 @@ class Test(models.Model):
                 Status.XFAILED,
             ],
             duration__gt=0,
-        )[:RESULT_SAMPLE_COUNT]
+        )
+        if not results.exists():
+            return False
 
+        results = results[:SAMPLE_COUNT]
         durations = [result.duration for result in results if result.duration]
         if not durations:
             return False
