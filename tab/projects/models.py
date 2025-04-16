@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.db import models
-from django.utils.functional import cached_property
 
 import log
 
@@ -121,7 +120,7 @@ class Test(models.Model):
             return "—"
         return f"{self.average_duration:.1f}s"
 
-    @cached_property
+    @property
     def significant_branches(self) -> list[str]:
         branches = self.project.default_branches
         if self.original_branch and self.original_branch not in branches:
@@ -130,7 +129,7 @@ class Test(models.Model):
             branches.insert(0, "")  # unknown local branch
         return branches
 
-    @cached_property
+    @property
     def markers(self) -> list[str]:
         metadata = self.last_result.metadata if self.last_result else {}
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
@@ -253,25 +252,25 @@ class Result(models.Model):
             return "—"
         return f"{self.duration:.1f}s"
 
-    @cached_property
+    @property
     def branch_url(self) -> str:
         if not self.branch:
             return ""
         return f"{self.test.project.repository}/tree/{self.branch}"
 
-    @cached_property
+    @property
     def commit_humanized(self) -> str:
         if not self.commit:
             return ""
         return self.commit[:7]
 
-    @cached_property
+    @property
     def commit_url(self) -> str:
         if not self.commit:
             return ""
         return f"{self.test.project.repository}/commit/{self.commit}"
 
-    @cached_property
+    @property
     def markers(self) -> list[str]:
         metadata = self.metadata
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
