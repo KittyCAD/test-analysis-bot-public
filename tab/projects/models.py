@@ -138,7 +138,9 @@ class Test(models.Model):
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
-        results = self.results.filter(branch__in=self.significant_branches)
+        results = self.results.filter(
+            branch__in=self.significant_branches,
+        ).order_by("-created_at")
         if not results.exists():
             return False
 
@@ -158,7 +160,10 @@ class Test(models.Model):
 
     def update_block_rate(self) -> bool:
         old = self.block_rate
-        results = self.results.filter(branch__in=self.significant_branches, final=True)
+        results = self.results.filter(
+            branch__in=self.significant_branches,
+            final=True,
+        ).order_by("-created_at")
         if not results.exists():
             return False
 
@@ -186,7 +191,7 @@ class Test(models.Model):
                 Status.XFAILED,
             ],
             duration__gt=0,
-        )
+        ).order_by("-created_at")
         if not results.exists():
             return False
 
@@ -205,9 +210,11 @@ class Test(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            self.last_result = self.results.filter(
-                branch=self.project.default_branch
-            ).first()
+            self.last_result = (
+                self.results.filter(branch=self.project.default_branch)
+                .order_by("-created_at")
+                .first()
+            )
         self.enabled = bool(
             self.last_result and self.last_result.status != Status.SKIPPED
         )
