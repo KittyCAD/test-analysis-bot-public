@@ -13,6 +13,8 @@ class Status(models.TextChoices):
     XFAILED = "xfailed", "Expected Failure"
     XPASSED = "xpassed", "Unexpected Pass"
 
+    DISABLED = "disabled", "Disabled"
+
     @classmethod
     def normalize(
         cls,
@@ -22,10 +24,13 @@ class Status(models.TextChoices):
         message: str | None,
         error_indicators: list[str],
     ) -> str:
-        expected_failure = "fail" in markers or "fixme" in markers
-        if value in (cls.FAILED.value, cls.ERROR.value) and expected_failure:
+        expected_failure = "fail" in markers
+        known_broken = "fixme" in markers
+        if value == cls.FAILED.value and expected_failure:
             return cls.XFAILED.value
-        if value == cls.PASSED.value and expected_failure:
+        if value in (cls.FAILED.value, cls.ERROR.value) and known_broken:
+            return cls.DISABLED.value
+        if value == cls.PASSED.value and (expected_failure or known_broken):
             return cls.XPASSED.value
         if message:
             for error_indicator in error_indicators:

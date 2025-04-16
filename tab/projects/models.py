@@ -133,7 +133,9 @@ class Test(models.Model):
             return False
 
         failed = sum(
-            1 for result in results if result.status in [Status.FAILED, Status.XPASSED]
+            1
+            for result in results
+            if result.status in [Status.FAILED, Status.XPASSED, Status.DISABLED]
         )
         new = round(failed / len(results), 3)
 

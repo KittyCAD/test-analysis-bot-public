@@ -9,11 +9,6 @@ def describe_status():
                     "failed", markers=["fail"], message="", error_indicators=[]
                 )
             ) == "xfailed"
-            expect(
-                Status.normalize(
-                    "error", markers=["fixme"], message="", error_indicators=[]
-                )
-            ) == "xfailed"
 
         def it_detects_unexpected_passes(expect):
             expect(
@@ -21,6 +16,13 @@ def describe_status():
                     "passed", markers=["fail"], message="", error_indicators=[]
                 )
             ) == "xpassed"
+
+        def it_detects_expected_broken(expect):
+            expect(
+                Status.normalize(
+                    "error", markers=["fixme"], message="", error_indicators=[]
+                )
+            ) == "disabled"
 
         def it_detects_errors(expect):
             expect(
