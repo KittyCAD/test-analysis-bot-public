@@ -83,6 +83,9 @@ class TestTable(tables.Table):
     def render_failure_rate(self, record: Test):
         return record.failure_rate_humanized
 
+    def render_block_rate(self, record: Test):
+        return record.block_rate_humanized
+
     def render_average_duration(self, record):
         return record.average_duration_humanized
 
