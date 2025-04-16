@@ -75,7 +75,6 @@ class TestTable(tables.Table):
         when = naturaltime(value)
         if not record.last_result:
             return when
-        # TODO: Consider denormalizing this field to avoid an N+1 query
         status = Status(record.last_result.status)
         return mark_safe(
             f'{when} <span class="badge text-bg-{status.color} ms-1">{status.label}</span>'

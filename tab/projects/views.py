@@ -42,7 +42,7 @@ class TestListView(SingleTableMixin, ListView):
         context["enabled"] = self.request.GET.get("enabled", "true")
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
-                "admin:projects_project_change", args=[project.id]
+                "admin:projects_project_change", args=[project.pk]
             )
 
         return context
@@ -51,7 +51,6 @@ class TestListView(SingleTableMixin, ListView):
 def test_detail(request, path: str, test_id: int):
     project = get_object_or_404(Project, repository__iendswith=path.strip("/"))
     test = get_object_or_404(Test, project=project, id=test_id)
-    _ = test.markers  # cache markers
 
     branch = request.GET.get("branch")
     if branch == "all":
@@ -66,6 +65,6 @@ def test_detail(request, path: str, test_id: int):
 
     context = {"project": project, "test": test, "table": table}
     if request.user.is_staff:
-        context["admin_url"] = reverse("admin:projects_test_change", args=[test.id])
+        context["admin_url"] = reverse("admin:projects_test_change", args=[test.pk])
 
     return render(request, "projects/results.html", context)

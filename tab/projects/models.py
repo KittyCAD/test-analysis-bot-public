@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from django.conf import settings
 from django.db import models
 from django.utils.functional import cached_property
@@ -81,6 +79,9 @@ class Test(models.Model):
     enabled = models.BooleanField(default=False)
     failure_rate = models.FloatField(default=-1)
     average_duration = models.FloatField(default=-1)
+    last_result = models.ForeignKey(
+        "Result", on_delete=models.SET_NULL, null=True, related_name="+"
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -110,26 +111,10 @@ class Test(models.Model):
         return branches
 
     @cached_property
-    def last_result(self) -> Result | None:
-        return self.results.filter(branch=self.project.default_branch).first()
-
-    @cached_property
     def markers(self) -> list[str]:
         metadata = self.last_result.metadata if self.last_result else {}
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
         return metadata.get("annotations", []) + metadata.get("tags", [])
-
-    def update_enabled(self) -> bool:
-        old = self.enabled
-        result = self.results.filter(branch=self.project.default_branch).first()
-
-        new = bool(result and result.status != Status.SKIPPED)
-        if old == new:
-            return False
-
-        log.debug(f"Test has new enabled status: {old} => {new}")
-        self.enabled = new
-        return True
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
@@ -180,6 +165,16 @@ class Test(models.Model):
         self.average_duration = new
         return True
 
+    def save(self, *args, **kwargs):
+        if self.pk:
+            self.last_result = self.results.filter(
+                branch=self.project.default_branch
+            ).first()
+        self.enabled = bool(
+            self.last_result and self.last_result.status != Status.SKIPPED
+        )
+        super().save(*args, **kwargs)
+
 
 class Result(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="results")
@@ -228,8 +223,8 @@ class Result(models.Model):
         super().save(*args, **kwargs)
 
         if (
-            self.test.update_enabled()
-            or self.test.update_failure_rate()
+            self.test.update_failure_rate()
             or self.test.update_average_duration()
+            or self.status != Status.SKIPPED
         ):
             self.test.save()
