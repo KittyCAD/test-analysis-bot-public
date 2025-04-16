@@ -127,15 +127,15 @@ class Test(models.Model):
                 Status.SKIPPED,
                 Status.XFAILED,
                 Status.XPASSED,
+                Status.DISABLED,
             ],
         )[:RELEVANT_SAMPLES]
         if not results:
             return False
 
         failed = sum(
-            1
+            result.status in {Status.FAILED, Status.XPASSED, Status.DISABLED}
             for result in results
-            if result.status in [Status.FAILED, Status.XPASSED, Status.DISABLED]
         )
         new = round(failed / len(results), 3)
 
@@ -151,7 +151,12 @@ class Test(models.Model):
         results = Result.objects.filter(
             test=self,
             branch__in=self.relevant_branches,
-            status__in=[Status.PASSED, Status.FAILED, Status.XPASSED, Status.XFAILED],
+            status__in=[
+                Status.PASSED,
+                Status.FAILED,
+                Status.XPASSED,
+                Status.XFAILED,
+            ],
             duration__gt=0,
         )[:RELEVANT_SAMPLES]
 
