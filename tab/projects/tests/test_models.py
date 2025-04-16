@@ -26,14 +26,26 @@ def describe_test():
             test: Test = project.tests.create(
                 name="my-test", original_branch="my-branch"
             )
-            test.results.create(test=test, status=Status.PASSED, branch="my-branch")
-            test.results.create(test=test, status=Status.SKIPPED, branch="main")
-            test.results.create(test=test, status=Status.FAILED, branch="main")
-            test.results.create(test=test, status=Status.FAILED, branch="other")
+            test.results.create(
+                test=test, status=Status.PASSED, branch="my-branch", commit="a1"
+            )
+            test.results.create(
+                test=test, status=Status.SKIPPED, branch="main", commit="b2"
+            )
+            test.results.create(
+                test=test, status=Status.FAILED, branch="main", commit="b2"
+            )
+            test.results.create(
+                test=test, status=Status.FAILED, branch="other", commit="c3"
+            )
 
             test.failure_rate = -1
             expect(test.update_failure_rate()) == True
             expect(test.failure_rate) == 0.333
+
+            test.block_rate = -1
+            expect(test.update_block_rate()) == True
+            expect(test.block_rate) == 0.5
 
     def describe_update_average_duration():
         @pytest.mark.django_db

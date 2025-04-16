@@ -25,7 +25,11 @@ class TestTable(tables.Table):
         verbose_name="Failure Rate",
         attrs={
             "td": {"class": "text-center"},
-            "th": {"class": "text-center"},
+            "th": {
+                "class": "text-center",
+                "data-bs-toggle": "tooltip",
+                "title": "Failure rate (including all reruns)",
+            },
         },
     )
     average_duration = tables.Column(

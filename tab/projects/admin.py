@@ -32,6 +32,7 @@ class TestAdmin(admin.ModelAdmin):
         "markers",
         "enabled",
         "failure_rate",
+        "block_rate",
         "average_duration",
         "original_branch",
         "created_at",

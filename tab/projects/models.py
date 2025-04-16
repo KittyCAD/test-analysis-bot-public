@@ -77,7 +77,12 @@ class Test(models.Model):
     metadata = models.JSONField(default=dict, blank=True)
 
     enabled = models.BooleanField(default=False)
-    failure_rate = models.FloatField(default=-1)
+    failure_rate = models.FloatField(
+        default=-1, help_text="Failure rate on original and default branches"
+    )
+    block_rate = models.FloatField(
+        default=-1, help_text="Effective failure rate with reruns excluded"
+    )
     average_duration = models.FloatField(default=-1)
     last_result = models.ForeignKey(
         "Result", on_delete=models.SET_NULL, null=True, related_name="+"
@@ -144,6 +149,37 @@ class Test(models.Model):
 
         log.debug(f"Test has new failure rate: {old*100}% => {new*100}%")
         self.failure_rate = new
+        return True
+
+    def update_block_rate(self) -> bool:
+        old = self.block_rate
+        results = Result.objects.filter(
+            test=self,
+            branch__in=self.relevant_branches,
+            status__in=[
+                Status.PASSED,
+                Status.FAILED,
+                Status.SKIPPED,
+                Status.XFAILED,
+                Status.XPASSED,
+                Status.DISABLED,
+            ],
+            final=True,
+        )[:RELEVANT_SAMPLES]
+        if not results:
+            return False
+
+        failed = sum(
+            result.status in {Status.FAILED, Status.XPASSED, Status.DISABLED}
+            for result in results
+        )
+        new = round(failed / len(results), 3)
+
+        if old == new:
+            return False
+
+        log.debug(f"Test has new block rate: {old*100}% => {new*100}%")
+        self.block_rate = new
         return True
 
     def update_average_duration(self) -> bool:
