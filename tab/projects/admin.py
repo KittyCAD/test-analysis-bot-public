@@ -47,7 +47,13 @@ class TestAdmin(admin.ModelAdmin):
         "original_branch",
     )
 
-    readonly_fields = ("last_result", "markers", "created_at", "updated_at")
+    readonly_fields = (
+        "significant_branches",
+        "last_result",
+        "markers",
+        "created_at",
+        "updated_at",
+    )
 
     class ResultInline(admin.TabularInline):
         model = Result
@@ -56,7 +62,7 @@ class TestAdmin(admin.ModelAdmin):
         max_num = 0
         classes = ("collapse",)
 
-        verbose_name_plural = "Recent Results"
+        verbose_name_plural = "Recent Significant Results"
         fields = readonly_fields = (
             "status",
             "branch",
@@ -81,7 +87,7 @@ class TestAdmin(admin.ModelAdmin):
                 super()
                 .get_queryset(request)
                 .filter(
-                    branch__in=test.relevant_branches,
+                    branch__in=test.significant_branches,
                     created_at__gte=limit,
                 )
             )

@@ -58,7 +58,7 @@ def test_detail(request, path: str, test_id: int):
     elif branch:
         results = test.results.filter(branch=branch)
     else:
-        results = test.results.filter(branch__in=test.relevant_branches)
+        results = test.results.filter(branch__in=test.significant_branches)
 
     table = ResultTable(results)
     RequestConfig(request).configure(table)

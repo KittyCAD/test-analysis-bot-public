@@ -4,7 +4,7 @@ from django.utils.functional import cached_property
 
 import log
 
-from .constants import ANSI_ESCAPE, RELEVANT_SAMPLES, get_default_branches
+from .constants import ANSI_ESCAPE, RESULT_SAMPLE_COUNT, get_default_branches
 from .enums import Platform, Status, Target
 
 
@@ -78,10 +78,11 @@ class Test(models.Model):
 
     enabled = models.BooleanField(default=False)
     failure_rate = models.FloatField(
-        default=-1, help_text="Failure rate on original and default branches"
+        default=-1,
+        help_text="Total failure rate on significant branches including reruns",
     )
     block_rate = models.FloatField(
-        default=-1, help_text="Effective failure rate with reruns excluded"
+        default=-1, help_text="Effective failure rate with reruns and disabled excluded"
     )
     average_duration = models.FloatField(default=-1)
     last_result = models.ForeignKey(
@@ -95,10 +96,18 @@ class Test(models.Model):
         return self.name
 
     @property
+    def failure_rate_help(self) -> str:
+        return self._meta.get_field("failure_rate").help_text  # type: ignore
+
+    @property
     def failure_rate_humanized(self) -> str:
         if self.failure_rate < 0:
             return "—"
         return f"{self.failure_rate*100:.1f}%"
+
+    @property
+    def block_rate_help(self) -> str:
+        return self._meta.get_field("block_rate").help_text  # type: ignore
 
     @property
     def block_rate_humanized(self) -> str:
@@ -113,7 +122,7 @@ class Test(models.Model):
         return f"{self.average_duration:.1f}s"
 
     @cached_property
-    def relevant_branches(self) -> list[str]:
+    def significant_branches(self) -> list[str]:
         branches = self.project.default_branches
         if self.original_branch:
             branches.insert(0, self.original_branch)
@@ -131,7 +140,7 @@ class Test(models.Model):
         old = self.failure_rate
         results = Result.objects.filter(
             test=self,
-            branch__in=self.relevant_branches,
+            branch__in=self.significant_branches,
             status__in=[
                 Status.PASSED,
                 Status.FAILED,
@@ -140,7 +149,7 @@ class Test(models.Model):
                 Status.SKIPPED,
                 Status.DISABLED,
             ],
-        )[:RELEVANT_SAMPLES]
+        )[:RESULT_SAMPLE_COUNT]
         if not results:
             return False
 
@@ -161,7 +170,7 @@ class Test(models.Model):
         old = self.block_rate
         results = Result.objects.filter(
             test=self,
-            branch__in=self.relevant_branches,
+            branch__in=self.significant_branches,
             status__in=[
                 Status.PASSED,
                 Status.FAILED,
@@ -171,7 +180,7 @@ class Test(models.Model):
                 Status.DISABLED,
             ],
             final=True,
-        )[:RELEVANT_SAMPLES]
+        )[:RESULT_SAMPLE_COUNT]
         if not results:
             return False
 
@@ -191,7 +200,7 @@ class Test(models.Model):
         old = self.average_duration
         results = Result.objects.filter(
             test=self,
-            branch__in=self.relevant_branches,
+            branch__in=self.significant_branches,
             status__in=[
                 Status.PASSED,
                 Status.FAILED,
@@ -199,7 +208,7 @@ class Test(models.Model):
                 Status.XFAILED,
             ],
             duration__gt=0,
-        )[:RELEVANT_SAMPLES]
+        )[:RESULT_SAMPLE_COUNT]
 
         durations = [result.duration for result in results if result.duration]
         if not durations:

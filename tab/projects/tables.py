@@ -28,7 +28,18 @@ class TestTable(tables.Table):
             "th": {
                 "class": "text-center",
                 "data-bs-toggle": "tooltip",
-                "title": "Failure rate (including all reruns)",
+                "title": lambda table: table._meta.model().failure_rate_help,
+            },
+        },
+    )
+    block_rate = tables.Column(
+        verbose_name="Block Rate",
+        attrs={
+            "td": {"class": "text-center"},
+            "th": {
+                "class": "text-center",
+                "data-bs-toggle": "tooltip",
+                "title": lambda table: table._meta.model().block_rate_help,
             },
         },
     )
@@ -48,6 +59,7 @@ class TestTable(tables.Table):
             "name",
             "enabled",
             "failure_rate",
+            "block_rate",
             "average_duration",
             "updated_at",
         )

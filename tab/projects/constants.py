@@ -1,6 +1,6 @@
 import re
 
-RELEVANT_SAMPLES = 100
+RESULT_SAMPLE_COUNT = 100
 
 ANSI_ESCAPE = re.compile(r"\x1B[@-_][0-?]*[ -/]*[@-~]")
 
