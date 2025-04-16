@@ -138,8 +138,7 @@ class Test(models.Model):
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
-        results = Result.objects.filter(
-            test=self,
+        results = self.results.filter(
             branch__in=self.significant_branches,
             status__in=[
                 Status.PASSED,
@@ -168,8 +167,7 @@ class Test(models.Model):
 
     def update_block_rate(self) -> bool:
         old = self.block_rate
-        results = Result.objects.filter(
-            test=self,
+        results = self.results.filter(
             branch__in=self.significant_branches,
             status__in=[
                 Status.PASSED,
@@ -198,8 +196,7 @@ class Test(models.Model):
 
     def update_average_duration(self) -> bool:
         old = self.average_duration
-        results = Result.objects.filter(
-            test=self,
+        results = self.results.filter(
             branch__in=self.significant_branches,
             status__in=[
                 Status.PASSED,
@@ -320,10 +317,12 @@ class Result(models.Model):
                 for result in results:
                     log.info(f"Demoted result: {result}")
 
-        if (
-            self.test.update_failure_rate()
-            or self.test.update_average_duration()
-            or self.test.update_block_rate()
-            or self.status != Status.SKIPPED
+        if any(
+            [
+                self.test.update_failure_rate(),
+                self.test.update_block_rate(),
+                self.test.update_average_duration(),
+                self.status != Status.SKIPPED,
+            ]
         ):
             self.test.save()
