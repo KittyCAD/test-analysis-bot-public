@@ -273,7 +273,7 @@ class Result(models.Model):
     def save(self, *args, **kwargs):
         self.status = Status.normalize(
             self.status,
-            markers=self.test.markers or self.markers,
+            markers=self.markers,
             message=self.message,
             error_indicators=self.test.project.error_indicators,
         )
