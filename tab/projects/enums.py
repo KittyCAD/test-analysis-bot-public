@@ -47,9 +47,7 @@ class Status(models.TextChoices):
                 return "danger"
             case self.ERROR | self.TIMEDOUT:
                 return "warning"
-            case self.SKIPPED | self.INTERRUPTED:
-                return "secondary"
-            case self.DISABLED:
+            case self.SKIPPED | self.DISABLED:
                 return "info"
             case _:
                 return "dark"
