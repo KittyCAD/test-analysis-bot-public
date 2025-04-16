@@ -53,11 +53,10 @@ class TestTable(tables.Table):
     def render_name(self, record: Test):
         name = record.name
         if record.markers:
-            markers = " ".join(
-                f'<span class="badge rounded-pill text-bg-secondary">{marker}</span>'
-                for marker in record.markers
+            markers = render_to_string(
+                "projects/_markers.html", {"markers": record.markers}
             )
-            return mark_safe(f'{name} <span class="ms-1 text-nowrap">{markers}</span>')
+            return mark_safe(f"{name} {markers}")
         return name
 
     def render_enabled(self, value):
@@ -143,5 +142,11 @@ class ResultTable(tables.Table):
     def render_duration(self, record: Result):
         return record.duration_humanized
 
-    def render_created_at(self, value):
-        return naturaltime(value)
+    def render_created_at(self, value, record: Result):
+        when = naturaltime(value)
+        if record.markers:
+            markers = render_to_string(
+                "projects/_markers.html", {"markers": record.markers}
+            )
+            return mark_safe(f"{when} {markers}")
+        return when

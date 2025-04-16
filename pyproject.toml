@@ -84,7 +84,7 @@ sections = "FUTURE,STDLIB,DJANGO,THIRDPARTY,FIRSTPARTY,LOCALFOLDER"
 profile = "django"
 
 blank_line_before_tag = "block"
-blank_line_after_tag = "load,extends,include,endblock"
+blank_line_after_tag = "load,extends,endblock"
 
 quiet = true
 

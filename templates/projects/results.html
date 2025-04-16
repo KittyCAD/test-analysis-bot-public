@@ -17,9 +17,7 @@
         </h1>
         <h2 class="mb-4">
             {{ test.name }}
-            <span class="text-nowrap">
-                {% for marker in test.markers %}<span class="badge rounded-pill bg-secondary me-1">{{ marker }}</span>{% endfor %}
-            </span>
+            {% include "projects/_markers.html" with markers=test.markers %}
         </h2>
         <div class="card mb-4">
             <div class="card-body">
