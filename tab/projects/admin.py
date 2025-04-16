@@ -99,16 +99,17 @@ class ResultAdmin(admin.ModelAdmin):
         "_commit",
         "target",
         "platform",
-        "markers",
         "final",
         "status",
         "duration",
+        "markers",
         "created_at",
     )
     list_filter = (
         "status",
         "target",
         "platform",
+        "final",
         "created_at",
         "test__project__repository",
         "branch",
