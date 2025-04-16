@@ -97,7 +97,13 @@ class TestAdmin(admin.ModelAdmin):
 
 @admin.register(Result)
 class ResultAdmin(admin.ModelAdmin):
-    search_fields = ("test__project__repository", "test__name", "branch", "commit")
+    search_fields = (
+        "test__project__repository",
+        "test__name",
+        "branch",
+        "commit",
+        "message",
+    )
     list_display = (
         "id",
         "test__project",
