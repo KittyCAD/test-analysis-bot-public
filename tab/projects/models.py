@@ -186,14 +186,17 @@ class Test(models.Model):
 class Result(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="results")
 
-    status = models.CharField(max_length=20, choices=Status.choices)
     branch = models.CharField(max_length=100, default="")
     commit = models.CharField(max_length=100, default="")
-
-    duration = models.FloatField(null=True)
-    message = models.TextField(null=True)
     target = models.CharField(max_length=100, null=True, choices=Target.choices)
     platform = models.CharField(max_length=100, null=True, choices=Platform.choices)
+    final = models.BooleanField(
+        default=True, help_text="Indicates this was the final retry"
+    )
+
+    status = models.CharField(max_length=20, choices=Status.choices)
+    duration = models.FloatField(null=True)
+    message = models.TextField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -202,8 +205,9 @@ class Result(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        branch = self.branch or "???"
-        return f"{Status(self.status).label} after {self.duration or '???'} seconds on {branch!r}"
+        branch = self.branch or "<local>"
+        commit = self.commit[:7] if self.commit else "<dirty>"
+        return f"{Status(self.status).label} after {self.duration or '???'} seconds on {branch!r} at {commit}"
 
     @property
     def duration_humanized(self) -> str:
@@ -234,6 +238,19 @@ class Result(models.Model):
             self.platform = Platform.normalize(self.platform)
 
         super().save(*args, **kwargs)
+
+        if self.final:
+            if results := Result.objects.filter(
+                test=self.test,
+                commit=self.commit,
+                target=self.target,
+                platform=self.platform,
+                final=True,
+                created_at__lt=self.created_at,
+            ).exclude(id=self.id):
+                results.update(final=False)
+                for result in results:
+                    log.info(f"Demoted result: {result}")
 
         if (
             self.test.update_failure_rate()

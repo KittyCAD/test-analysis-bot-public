@@ -97,11 +97,12 @@ class ResultAdmin(admin.ModelAdmin):
         "test__name",
         "branch",
         "_commit",
-        "status",
-        "duration",
         "target",
         "platform",
         "markers",
+        "final",
+        "status",
+        "duration",
         "created_at",
     )
     list_filter = (

@@ -124,6 +124,7 @@ class ResultTable(tables.Table):
             "target",
             "platform",
             "duration",
+            "created_at",
         )
         per_page = 100
         order_by = "-created_at"
@@ -143,10 +144,11 @@ class ResultTable(tables.Table):
         return record.duration_humanized
 
     def render_created_at(self, value, record: Result):
-        when = naturaltime(value)
+        html = "" if record.final else '<i class="fa-solid fa-repeat me-2"></i>'
+        html += naturaltime(value)
         if record.markers:
             markers = render_to_string(
                 "projects/_markers.html", {"markers": record.markers}
             )
-            return mark_safe(f"{when} {markers}")
-        return when
+            html += f" {markers}"
+        return mark_safe(html)
