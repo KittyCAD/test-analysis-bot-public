@@ -50,7 +50,7 @@ class TestTable(tables.Table):
             "th": {"class": "text-center"},
         },
     )
-    updated_at = tables.DateTimeColumn(verbose_name="Last Run")
+    updated_at = tables.DateTimeColumn(verbose_name="Last Updated")
 
     class Meta:
         model = Test
@@ -86,17 +86,11 @@ class TestTable(tables.Table):
     def render_block_rate(self, record: Test):
         return record.block_rate_humanized
 
-    def render_average_duration(self, record):
+    def render_average_duration(self, record: Test):
         return record.average_duration_humanized
 
-    def render_updated_at(self, value, record: Test):
-        when = naturaltime(value)
-        if not record.last_result:
-            return when
-        status = Status(record.last_result.status)
-        return mark_safe(
-            f'{when} <span class="badge text-bg-{status.color} ms-1">{status.label}</span>'
-        )
+    def render_updated_at(self, value):
+        return naturaltime(value)
 
 
 class ResultTable(tables.Table):
