@@ -21,6 +21,7 @@ class TestListView(SingleTableMixin, ListView):
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
+
         queryset = project.tests.all()
         search = self.request.GET.get("search", "")
         if search:
@@ -28,10 +29,12 @@ class TestListView(SingleTableMixin, ListView):
         enabled = self.request.GET.get("enabled")
         if enabled is None or enabled == "true":
             queryset = queryset.filter(enabled=True)
+
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
         context["project"] = project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
@@ -41,12 +44,15 @@ class TestListView(SingleTableMixin, ListView):
             context["admin_url"] = reverse(
                 "admin:projects_project_change", args=[project.id]
             )
+
         return context
 
 
 def test_detail(request, path: str, test_id: int):
     project = get_object_or_404(Project, repository__iendswith=path.strip("/"))
     test = get_object_or_404(Test, project=project, id=test_id)
+    _ = test.markers  # cache markers
+
     branch = request.GET.get("branch")
     if branch == "all":
         results = test.results.all()
@@ -54,9 +60,12 @@ def test_detail(request, path: str, test_id: int):
         results = test.results.filter(branch=branch)
     else:
         results = test.results.filter(branch__in=test.relevant_branches)
+
     table = ResultTable(results)
     RequestConfig(request).configure(table)
+
     context = {"project": project, "test": test, "table": table}
     if request.user.is_staff:
         context["admin_url"] = reverse("admin:projects_test_change", args=[test.id])
+
     return render(request, "projects/results.html", context)

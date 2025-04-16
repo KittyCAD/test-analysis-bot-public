@@ -50,18 +50,28 @@ class TestTable(tables.Table):
         per_page = 10
         order_by = "-failure_rate"
 
+    def render_name(self, record: Test):
+        name = record.name
+        if record.markers:
+            markers = " ".join(
+                f'<span class="badge rounded-pill text-bg-secondary">{marker}</span>'
+                for marker in record.markers
+            )
+            return mark_safe(f'{name} <span class="ms-1 text-nowrap">{markers}</span>')
+        return name
+
     def render_enabled(self, value):
         icon = "check" if value else "xmark"
         color = "success" if value else "danger"
         return mark_safe(f'<i class="fa-solid fa-{icon} text-{color}"></i>')
 
-    def render_failure_rate(self, record):
+    def render_failure_rate(self, record: Test):
         return record.failure_rate_humanized
 
     def render_average_duration(self, record):
         return record.average_duration_humanized
 
-    def render_updated_at(self, value, record):
+    def render_updated_at(self, value, record: Test):
         when = naturaltime(value)
         if not record.last_result:
             return when
