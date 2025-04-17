@@ -214,6 +214,15 @@ class Test(models.Model):
         self.average_duration = new
         return True
 
+    def update(self) -> bool:
+        return any(
+            [
+                self.update_failure_rate(),
+                self.update_block_rate(),
+                self.update_average_duration(),
+            ]
+        )
+
     def save(self, *args, **kwargs):
         if self.pk:
             self.last_result = (
@@ -316,12 +325,5 @@ class Result(models.Model):
                 for result in results:
                     log.info(f"Demoted result: {result}")
 
-        if any(
-            [
-                self.test.update_failure_rate(),
-                self.test.update_block_rate(),
-                self.test.update_average_duration(),
-                self.status != Status.SKIPPED,
-            ]
-        ):
-            self.test.save()
+        self.test.update()
+        self.test.save()
