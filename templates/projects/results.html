@@ -2,64 +2,18 @@
 
 {% load django_tables2 %}
 {% load static %}
-{% load humanize %}
 
 {% block title %}
-    {{ project.name }} › {{ test.name }}
+    {{ project.name }}
 {% endblock title %}
 
 {% block content %}
     <div class="container mt-4">
         <h1 class="mb-4">
             {{ project.name }}
-            <a href="{% url 'projects:detail' project.path %}"
+            <a href="{% url 'projects:tests' project.path %}"
                class="btn btn-outline-primary ms-2"><i class="fa-solid fa-arrow-left"></i></a>
         </h1>
-        <h2 class="mb-4">
-            {{ test.name }}
-            {% include "projects/_markers.html" with markers=test.markers %}
-        </h2>
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col">
-                        <h5 class="card-title">Created</h5>
-                        <p class="card-text">{{ test.created_at|naturaltime }}</p>
-                    </div>
-                    <div class="col">
-                        <h5 class="card-title">Original Branch</h5>
-                        <p class="card-text font-monospace">{{ test.original_branch }}</p>
-                    </div>
-                    <div class="col">
-                        <h5 class="card-title">Failure Rate</h5>
-                        <small class="fst-italic text-muted d-block mb-2">{{ test.failure_rate_help }}</small>
-                        <p class="card-text">{{ test.failure_rate_humanized }}</p>
-                    </div>
-                    <div class="col">
-                        <h5 class="card-title">Block Rate</h5>
-                        <small class="fst-italic text-muted d-block mb-2">{{ test.block_rate_help }}</small>
-                        <p class="card-text">{{ test.block_rate_humanized }}</p>
-                    </div>
-                    <div class="col">
-                        <h5 class="card-title">Enabled</h5>
-                        <small class="fst-italic text-muted d-block mb-2">{{ test.enabled_help }}</small>
-                        <p class="card-text">
-                            {% if test.enabled %}
-                                <i class="fa-solid fa-check text-success me-1"></i>
-                                Yes
-                            {% else %}
-                                <i class="fa-solid fa-xmark text-danger me-1"></i>
-                                No
-                            {% endif %}
-                        </p>
-                    </div>
-                    <div class="col">
-                        <h5 class="card-title">Average Duration</h5>
-                        <p class="card-text">{{ test.average_duration_humanized }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
         {% render_table table %}
     </div>
 {% endblock content %}
@@ -67,8 +21,12 @@
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/tables.css' %}">
     <style>
+        /* Wrap text in the Test Name column */
+        .table td:first-child {
+            white-space: normal;
+        }
         /* Wrap text in the Branch column */
-        .table td:nth-child(2) {
+        .table td:nth-child(3) {
             white-space: normal;
         }
     </style>

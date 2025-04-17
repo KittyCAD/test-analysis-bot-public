@@ -7,15 +7,15 @@ from django.views.generic import ListView
 
 from django_tables2 import SingleTableMixin
 
-from .models import Project, Test
-from .tables import ResultTable, TestTable
+from .models import Project, Result, Test
+from .tables import ResultTable, TestResultTable, TestTable
 
 
 def index(request):
     return render(request, "projects/index.html")
 
 
-class TestListView(SingleTableMixin, ListView):
+class TestsListView(SingleTableMixin, ListView):
     model = Test
     table_class = TestTable
     template_name = "projects/tests.html"
@@ -25,7 +25,7 @@ class TestListView(SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
 
-        search = self.request.GET.get("search", "")
+        search = self.request.GET.get("search")
         enabled = self.request.GET.get("enabled")
 
         queryset = project.tests.select_related("last_result")
@@ -56,10 +56,51 @@ class TestListView(SingleTableMixin, ListView):
         return context
 
 
-class ResultListView(SingleTableMixin, ListView):
-    model = Test
+class ResultsListView(SingleTableMixin, ListView):
+    model = Result
     table_class = ResultTable
     template_name = "projects/results.html"
+
+    def get_queryset(self):
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+
+        search = self.request.GET.get("search")
+        branch = self.request.GET.get("branch")
+
+        queryset = (
+            Result.objects.filter(test__project=project)
+            .order_by("-created_at")
+            .select_related("test", "test__project")
+        )
+        if search:
+            queryset = queryset.filter(test__name__icontains=search)
+        if branch:
+            queryset = queryset.filter(branch=branch)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["project"] = project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        if self.request.user.is_staff:
+            context["admin_url"] = reverse(
+                # TODO: Link to results for this particular project instead
+                "admin:projects_project_change",
+                args=[project.pk],
+            )
+
+        return context
+
+
+class TestResultsListView(SingleTableMixin, ListView):
+    model = Result
+    table_class = TestResultTable
+    template_name = "projects/test-results.html"
 
     def get_queryset(self):
         project = get_object_or_404(

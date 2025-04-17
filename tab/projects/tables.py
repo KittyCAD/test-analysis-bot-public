@@ -11,7 +11,7 @@ from .models import Result, Status, Test
 
 class TestTable(tables.Table):
     name = tables.LinkColumn(
-        "projects:test-detail",
+        "projects:test-results",
         args=[A("project__path"), A("id")],
         verbose_name="Test Name",
         attrs={"a": {"class": "text-body text-decoration-none fw-bold"}},
@@ -94,7 +94,7 @@ class TestTable(tables.Table):
         return naturaltime(value)
 
 
-class ResultTable(tables.Table):
+class TestResultTable(tables.Table):
     status = tables.Column(verbose_name="Status")
     branch = tables.Column(
         attrs={
@@ -192,3 +192,28 @@ class ResultTable(tables.Table):
         if not record.final:
             html = f'<span class="opacity-25">{html}</span>'
         return mark_safe(html)
+
+
+class ResultTable(TestResultTable):
+    test = tables.LinkColumn(
+        "projects:test-results",
+        args=[A("test__project__path"), A("test__id")],
+        verbose_name="Test Name",
+        attrs={"a": {"class": "text-body text-decoration-none fw-bold"}},
+    )
+
+    class Meta:
+        model = Result
+        template_name = "django_tables2/bootstrap5.html"
+        fields = (
+            "test",
+            "status",
+            "branch",
+            "commit",
+            "target",
+            "platform",
+            "duration",
+            "created_at",
+        )
+        per_page = 100
+        order_by = "-created_at"

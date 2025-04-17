@@ -8,8 +8,17 @@ urlpatterns = [
     path("", views.index, name="index"),
     path(
         "<path:path>/tests/<int:test_id>",
-        views.ResultListView.as_view(),
-        name="test-detail",
+        views.TestResultsListView.as_view(),
+        name="test-results",
     ),
-    path("<path:path>", views.TestListView.as_view(), name="detail"),
+    path(
+        "<path:path>/results",
+        views.ResultsListView.as_view(),
+        name="results",
+    ),
+    path(
+        "<path:path>",
+        views.TestsListView.as_view(),
+        name="tests",
+    ),
 ]
