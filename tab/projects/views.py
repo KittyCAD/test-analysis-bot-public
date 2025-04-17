@@ -66,12 +66,12 @@ class ResultsListView(SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
 
-        branch = self.request.GET.get("branch", "all")
+        branch = self.request.GET.get("branch", project.default_branch)
         show = self.request.GET.get("show", "all")
         search = self.request.GET.get("search")
 
         queryset = (
-            Result.objects.filter(test__project=project)
+            Result.objects.filter(test__project=project, branch=branch)
             .annotate(
                 row_number=Window(
                     expression=RowNumber(),
@@ -83,8 +83,6 @@ class ResultsListView(SingleTableMixin, ListView):
             .order_by("-created_at")
             .select_related("test", "test__project")
         )
-        if branch != "all":
-            queryset = queryset.filter(branch=branch)
         if show == "bad":
             queryset = queryset.exclude(status__in=[Status.PASSED, Status.SKIPPED])
         elif show == "good":
@@ -100,7 +98,7 @@ class ResultsListView(SingleTableMixin, ListView):
         context["project"] = project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
-        context["branch"] = self.request.GET.get("branch", "all")
+        context["branch"] = self.request.GET.get("branch", project.default_branch)
         context["show"] = self.request.GET.get("show", "all")
         if self.request.user.is_staff:
             context["admin_url"] = reverse(

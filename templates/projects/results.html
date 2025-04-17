@@ -15,12 +15,7 @@
                class="btn btn-outline-primary ms-2"><i class="fa-solid fa-arrow-left"></i></a>
         </h1>
         <h2 class="mb-4">
-            {{ table.data|length }} Latest Results from
-            {% if branch != "all" %}
-                Branch: <code>{{ branch }}</code>
-            {% else %}
-                All Branches
-            {% endif %}
+            Latest Branch Results › <code class="fs-2">{{ branch }}</code>
         </h2>
         <form method="get" class="mb-4">
             <input type="hidden" name="branch" value="{{ branch }}">

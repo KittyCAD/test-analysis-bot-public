@@ -1,5 +1,6 @@
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 import django_tables2 as tables
@@ -195,12 +196,20 @@ class TestResultTable(tables.Table):
 
 
 class ResultTable(TestResultTable):
-    test = tables.LinkColumn(
-        "projects:test-results",
-        args=[A("test__project__path"), A("test__id")],
+    test = tables.Column(
         verbose_name="Test Name",
-        attrs={"a": {"class": "text-body text-decoration-none fw-bold"}},
+        accessor="test",
+        order_by="test__name",
     )
+    branch = None
+
+    def render_test(self, record: Result):
+        url = reverse(
+            "projects:test-results", args=[record.test.project.path, record.test.id]
+        )
+        return mark_safe(
+            f'<a href="{url}?branch={record.branch}" class="text-body text-decoration-none fw-bold">{record.test.name}</a>'
+        )
 
     class Meta:
         model = Result
@@ -208,7 +217,6 @@ class ResultTable(TestResultTable):
         fields = (
             "test",
             "status",
-            "branch",
             "commit",
             "target",
             "platform",
