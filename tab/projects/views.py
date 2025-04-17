@@ -61,6 +61,7 @@ class ResultListView(SingleTableMixin, ListView):
         test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
 
         branch = self.request.GET.get("branch")
+        status = self.request.GET.get("status")
 
         if branch == "all":
             queryset = test.results.all()
@@ -68,6 +69,8 @@ class ResultListView(SingleTableMixin, ListView):
             queryset = test.results.filter(branch=branch)
         else:
             queryset = test.results.filter(branch__in=test.significant_branches)
+        if status:
+            queryset = queryset.filter(status=status)
 
         return queryset
 
