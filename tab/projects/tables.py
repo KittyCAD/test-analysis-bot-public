@@ -5,6 +5,7 @@ from django.utils.safestring import mark_safe
 import django_tables2 as tables
 from django_tables2 import A
 
+from .constants import SAMPLE_COUNT
 from .models import Result, Status, Test
 
 
@@ -139,7 +140,7 @@ class ResultTable(tables.Table):
             "duration",
             "created_at",
         )
-        per_page = 100
+        per_page = SAMPLE_COUNT
         order_by = "-created_at"
 
     def render_status(self, record: Result):
