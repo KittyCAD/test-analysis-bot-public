@@ -151,24 +151,37 @@ class ResultTable(tables.Table):
             html = f'<div class="d-flex align-items-center gap-1">{html} <span class="ms-1">{details}</span></div>'
         return mark_safe(html)
 
-    def render_branch(self, record):
+    def render_branch(self, record: Result):
         if not record.branch:
             return ""
         return mark_safe(
             f'<a href="{record.branch_url}" target="_blank">{record.branch}</a>'
         )
 
-    def render_commit(self, record):
+    def render_commit(self, record: Result):
         if not record.commit:
             return ""
         return mark_safe(
             f'<a href="{record.commit_url}" target="_blank">{record.commit_humanized}</a>'
         )
 
-    def render_duration(self, record: Result):
-        return record.duration_humanized
+    def render_target(self, value, record: Result):
+        if not record.final:
+            return mark_safe(f'<span class="opacity-25">{value}</span>')
+        return value
 
-    def render_created_at(self, value, record):
+    def render_platform(self, value, record: Result):
+        if not record.final:
+            return mark_safe(f'<span class="opacity-25">{value}</span>')
+        return value
+
+    def render_duration(self, record: Result):
+        html = record.duration_humanized
+        if not record.final:
+            html = f'<span class="opacity-25">{html}</span>'
+        return mark_safe(html)
+
+    def render_created_at(self, value, record: Result):
         icon = "" if record.final else '<i class="fa-solid fa-repeat me-2"></i>'
         html = f"{icon}{naturaltime(value)}"
         if record.markers:
@@ -177,5 +190,5 @@ class ResultTable(tables.Table):
             )
             html += f" {markers}"
         if not record.final:
-            html = f'<span class="text-muted">{html}</span>'
+            html = f'<span class="opacity-25">{html}</span>'
         return mark_safe(html)
