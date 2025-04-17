@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.conf import settings
 from django.db import models
 
@@ -36,6 +38,15 @@ class Project(models.Model):
     repository = models.URLField(unique=True)
     default_branches = models.JSONField(default=get_default_branches)
     error_indicators = models.JSONField(default=list)
+
+    test_inactive_threshold = models.DurationField(
+        default=timedelta(days=7),
+        help_text="Tests older than this will be hidden by default",
+    )
+    test_stale_threshold = models.DurationField(
+        default=timedelta(days=30),
+        help_text="Tests older than this will be pruned automatically",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -1,8 +1,11 @@
-from django.shortcuts import get_object_or_404, redirect, render
+from datetime import timedelta
+
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
+from django.utils import timezone
 from django.views.generic import ListView
 
-from django_tables2 import RequestConfig, SingleTableMixin
+from django_tables2 import SingleTableMixin
 
 from .models import Project, Test
 from .tables import ResultTable, TestTable
@@ -25,7 +28,9 @@ class TestListView(SingleTableMixin, ListView):
         search = self.request.GET.get("search", "")
         enabled = self.request.GET.get("enabled")
 
-        queryset = project.tests.all().select_related("last_result")
+        queryset = project.tests.filter(
+            updated_at__gte=timezone.now() - project.test_inactive_threshold
+        ).select_related("last_result")
         if search:
             queryset = queryset.filter(name__icontains=search)
         if enabled is None or enabled == "true":
