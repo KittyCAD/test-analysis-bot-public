@@ -41,7 +41,7 @@ def describe_test():
 
             test.failure_rate = -1
             expect(test.update_failure_rate()) == True
-            expect(test.failure_rate) == 0.333
+            expect(test.failure_rate) == 0.333333
 
             test.block_rate = -1
             expect(test.update_block_rate()) == True

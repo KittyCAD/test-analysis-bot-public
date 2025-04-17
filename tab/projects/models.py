@@ -155,7 +155,7 @@ class Test(models.Model):
             result.status in {Status.FAILED, Status.XPASSED, Status.DISABLED}
             for result in results
         )
-        new = round(failed / len(results), 3)
+        new = round(failed / len(results), 6)
 
         if old == new:
             return False
@@ -177,7 +177,7 @@ class Test(models.Model):
         failed = sum(
             result.status in {Status.FAILED, Status.XPASSED} for result in results
         )
-        new = round(failed / len(results), 3)
+        new = round(failed / len(results), 6)
 
         if old == new:
             return False
@@ -206,7 +206,7 @@ class Test(models.Model):
         if not durations:
             return False
 
-        new = round(sum(durations) / len(durations), 1)
+        new = round(sum(durations) / len(durations), 3)
         if old == new:
             return False
 
