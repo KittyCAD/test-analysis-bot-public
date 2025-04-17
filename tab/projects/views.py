@@ -22,11 +22,12 @@ class TestListView(SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
 
-        queryset = project.tests.all().select_related("last_result")
         search = self.request.GET.get("search", "")
+        enabled = self.request.GET.get("enabled")
+
+        queryset = project.tests.all().select_related("last_result")
         if search:
             queryset = queryset.filter(name__icontains=search)
-        enabled = self.request.GET.get("enabled")
         if enabled is None or enabled == "true":
             queryset = queryset.filter(enabled=True)
 
@@ -48,23 +49,39 @@ class TestListView(SingleTableMixin, ListView):
         return context
 
 
-def test_detail(request, path: str, test_id: int):
-    project = get_object_or_404(Project, repository__iendswith=path.strip("/"))
-    test = get_object_or_404(Test, project=project, id=test_id)
+class ResultListView(SingleTableMixin, ListView):
+    model = Test
+    table_class = ResultTable
+    template_name = "projects/results.html"
 
-    branch = request.GET.get("branch")
-    if branch == "all":
-        results = test.results.all()
-    elif branch:
-        results = test.results.filter(branch=branch)
-    else:
-        results = test.results.filter(branch__in=test.significant_branches)
+    def get_queryset(self):
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
 
-    table = ResultTable(results)
-    RequestConfig(request).configure(table)
+        branch = self.request.GET.get("branch")
 
-    context = {"project": project, "test": test, "table": table}
-    if request.user.is_staff:
-        context["admin_url"] = reverse("admin:projects_test_change", args=[test.pk])
+        if branch == "all":
+            queryset = test.results.all()
+        elif branch:
+            queryset = test.results.filter(branch=branch)
+        else:
+            queryset = test.results.filter(branch__in=test.significant_branches)
 
-    return render(request, "projects/results.html", context)
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
+
+        context["project"] = project
+        context["test"] = test
+        if self.request.user.is_staff:
+            context["admin_url"] = reverse("admin:projects_test_change", args=[test.pk])
+
+        return context
