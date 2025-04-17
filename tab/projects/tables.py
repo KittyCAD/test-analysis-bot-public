@@ -168,12 +168,14 @@ class ResultTable(tables.Table):
     def render_duration(self, record: Result):
         return record.duration_humanized
 
-    def render_created_at(self, value, record: Result):
-        html = "" if record.final else '<i class="fa-solid fa-repeat me-2"></i>'
-        html += naturaltime(value)
+    def render_created_at(self, value, record):
+        icon = "" if record.final else '<i class="fa-solid fa-repeat me-2"></i>'
+        html = f"{icon}{naturaltime(value)}"
         if record.markers:
             markers = render_to_string(
                 "projects/_markers.html", {"markers": record.markers}
             )
             html += f" {markers}"
+        if not record.final:
+            html = f'<span class="text-muted">{html}</span>'
         return mark_safe(html)
