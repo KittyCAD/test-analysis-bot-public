@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.contrib import admin
 from django.utils import timezone
+from django.utils.timesince import timesince
 
 from .models import Project, Result, Test
 
@@ -13,6 +14,8 @@ class ProjectAdmin(admin.ModelAdmin):
         "name",
         "repository",
         "default_branch",
+        "test_inactive_threshold_humanized",
+        "test_stale_threshold_humanized",
         "created_at",
         "updated_at",
     )
@@ -20,6 +23,18 @@ class ProjectAdmin(admin.ModelAdmin):
     list_filter = ("created_at", "updated_at")
 
     readonly_fields = ("created_at", "updated_at")
+
+    @admin.display(description="Tests Inactive After")
+    def test_inactive_threshold_humanized(self, project: Project) -> str:
+        if not project.test_inactive_threshold:
+            return "Never"
+        return timesince(timezone.now() - project.test_inactive_threshold)
+
+    @admin.display(description="Tests Stale After")
+    def test_stale_threshold_humanized(self, project: Project) -> str:
+        if not project.test_stale_threshold:
+            return "Never"
+        return timesince(timezone.now() - project.test_stale_threshold)
 
 
 @admin.register(Test)
