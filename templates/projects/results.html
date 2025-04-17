@@ -14,6 +14,25 @@
             <a href="{% url 'projects:tests' project.path %}"
                class="btn btn-outline-primary ms-2"><i class="fa-solid fa-arrow-left"></i></a>
         </h1>
+        <h2 class="mb-4">
+            {{ table.data|length }} Latest Results from
+            {% if branch %}
+                Branch: <code>{{ branch }}</code>
+            {% else %}
+                All Branches
+            {% endif %}
+        </h2>
+        <form method="get" class="mb-4">
+            <div class="form-check">
+                <input type="hidden" name="show" value="{{ show }}">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="show_checkbox"
+                       {% if show == "bad" %}checked{% endif %}
+                       onchange="document.querySelector('input[name=show]').value = this.checked ? 'bad' : 'all'; this.form.submit()">
+                <label class="form-check-label" for="show_checkbox">Hide tests that passed or were skipped</label>
+            </div>
+        </form>
         {% render_table table %}
     </div>
 {% endblock content %}

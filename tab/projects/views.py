@@ -1,5 +1,4 @@
-from datetime import timedelta
-
+from django.db.models import F, OuterRef, Subquery
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
@@ -7,7 +6,7 @@ from django.views.generic import ListView
 
 from django_tables2 import SingleTableMixin
 
-from .models import Project, Result, Test
+from .models import Project, Result, Status, Test
 from .tables import ResultTable, TestResultTable, TestTable
 
 
@@ -66,18 +65,30 @@ class ResultsListView(SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
 
-        search = self.request.GET.get("search")
         branch = self.request.GET.get("branch")
+        show = self.request.GET.get("show", "all")
+        search = self.request.GET.get("search")
 
+        latest_results = (
+            Result.objects.filter(test=OuterRef("test"))
+            .order_by("-created_at")
+            .values("id")
+        )[:1]
         queryset = (
             Result.objects.filter(test__project=project)
+            .annotate(latest_result=Subquery(latest_results))
+            .filter(id=F("latest_result"))
             .order_by("-created_at")
             .select_related("test", "test__project")
         )
-        if search:
-            queryset = queryset.filter(test__name__icontains=search)
         if branch:
             queryset = queryset.filter(branch=branch)
+        if show == "bad":
+            queryset = queryset.exclude(status__in=[Status.PASSED, Status.SKIPPED])
+        elif show == "good":
+            queryset = queryset.filter(status__in=[Status.PASSED, Status.SKIPPED])
+        if search:
+            queryset = queryset.filter(test__name__icontains=search)
 
         return queryset
 
@@ -87,6 +98,8 @@ class ResultsListView(SingleTableMixin, ListView):
         context["project"] = project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
+        context["branch"] = self.request.GET.get("branch")
+        context["show"] = self.request.GET.get("show", "all")
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
                 # TODO: Link to results for this particular project instead
@@ -109,6 +122,7 @@ class TestResultsListView(SingleTableMixin, ListView):
         test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
 
         branch = self.request.GET.get("branch")
+        show = self.request.GET.get("show", "all")
         status = self.request.GET.get("status")
 
         if branch == "all":
@@ -117,6 +131,10 @@ class TestResultsListView(SingleTableMixin, ListView):
             queryset = test.results.filter(branch=branch)
         else:
             queryset = test.results.filter(branch__in=test.significant_branches)
+        if show == "bad":
+            queryset = queryset.exclude(status__in=[Status.PASSED, Status.SKIPPED])
+        elif show == "good":
+            queryset = queryset.filter(status__in=[Status.PASSED, Status.SKIPPED])
         if status:
             queryset = queryset.filter(status=status)
 
@@ -132,6 +150,8 @@ class TestResultsListView(SingleTableMixin, ListView):
 
         context["project"] = project
         context["test"] = test
+        context["branch"] = self.request.GET.get("branch")
+        context["show"] = self.request.GET.get("show", "all")
         if self.request.user.is_staff:
             context["admin_url"] = reverse("admin:projects_test_change", args=[test.pk])
 
