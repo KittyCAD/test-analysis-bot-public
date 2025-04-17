@@ -17,14 +17,19 @@ def describe_status():
                 )
             ) == "xpassed"
 
-        def it_detects_expected_broken(expect):
+        def it_detects_disabled(expect):
             expect(
                 Status.normalize(
                     "error", markers=["fixme"], message="", error_indicators=[]
                 )
             ) == "disabled"
+            expect(
+                Status.normalize(
+                    "skipped", markers=["fixme"], message="", error_indicators=[]
+                )
+            ) == "disabled"
 
-        def it_detects_errors(expect):
+        def it_detects_error(expect):
             expect(
                 Status.normalize(
                     "failed",
