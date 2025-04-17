@@ -24,6 +24,12 @@ class Command(BaseCommand):
             key="localhost",
         )
         if created:
-            self.stdout.write(self.style.SUCCESS("Default organization created"))
+            self.stdout.write(
+                self.style.SUCCESS("Default organization created: %s" % organization)
+            )
         else:
-            self.stdout.write(self.style.WARNING("Default organization already exists"))
+            self.stdout.write(
+                self.style.WARNING(
+                    "Default organization already exists: %s" % organization
+                )
+            )

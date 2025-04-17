@@ -28,13 +28,15 @@ class TestListView(SingleTableMixin, ListView):
         search = self.request.GET.get("search", "")
         enabled = self.request.GET.get("enabled")
 
-        queryset = project.tests.filter(
-            updated_at__gte=timezone.now() - project.test_inactive_threshold
-        ).select_related("last_result")
+        queryset = project.tests.select_related("last_result")
         if search:
             queryset = queryset.filter(name__icontains=search)
         if enabled is None or enabled == "true":
             queryset = queryset.filter(enabled=True)
+        if project.test_inactive_threshold:
+            queryset = queryset.filter(
+                updated_at__gte=timezone.now() - project.test_inactive_threshold
+            )
 
         return queryset
 
