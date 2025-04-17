@@ -16,13 +16,14 @@
         </h1>
         <h2 class="mb-4">
             {{ table.data|length }} Latest Results from
-            {% if branch %}
+            {% if branch != "all" %}
                 Branch: <code>{{ branch }}</code>
             {% else %}
                 All Branches
             {% endif %}
         </h2>
         <form method="get" class="mb-4">
+            <input type="hidden" name="branch" value="{{ branch }}">
             <div class="form-check">
                 <input type="hidden" name="show" value="{{ show }}">
                 <input class="form-check-input"

@@ -1,4 +1,5 @@
-from django.db.models import F, OuterRef, Subquery
+from django.db.models import F, Window
+from django.db.models.functions import RowNumber
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
@@ -65,23 +66,24 @@ class ResultsListView(SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
 
-        branch = self.request.GET.get("branch")
+        branch = self.request.GET.get("branch", "all")
         show = self.request.GET.get("show", "all")
         search = self.request.GET.get("search")
 
-        latest_results = (
-            Result.objects.filter(test=OuterRef("test"))
-            .order_by("-created_at")
-            .values("id")
-        )[:1]
         queryset = (
             Result.objects.filter(test__project=project)
-            .annotate(latest_result=Subquery(latest_results))
-            .filter(id=F("latest_result"))
+            .annotate(
+                row_number=Window(
+                    expression=RowNumber(),
+                    partition_by=[F("test")],
+                    order_by=F("created_at").desc(),
+                )
+            )
+            .filter(row_number=1)
             .order_by("-created_at")
             .select_related("test", "test__project")
         )
-        if branch:
+        if branch != "all":
             queryset = queryset.filter(branch=branch)
         if show == "bad":
             queryset = queryset.exclude(status__in=[Status.PASSED, Status.SKIPPED])
@@ -98,7 +100,7 @@ class ResultsListView(SingleTableMixin, ListView):
         context["project"] = project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
-        context["branch"] = self.request.GET.get("branch")
+        context["branch"] = self.request.GET.get("branch", "all")
         context["show"] = self.request.GET.get("show", "all")
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
