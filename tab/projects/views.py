@@ -72,17 +72,12 @@ class ResultsListView(SingleTableMixin, ListView):
 
         queryset = (
             Result.objects.filter(test__project=project, branch=branch)
-            .annotate(
-                row_number=Window(
-                    expression=RowNumber(),
-                    partition_by=[F("test")],
-                    order_by=F("created_at").desc(),
-                )
-            )
-            .filter(row_number=1)
             .order_by("-created_at")
             .select_related("test", "test__project")
         )
+        latest_commit = queryset.values_list("commit", flat=True).first()
+        queryset = queryset.filter(commit=latest_commit)
+
         if show == "bad":
             queryset = queryset.exclude(status__in=[Status.PASSED, Status.SKIPPED])
         elif show == "good":
