@@ -41,6 +41,19 @@
                         <p class="card-text">{{ test.block_rate_humanized }}</p>
                     </div>
                     <div class="col">
+                        <h5 class="card-title">Enabled</h5>
+                        <small class="fst-italic text-muted d-block mb-2">{{ test.enabled_help }}</small>
+                        <p class="card-text">
+                            {% if test.enabled %}
+                                <i class="fa-solid fa-check text-success me-1"></i>
+                                Yes
+                            {% else %}
+                                <i class="fa-solid fa-xmark text-danger me-1"></i>
+                                No
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col">
                         <h5 class="card-title">Average Duration</h5>
                         <p class="card-text">{{ test.average_duration_humanized }}</p>
                     </div>

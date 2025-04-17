@@ -75,7 +75,10 @@ class Test(models.Model):
     original_commit = models.CharField(max_length=100, default="")
     metadata = models.JSONField(default=dict, blank=True)
 
-    enabled = models.BooleanField(default=False)
+    enabled = models.BooleanField(
+        default=False,
+        help_text="Test is allowed to block merges and releases",
+    )
     failure_rate = models.FloatField(
         default=-1,
         help_text="Total failure rate on significant branches including reruns",
@@ -99,14 +102,18 @@ class Test(models.Model):
         return self._meta.get_field("failure_rate").help_text  # type: ignore
 
     @property
+    def block_rate_help(self) -> str:
+        return self._meta.get_field("block_rate").help_text  # type: ignore
+
+    @property
+    def enabled_help(self) -> str:
+        return self._meta.get_field("enabled").help_text  # type: ignore
+
+    @property
     def failure_rate_humanized(self) -> str:
         if self.failure_rate < 0:
             return "—"
         return f"{self.failure_rate*100:.1f}%"
-
-    @property
-    def block_rate_help(self) -> str:
-        return self._meta.get_field("block_rate").help_text  # type: ignore
 
     @property
     def block_rate_humanized(self) -> str:
