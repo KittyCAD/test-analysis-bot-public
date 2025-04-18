@@ -69,13 +69,12 @@ class TestTable(tables.Table):
         order_by = "-failure_rate"
 
     def render_name(self, record: Test):
-        name = record.name
         if record.markers:
-            markers = render_to_string(
-                "projects/_markers.html", {"markers": record.markers}
+            return render_to_string(
+                "projects/_markers.html",
+                {"label": record.name, "markers": record.markers},
             )
-            return mark_safe(f"{name} {markers}")
-        return name
+        return record.name
 
     def render_enabled(self, value):
         icon = "check" if value else "xmark"
@@ -186,10 +185,10 @@ class TestResultTable(tables.Table):
         icon = "" if record.final else '<i class="fa-solid fa-repeat me-2"></i>'
         html = f'<span class="text-nowrap">{icon}{naturaltime(value)}</span>'
         if record.markers:
-            markers = render_to_string(
-                "projects/_markers.html", {"markers": record.markers}
+            html = render_to_string(
+                "projects/_markers.html",
+                {"label": mark_safe(html), "markers": record.markers},
             )
-            html += f" {markers}"
         if not record.final:
             html = f'<span class="opacity-25">{html}</span>'
         return mark_safe(html)

@@ -24,10 +24,7 @@
                    class="btn btn-sm btn-outline-secondary">View Latest Results</a>
             {% endif %}
         </div>
-        <h2 class="mb-4">
-            {{ test.name }}
-            {% include "projects/_markers.html" with markers=test.markers %}
-        </h2>
+        <h2 class="mb-4">{% include "projects/_markers.html" with label=test.name markers=test.markers %}</h2>
         <div class="card mb-4">
             <div class="card-body">
                 <div class="row g-3">

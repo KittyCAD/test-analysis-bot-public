@@ -1,3 +1,6 @@
-<span class="ms-1 text-nowrap">
-    {% for marker in markers %}<span class="badge rounded-pill bg-secondary me-1">{{ marker }}</span>{% endfor %}
+<span>
+    <span class="me-1">{{ label }}</span>
+    <span class="text-nowrap">
+        {% for marker in markers %}<span class="badge rounded-pill bg-secondary me-1">{{ marker }}</span>{% endfor %}
+    </span>
 </span>
