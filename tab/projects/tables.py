@@ -201,7 +201,6 @@ class ResultTable(TestResultTable):
         order_by="test__name",
     )
     branch = None
-    commit = None
 
     def render_test(self, record: Result):
         url = reverse(
@@ -217,6 +216,7 @@ class ResultTable(TestResultTable):
         fields = (
             "test",
             "status",
+            "commit",
             "duration",
             "target",
             "platform",

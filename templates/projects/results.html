@@ -17,13 +17,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">
                 Latest Branch Results:
-                <code class="ms-1">
-                    {% if branch %}
-                        {{ branch }}
-                    {% else %}
-                        &lt;local&gt;
-                    {% endif %}
-                </code>
+                <code class="ms-1">{{ branch }}</code>
             </h2>
             <div class="dropdown ms-2">
                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
@@ -33,13 +27,7 @@
                     {% for b in branches %}
                         <li>
                             <a class="dropdown-item {% if b == branch %}active{% endif %}"
-                               href="?branch={{ b }}{% if show != 'all' %}&show={{ show }}{% endif %}">
-                                {% if b %}
-                                    {{ b }}
-                                {% else %}
-                                    &lt;local&gt;
-                                {% endif %}
-                            </a>
+                               href="?branch={{ b }}{% if show != 'all' %}&show={{ show }}{% endif %}">{{ b }}</a>
                         </li>
                     {% endfor %}
                 </ul>
