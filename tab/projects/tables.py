@@ -218,10 +218,10 @@ class ResultTable(TestResultTable):
         fields = (
             "test",
             "status",
+            "duration",
             "target",
             "platform",
-            "duration",
             "created_at",
         )
         per_page = 100
-        order_by = "test", "-created_at"
+        order_by = "test", "target", "platform", "-created_at"
