@@ -163,7 +163,8 @@ class Test(models.Model):
 
         results = results[:SAMPLE_COUNT]
         failed = sum(
-            result.status in {Status.FAILED, Status.XPASSED, Status.DISABLED}
+            result.status
+            in {Status.FAILED, Status.XPASSED, Status.ERROR, Status.DISABLED}
             for result in results
         )
         new = round(failed / len(results), 6)
@@ -186,7 +187,8 @@ class Test(models.Model):
 
         results = results[:SAMPLE_COUNT]
         failed = sum(
-            result.status in {Status.FAILED, Status.XPASSED} for result in results
+            result.status in {Status.FAILED, Status.XPASSED, Status.ERROR}
+            for result in results
         )
         new = round(failed / len(results), 6)
 
