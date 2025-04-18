@@ -1,6 +1,5 @@
 /* Prevent column headers from wrapping */
 
-.table td,
 .table th {
     white-space: nowrap;
 }
