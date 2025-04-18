@@ -92,7 +92,7 @@ class TestTable(tables.Table):
         return record.average_duration_humanized
 
     def render_updated_at(self, value):
-        return naturaltime(value)
+        return mark_safe(f'<span class="text-nowrap">{naturaltime(value)}</span>')
 
 
 class TestResultTable(tables.Table):
@@ -184,7 +184,7 @@ class TestResultTable(tables.Table):
 
     def render_created_at(self, value, record: Result):
         icon = "" if record.final else '<i class="fa-solid fa-repeat me-2"></i>'
-        html = f"{icon}{naturaltime(value)}"
+        html = f'<span class="text-nowrap">{icon}{naturaltime(value)}</span>'
         if record.markers:
             markers = render_to_string(
                 "projects/_markers.html", {"markers": record.markers}
