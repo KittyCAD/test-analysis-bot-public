@@ -224,4 +224,4 @@ class ResultTable(TestResultTable):
             "created_at",
         )
         per_page = 100
-        order_by = "-created_at"
+        order_by = "test", "-created_at"
