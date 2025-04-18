@@ -52,8 +52,8 @@
                 <input class="form-check-input"
                        type="checkbox"
                        id="show_checkbox"
-                       {% if show == "bad" %}checked{% endif %}
-                       onchange="document.querySelector('input[name=show]').value = this.checked ? 'bad' : 'all'; this.form.submit()">
+                       {% if show == "fails" %}checked{% endif %}
+                       onchange="document.querySelector('input[name=show]').value = this.checked ? 'fails' : 'all'; this.form.submit()">
                 <label class="form-check-label" for="show_checkbox">Hide tests that passed or were skipped</label>
             </div>
             <div class="text-muted">({{ table.rows|length }} results)</div>

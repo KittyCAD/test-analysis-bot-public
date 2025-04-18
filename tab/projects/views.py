@@ -79,10 +79,10 @@ class ResultsListView(SingleTableMixin, ListView):
         latest_commit = queryset.values_list("commit", flat=True).first()
         queryset = queryset.filter(commit=latest_commit)
 
-        if show == "bad":
-            queryset = queryset.exclude(status__in=[Status.PASSED, Status.SKIPPED])
-        elif show == "good":
-            queryset = queryset.filter(status__in=[Status.PASSED, Status.SKIPPED])
+        if show == "fails":
+            queryset = queryset.exclude(
+                status__in=[Status.PASSED, Status.SKIPPED, Status.DISABLED]
+            )
         if search:
             queryset = queryset.filter(test__name__icontains=search)
 
@@ -133,7 +133,6 @@ class TestResultsListView(SingleTableMixin, ListView):
 
         branch = self.request.GET.get("branch")
         show = self.request.GET.get("show", "all")
-        status = self.request.GET.get("status")
 
         if branch == "all":
             queryset = test.results.all()
@@ -141,12 +140,10 @@ class TestResultsListView(SingleTableMixin, ListView):
             queryset = test.results.filter(branch=branch)
         else:
             queryset = test.results.filter(branch__in=test.significant_branches)
-        if show == "bad":
-            queryset = queryset.exclude(status__in=[Status.PASSED, Status.SKIPPED])
-        elif show == "good":
-            queryset = queryset.filter(status__in=[Status.PASSED, Status.SKIPPED])
-        if status:
-            queryset = queryset.filter(status=status)
+        if show == "fails":
+            queryset = queryset.exclude(
+                status__in=[Status.PASSED, Status.SKIPPED, Status.DISABLED]
+            )
 
         return queryset
 
