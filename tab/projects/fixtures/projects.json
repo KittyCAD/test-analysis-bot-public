@@ -9,6 +9,7 @@
         "all-e2e"
       ],
       "test_inactive_threshold": "0",
+      "branch_inactive_threshold": "0",
       "created_at": "2025-04-11T02:49:01.887Z",
       "updated_at": "2025-04-11T02:49:01.887Z"
     }

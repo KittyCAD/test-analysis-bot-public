@@ -101,22 +101,22 @@ class ResultsListView(SingleTableMixin, ListView):
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
-        results = (
+        results_by_branch = (
             Result.objects.filter(
                 test__project=project,
             )
             .distinct()
             .order_by("branch")
         )
-        if project.test_inactive_threshold:
-            results = results.filter(
-                created_at__gte=timezone.now() - project.test_inactive_threshold
+        if project.branch_inactive_threshold:
+            results_by_branch = results_by_branch.filter(
+                created_at__gte=timezone.now() - project.branch_inactive_threshold
             )
 
         context["project"] = project
         context["branch"] = self.request.GET.get("branch", project.default_branch)
         context["show"] = self.request.GET.get("show", "all")
-        context["branches"] = results.values_list("branch", flat=True)
+        context["branches"] = results_by_branch.values_list("branch", flat=True)
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
                 # TODO: Link to results for this particular project instead

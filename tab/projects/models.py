@@ -37,8 +37,12 @@ class ProjectManager(models.Manager):
 class Project(models.Model):
     repository = models.URLField(unique=True)
     default_branches = models.JSONField(default=get_default_branches)
-    error_indicators = models.JSONField(default=list)
+    error_indicators = models.JSONField(default=list, blank=True)
 
+    branch_inactive_threshold = models.DurationField(
+        default=timedelta(days=7),
+        help_text="Branches older than this will be hidden by default",
+    )
     test_inactive_threshold = models.DurationField(
         default=timedelta(days=7),
         help_text="Tests older than this will be hidden by default",

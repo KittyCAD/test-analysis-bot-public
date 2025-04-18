@@ -14,6 +14,7 @@ class ProjectAdmin(admin.ModelAdmin):
         "name",
         "repository",
         "default_branch",
+        "branch_inactive_threshold_humanized",
         "test_inactive_threshold_humanized",
         "test_stale_threshold_humanized",
         "created_at",
@@ -24,13 +25,19 @@ class ProjectAdmin(admin.ModelAdmin):
 
     readonly_fields = ("created_at", "updated_at")
 
-    @admin.display(description="Tests Inactive After")
+    @admin.display(description="Branches Inactive")
+    def branch_inactive_threshold_humanized(self, project: Project) -> str:
+        if not project.branch_inactive_threshold:
+            return "Never"
+        return timesince(timezone.now() - project.branch_inactive_threshold)
+
+    @admin.display(description="Tests Inactive")
     def test_inactive_threshold_humanized(self, project: Project) -> str:
         if not project.test_inactive_threshold:
             return "Never"
         return timesince(timezone.now() - project.test_inactive_threshold)
 
-    @admin.display(description="Tests Stale After")
+    @admin.display(description="Tests Stale")
     def test_stale_threshold_humanized(self, project: Project) -> str:
         if not project.test_stale_threshold:
             return "Never"
