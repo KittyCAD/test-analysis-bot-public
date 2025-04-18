@@ -9,11 +9,13 @@
 
 {% block content %}
     <div class="container mt-4">
-        <h1 class="mb-4">
-            {{ project.name }}
+        <div class="d-flex align-items-center mb-4">
+            <h1 class="mb-0">{{ project.name }}</h1>
             <a href="{% url 'projects:tests' project.path %}"
-               class="btn btn-sm btn-outline-primary ms-2"><i class="fa-solid fa-arrow-left"></i> View Project </a>
-        </h1>
+               class="btn btn-sm btn-outline-primary ms-3">
+                <i class="fa-solid fa-arrow-left"></i> View Project
+            </a>
+        </div>
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2 class="mb-0">
                 Latest Branch Results:

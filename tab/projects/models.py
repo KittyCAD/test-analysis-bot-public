@@ -277,10 +277,11 @@ class Result(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
+        status = Status(self.status).label
         duration = self.duration_humanized if self.duration else "???s"
-        branch = self.branch or "<local>"
-        commit = self.commit_humanized if self.commit else "<dirty>"
-        return f"{Status(self.status).label} after {duration} on {branch!r} at {commit}"
+        branch = self.branch or "???"
+        commit = self.commit_humanized if self.commit else "???"
+        return f"{status} after {duration} on {branch!r} at {commit}"
 
     @property
     def duration_humanized(self) -> str:
