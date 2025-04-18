@@ -1,5 +1,6 @@
-from django.db.models import F, Window
-from django.db.models.functions import RowNumber
+from datetime import timedelta
+
+from django.conf import settings
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
@@ -90,11 +91,25 @@ class ResultsListView(SingleTableMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context["project"] = project = get_object_or_404(
+        project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
+        results = (
+            Result.objects.filter(
+                test__project=project,
+            )
+            .distinct()
+            .order_by("branch")
+        )
+        if project.test_inactive_threshold:
+            results = results.filter(
+                created_at__gte=timezone.now() - project.test_inactive_threshold
+            )
+
+        context["project"] = project
         context["branch"] = self.request.GET.get("branch", project.default_branch)
         context["show"] = self.request.GET.get("show", "all")
+        context["branches"] = results.values_list("branch", flat=True)
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
                 # TODO: Link to results for this particular project instead

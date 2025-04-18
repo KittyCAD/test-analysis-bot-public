@@ -12,28 +12,55 @@
         <h1 class="mb-4">
             {{ project.name }}
             <a href="{% url 'projects:tests' project.path %}"
-               class="btn btn-outline-primary ms-2"><i class="fa-solid fa-arrow-left"></i></a>
+               class="btn btn-sm btn-outline-primary ms-2"><i class="fa-solid fa-arrow-left"></i> View Project </a>
         </h1>
-        <h2 class="mb-4">
-            Latest Branch Results › <code class="fs-2">{{ branch }}</code>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">
+                Latest Branch Results › <code class="fs-2">
+                {% if branch %}
+                    {{ branch }}
+                {% else %}
+                    &lt;local&gt;
+                {% endif %}
+            </code>
         </h2>
-        <form method="get" class="mb-4">
-            <input type="hidden" name="branch" value="{{ branch }}">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="form-check">
-                    <input type="hidden" name="show" value="{{ show }}">
-                    <input class="form-check-input"
-                           type="checkbox"
-                           id="show_checkbox"
-                           {% if show == "bad" %}checked{% endif %}
-                           onchange="document.querySelector('input[name=show]').value = this.checked ? 'bad' : 'all'; this.form.submit()">
-                    <label class="form-check-label" for="show_checkbox">Hide tests that passed or were skipped</label>
-                </div>
-                <div class="text-muted">({{ table.rows|length }} results)</div>
-            </div>
-        </form>
-        {% render_table table %}
+        <div class="dropdown ms-2">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                    type="button"
+                    data-bs-toggle="dropdown">Switch Branch</button>
+            <ul class="dropdown-menu">
+                {% for b in branches %}
+                    <li>
+                        <a class="dropdown-item {% if b == branch %}active{% endif %}"
+                           href="?branch={{ b }}{% if show != 'all' %}&show={{ show }}{% endif %}">
+                            {% if b %}
+                                {{ b }}
+                            {% else %}
+                                &lt;local&gt;
+                            {% endif %}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
+    <form method="get" class="mb-4">
+        <input type="hidden" name="branch" value="{{ branch }}">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="form-check">
+                <input type="hidden" name="show" value="{{ show }}">
+                <input class="form-check-input"
+                       type="checkbox"
+                       id="show_checkbox"
+                       {% if show == "bad" %}checked{% endif %}
+                       onchange="document.querySelector('input[name=show]').value = this.checked ? 'bad' : 'all'; this.form.submit()">
+                <label class="form-check-label" for="show_checkbox">Hide tests that passed or were skipped</label>
+            </div>
+            <div class="text-muted">({{ table.rows|length }} results)</div>
+        </div>
+    </form>
+</div>
+{% render_table table %}
 {% endblock content %}
 
 {% block extra_css %}
