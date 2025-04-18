@@ -26,7 +26,7 @@ class TestsListView(SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
 
-        search = self.request.GET.get("search")
+        search = self.request.GET.get("search", "").strip()
         enabled = self.request.GET.get("enabled", "true")
 
         queryset = project.tests.select_related("last_result")
@@ -49,7 +49,7 @@ class TestsListView(SingleTableMixin, ListView):
         context["project"] = project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
-        context["search"] = self.request.GET.get("search", "")
+        context["search"] = self.request.GET.get("search", "").strip()
         context["enabled"] = self.request.GET.get("enabled", "true")
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
@@ -140,6 +140,7 @@ class TestResultsListView(SingleTableMixin, ListView):
 
         branch = self.request.GET.get("branch")
         show = self.request.GET.get("show", "all")
+        platform = self.request.GET.get("platform")
 
         if branch == "all":
             queryset = test.results.all()
@@ -156,6 +157,8 @@ class TestResultsListView(SingleTableMixin, ListView):
                     Status.DISABLED,
                 ]
             )
+        if platform:
+            queryset = queryset.filter(platform=platform)
 
         return queryset
 
