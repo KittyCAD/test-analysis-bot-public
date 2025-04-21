@@ -81,6 +81,16 @@ class TestAdmin(admin.ModelAdmin):
         "updated_at",
     )
 
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        try:
+            return super().change_view(request, object_id, form_url, extra_context)
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger("django")
+            logger.error(f"Error in TestAdmin.change_view: {str(e)}", exc_info=True)
+            raise
+
     class ResultInline(admin.TabularInline):
         model = Result
         show_change_link = True
@@ -89,7 +99,16 @@ class TestAdmin(admin.ModelAdmin):
         classes = ("collapse",)
 
         verbose_name_plural = "Recent Significant Results"
-        fields = readonly_fields = (
+        fields = (
+            "status",
+            "branch",
+            "_commit",
+            "target",
+            "platform",
+            "duration",
+            "created_at",
+        )
+        readonly_fields = (
             "status",
             "branch",
             "_commit",
