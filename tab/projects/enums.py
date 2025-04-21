@@ -25,7 +25,7 @@ class Status(models.TextChoices):
         error_indicators: list[str],
     ) -> str:
         expected_failure = "fail" in markers
-        known_broken = "fixme" in markers
+        known_broken = "fixme" in markers or "disabled" in markers
         if value == cls.FAILED.value and expected_failure:
             return cls.XFAILED.value
         if (

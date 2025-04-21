@@ -49,7 +49,8 @@ class ResultRequest(ModelSchema):
 class ResultResponse(Schema):
     project: str
     test: str
-    result: str
+    status: str
+    block: bool
 
 
 class ErrorResponse(Schema):

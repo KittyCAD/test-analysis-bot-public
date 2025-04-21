@@ -28,6 +28,11 @@ def describe_status():
                     "skipped", markers=["fixme"], message="", error_indicators=[]
                 )
             ) == "disabled"
+            expect(
+                Status.normalize(
+                    "failed", markers=["disabled"], message="", error_indicators=[]
+                )
+            ) == "disabled"
 
         def it_detects_error(expect):
             expect(

@@ -86,5 +86,6 @@ def results(request, payload: ResultRequest):
     return status, ResultResponse(
         project=str(project),
         test=str(test),
-        result=result.status,
+        status=result.status,
+        block=result.block,
     )

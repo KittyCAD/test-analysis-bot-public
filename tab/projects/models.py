@@ -90,18 +90,30 @@ class Test(models.Model):
     original_commit = models.CharField(max_length=100, default="")
     metadata = models.JSONField(default=dict, blank=True)
 
+    disabled = models.BooleanField(
+        default=False,
+        help_text="Forces the test to be disabled",
+    )
+
     enabled = models.BooleanField(
         default=False,
+        editable=False,
         help_text="Test is allowed to block merges and releases",
     )
     failure_rate = models.FloatField(
         default=-1,
+        editable=False,
         help_text="Total failure rate on significant branches including reruns",
     )
     block_rate = models.FloatField(
-        default=-1, help_text="Effective failure rate with reruns and disabled excluded"
+        default=-1,
+        editable=False,
+        help_text="Effective failure rate with reruns and disabled excluded",
     )
-    average_duration = models.FloatField(default=-1)
+    average_duration = models.FloatField(
+        default=-1,
+        editable=False,
+    )
     last_result = models.ForeignKey(
         "Result", on_delete=models.SET_NULL, null=True, related_name="+"
     )
@@ -155,7 +167,10 @@ class Test(models.Model):
     def markers(self) -> list[str]:
         metadata = self.last_result.metadata if self.last_result else {}
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
-        return metadata.get("annotations", []) + metadata.get("tags", [])
+        values = metadata.get("annotations", []) + metadata.get("tags", [])
+        if self.disabled:
+            values.append("disabled")
+        return values
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
@@ -284,12 +299,6 @@ class Result(models.Model):
         return f"{status} after {duration} on {branch!r} at {commit}"
 
     @property
-    def duration_humanized(self) -> str:
-        if self.duration is None or self.duration < 0:
-            return "—"
-        return f"{self.duration:.1f}s"
-
-    @property
     def branch_url(self) -> str:
         if not self.branch:
             return ""
@@ -308,10 +317,28 @@ class Result(models.Model):
         return f"{self.test.project.repository}/commit/{self.commit}"
 
     @property
+    def block(self) -> bool:
+        return self.status in {
+            Status.FAILED,
+            Status.XPASSED,
+            Status.ERROR,
+            Status.TIMEDOUT,
+        }
+
+    @property
+    def duration_humanized(self) -> str:
+        if self.duration is None or self.duration < 0:
+            return "—"
+        return f"{self.duration:.1f}s"
+
+    @property
     def markers(self) -> list[str]:
         metadata = self.metadata
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
-        return metadata.get("annotations", []) + metadata.get("tags", [])
+        values = metadata.get("annotations", []) + metadata.get("tags", [])
+        if self.test.disabled:
+            values.append("disabled")
+        return values
 
     def save(self, *args, **kwargs):
         self.status = Status.normalize(

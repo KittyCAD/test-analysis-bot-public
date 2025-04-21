@@ -70,7 +70,11 @@ class TestAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = (
+        "enabled",
         "significant_branches",
+        "failure_rate",
+        "block_rate",
+        "average_duration",
         "last_result",
         "markers",
         "created_at",
