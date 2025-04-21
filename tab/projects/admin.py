@@ -137,7 +137,7 @@ class TestAdmin(admin.ModelAdmin):
                 )
             )
 
-    inlines = (ResultInline,)
+    # inlines = (ResultInline,)
 
 
 @admin.register(Result)
