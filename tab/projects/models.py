@@ -247,15 +247,13 @@ class Test(models.Model):
         return True
 
     def update(self) -> bool:
-        return any(
+        updated = any(
             [
                 self.update_failure_rate(),
                 self.update_block_rate(),
                 self.update_average_duration(),
             ]
         )
-
-    def save(self, *args, **kwargs):
         if self.pk:
             log.critical(f"TODO: {self.project.default_branch=}")
             self.last_result = (
@@ -269,7 +267,7 @@ class Test(models.Model):
             and self.last_result.status not in {Status.SKIPPED, Status.DISABLED}
         )
         log.critical(f"TODO: {self.enabled=}")
-        super().save(*args, **kwargs)
+        return updated
 
 
 class Result(models.Model):
