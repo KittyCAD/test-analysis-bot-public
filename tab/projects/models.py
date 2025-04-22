@@ -263,7 +263,8 @@ class Test(models.Model):
                 .first()
             )
         self.enabled = bool(
-            self.last_result
+            not self.disabled
+            and self.last_result
             and self.last_result.status not in {Status.SKIPPED, Status.DISABLED}
         )
         super().save(*args, **kwargs)
