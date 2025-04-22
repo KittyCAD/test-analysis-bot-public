@@ -256,7 +256,7 @@ class Test(models.Model):
         )
         if self.project.default_branch != "main":
             log.critical(
-                f"TODO: {self=} {self.project=} {self.project.default_branch=}"
+                f"TODO: {self=} {self.project=} {self.project.default_branches=} {self.project.default_branch=}"
             )
         self.last_result = (
             self.results.filter(branch=self.project.default_branch)
