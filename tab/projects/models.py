@@ -264,7 +264,6 @@ class Test(models.Model):
             )
         self.enabled = bool(
             self.last_result
-            and self.last_result.branch == self.project.default_branch
             and self.last_result.status not in {Status.SKIPPED, Status.DISABLED}
         )
         super().save(*args, **kwargs)
