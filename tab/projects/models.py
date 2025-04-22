@@ -254,19 +254,21 @@ class Test(models.Model):
                 self.update_average_duration(),
             ]
         )
-        if self.pk:
-            log.critical(f"TODO: {self.project.default_branch=}")
-            self.last_result = (
-                self.results.filter(branch=self.project.default_branch)
-                .order_by("-created_at")
-                .first()
+        if self.project.default_branch != "main":
+            log.critical(
+                f"TODO: {self=} {self.project=} {self.project.default_branch=}"
             )
-            log.critical(f"TODO: {self.last_result=}")
+        self.last_result = (
+            self.results.filter(branch=self.project.default_branch)
+            .order_by("-created_at")
+            .first()
+        )
+        # log.critical(f"TODO: {self.last_result=}")
         self.enabled = bool(
             self.last_result
             and self.last_result.status not in {Status.SKIPPED, Status.DISABLED}
         )
-        log.critical(f"TODO: {self.enabled=}")
+        # log.critical(f"TODO: {self.enabled=}")
         return updated
 
 
