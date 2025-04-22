@@ -41,11 +41,10 @@ class Command(BaseCommand):
         else:
             deleted = 0
             while True:
-                chunk = results[:CHUNK_SIZE]
-                if not chunk.exists():
+                chunk_ids = results.values_list("id", flat=True)[:CHUNK_SIZE]
+                if not chunk_ids:
                     break
-                chunk_count = chunk.count()
-                chunk.delete()
+                chunk_count = Result.objects.filter(id__in=chunk_ids).delete()[0]
                 deleted += chunk_count
                 self.stdout.write(
                     self.style.SUCCESS(f"Deleted {deleted}/{count} results: {project}")
