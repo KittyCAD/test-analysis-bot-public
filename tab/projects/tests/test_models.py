@@ -15,6 +15,17 @@ def describe_test():
     def project():
         return Project.objects.create(repository="https://github.com/foo/bar")
 
+    def describe_significant_branches():
+        def it_includes_default_and_original_branches(expect):
+            project = Project(
+                repository="https://github.com/foo/bar",
+                default_branches=["staging", "production"],
+            )
+            expect(project.default_branches) == ["staging", "production"]
+            test = Test(project=project, name="my-test", original_branch="my-branch")
+            expect(test.significant_branches) == ["my-branch", "staging", "production"]
+            expect(project.default_branch) == "staging"
+
     def describe_update_failure_rate():
         @pytest.mark.django_db
         def it_returns_false_if_no_results(expect, project: Project):

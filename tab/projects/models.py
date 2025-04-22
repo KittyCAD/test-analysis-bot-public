@@ -247,29 +247,26 @@ class Test(models.Model):
         return True
 
     def update(self) -> bool:
-        updated = any(
+        return any(
             [
                 self.update_failure_rate(),
                 self.update_block_rate(),
                 self.update_average_duration(),
             ]
         )
-        if self.project.default_branch != "main":
-            log.critical(
-                f"TODO: {self=} {self.project=} {self.project.default_branches=} {self.project.default_branch=}"
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            self.last_result = (
+                self.results.filter(branch=self.project.default_branch)
+                .order_by("-created_at")
+                .first()
             )
-        self.last_result = (
-            self.results.filter(branch=self.project.default_branch)
-            .order_by("-created_at")
-            .first()
-        )
-        # log.critical(f"TODO: {self.last_result=}")
         self.enabled = bool(
             self.last_result
             and self.last_result.status not in {Status.SKIPPED, Status.DISABLED}
         )
-        # log.critical(f"TODO: {self.enabled=}")
-        return updated
+        super().save(*args, **kwargs)
 
 
 class Result(models.Model):
