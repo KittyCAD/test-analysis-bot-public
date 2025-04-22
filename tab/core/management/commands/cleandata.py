@@ -3,6 +3,8 @@ from django.utils import timezone
 
 from tab.projects.models import Project, Result
 
+CHUNK_SIZE = 1000
+
 
 class Command(BaseCommand):
     help = "Delete inactive and stale test results"
@@ -37,5 +39,14 @@ class Command(BaseCommand):
                 self.style.WARNING(f"Would delete {count} results: {project}")
             )
         else:
-            results.delete()
-            self.stdout.write(self.style.SUCCESS(f"Deleted {count} results: {project}"))
+            deleted = 0
+            while True:
+                chunk = results[:CHUNK_SIZE]
+                if not chunk.exists():
+                    break
+                chunk_count = chunk.count()
+                chunk.delete()
+                deleted += chunk_count
+                self.stdout.write(
+                    self.style.SUCCESS(f"Deleted {deleted}/{count} results: {project}")
+                )
