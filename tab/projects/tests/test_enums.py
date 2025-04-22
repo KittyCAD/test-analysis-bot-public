@@ -1,3 +1,5 @@
+import pytest
+
 from ..enums import Platform, Status, Target
 
 
@@ -17,29 +19,16 @@ def describe_status():
                 )
             ) == "xpassed"
 
-        def it_detects_disabled(expect):
-            expect(
-                Status.normalize(
-                    "error", markers=["fixme"], message="", error_indicators=[]
-                )
-            ) == "disabled"
-            expect(
-                Status.normalize(
-                    "skipped", markers=["fixme"], message="", error_indicators=[]
-                )
-            ) == "disabled"
-            expect(
-                Status.normalize(
-                    "failed", markers=["disabled"], message="", error_indicators=[]
-                )
-            ) == "disabled"
-            expect(
-                Status.normalize(
-                    "passed", markers=["disabled"], message="", error_indicators=[]
-                )
-            ) == "passed"
+        @pytest.mark.parametrize("marker", ["fixme", "disabled"])
+        def it_detects_disabled_tests(expect, marker):
+            options: dict = dict(markers=[marker], message="", error_indicators=[])
+            expect(Status.normalize("failed", **options)) == "disabled"
+            expect(Status.normalize("error", **options)) == "disabled"
+            expect(Status.normalize("timedOut", **options)) == "disabled"
+            expect(Status.normalize("skipped", **options)) == "disabled"
+            expect(Status.normalize("passed", **options)) == "passed"
 
-        def it_detects_error(expect):
+        def it_detects_setup_errors(expect):
             expect(
                 Status.normalize(
                     "failed",

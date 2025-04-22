@@ -31,7 +31,13 @@ class Status(models.TextChoices):
         if value == cls.PASSED.value and expected_failure:
             return cls.XPASSED.value
         if (
-            value in (cls.FAILED.value, cls.ERROR.value, cls.SKIPPED.value)
+            value
+            in (
+                cls.FAILED.value,
+                cls.ERROR.value,
+                cls.TIMEDOUT.value,
+                cls.SKIPPED.value,
+            )
             and known_broken
         ):
             return cls.DISABLED.value
