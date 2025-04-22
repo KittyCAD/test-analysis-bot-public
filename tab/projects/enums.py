@@ -28,13 +28,13 @@ class Status(models.TextChoices):
         known_broken = "fixme" in markers or "disabled" in markers
         if value == cls.FAILED.value and expected_failure:
             return cls.XFAILED.value
+        if value == cls.PASSED.value and expected_failure:
+            return cls.XPASSED.value
         if (
             value in (cls.FAILED.value, cls.ERROR.value, cls.SKIPPED.value)
             and known_broken
         ):
             return cls.DISABLED.value
-        if value == cls.PASSED.value and (expected_failure or known_broken):
-            return cls.XPASSED.value
         if message:
             for error_indicator in error_indicators:
                 if error_indicator in message:

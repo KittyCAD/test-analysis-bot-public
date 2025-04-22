@@ -33,6 +33,11 @@ def describe_status():
                     "failed", markers=["disabled"], message="", error_indicators=[]
                 )
             ) == "disabled"
+            expect(
+                Status.normalize(
+                    "passed", markers=["disabled"], message="", error_indicators=[]
+                )
+            ) == "passed"
 
         def it_detects_error(expect):
             expect(
