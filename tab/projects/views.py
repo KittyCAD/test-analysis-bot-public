@@ -115,8 +115,9 @@ class ResultsListView(SingleTableMixin, ListView):
 
         context["project"] = project
         context["branch"] = self.request.GET.get("branch", project.default_branch)
-        context["show"] = self.request.GET.get("show", "all")
         context["branches"] = results_by_branch.values_list("branch", flat=True)
+        context["search"] = self.request.GET.get("search", "").strip()
+        context["show"] = self.request.GET.get("show", "all")
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
                 # TODO: Link to results for this particular project instead

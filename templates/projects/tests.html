@@ -24,7 +24,7 @@
                        aria-label="Filter tests by name"
                        required>
                 {% if search %}
-                    <a href="{% url 'projects:tests' project.path %}"
+                    <a href="{% url 'projects:tests' project.path %}{% if enabled != 'true' %}?enabled={{ enabled }}{% endif %}"
                        class="btn btn-outline-danger"
                        type="button"><i class="fa-solid fa-xmark"></i></a>
                 {% endif %}
