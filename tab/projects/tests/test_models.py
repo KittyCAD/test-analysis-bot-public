@@ -1,6 +1,6 @@
 import pytest
 
-from ..enums import Status
+from ..enums import Platform, Status
 from ..models import Project, Result, Test
 
 
@@ -85,6 +85,23 @@ def describe_test():
 
 
 def describe_result():
+    def describe_markers():
+
+        def it_adds_disabled_marker_if_test_is_disabled(expect):
+            test = Test(name="test", disabled=True)
+            result = Result(test=test, status=Status.FAILED)
+            expect(result.markers) == ["disabled"]
+
+        def it_adds_disabled_marker_if_test_is_disabled_on_platform(expect):
+            test = Test(name="test", disabled_platforms=[Platform.WINDOWS])
+            result = Result(test=test, status=Status.FAILED, platform=Platform.WINDOWS)
+            expect(result.markers) == ["disabled"]
+
+        def it_does_not_add_disabled_marker_if_another_platform(expect):
+            test = Test(name="test", disabled_platforms=[Platform.WINDOWS])
+            result = Result(test=test, status=Status.FAILED, platform=Platform.MACOS)
+            expect(result.markers) == []
+
     def describe_save():
         @pytest.mark.django_db
         def it_cleans_message(expect):

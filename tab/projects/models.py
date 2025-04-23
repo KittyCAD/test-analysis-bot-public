@@ -94,6 +94,11 @@ class Test(models.Model):
         default=False,
         help_text="Forces the test to be disabled",
     )
+    disabled_platforms = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Platforms to limit the disabled override",
+    )
 
     enabled = models.BooleanField(
         default=False,
@@ -262,6 +267,8 @@ class Test(models.Model):
                 .order_by("-created_at")
                 .first()
             )
+        if self.disabled_platforms:
+            self.disabled = True
         self.enabled = bool(
             not self.disabled
             and self.last_result
@@ -336,7 +343,10 @@ class Result(models.Model):
         metadata = self.metadata
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
         values = metadata.get("annotations", []) + metadata.get("tags", [])
-        if self.test.disabled:
+        if self.test.disabled_platforms:
+            if self.platform in self.test.disabled_platforms:
+                values.append("disabled")
+        elif self.test.disabled:
             values.append("disabled")
         return values
 

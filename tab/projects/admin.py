@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.timesince import timesince
 
-from .models import Project, Result, Test
+from .models import Platform, Project, Result, Test
 
 
 @admin.register(Project)
@@ -66,6 +66,61 @@ class TestAdmin(admin.ModelAdmin):
         "project__repository",
         "original_branch",
     )
+
+    @admin.action(description="Disable selected tests")
+    def disable(self, request, queryset):
+        count = 0
+        for test in queryset.filter(disabled=False):
+            test.disabled = True
+            test.disabled_platforms = []
+            test.save()
+            count += 1
+        s = "" if count == 1 else "s"
+        self.message_user(
+            request, f"Successfully marked {count} test{s} as non-blocking."
+        )
+
+    @admin.action(description=f"Disable selected tests on {Platform.MACOS.label}")
+    def disable_macos(self, request, queryset):
+        count = 0
+        for test in queryset.exclude(disabled_platforms__contains=[Platform.MACOS]):
+            test.disabled_platforms.append(Platform.MACOS)
+            test.save()
+            count += 1
+        s = "" if count == 1 else "s"
+        self.message_user(
+            request,
+            f"Successfully marked {count} test{s} as non-blocking on {Platform.MACOS.label}.",
+        )
+
+    @admin.action(description=f"Disable selected tests on {Platform.WINDOWS.label}")
+    def disable_windows(self, request, queryset):
+        count = 0
+        for test in queryset.exclude(disabled_platforms__contains=[Platform.WINDOWS]):
+            test.disabled_platforms.append(Platform.WINDOWS)
+            test.save()
+            count += 1
+        s = "" if count == 1 else "s"
+        self.message_user(
+            request,
+            f"Successfully marked {count} test{s} as non-blocking on {Platform.WINDOWS.label}.",
+        )
+
+    @admin.action(description="Enable selected tests")
+    def enable(self, request, queryset):
+        count = 0
+        for test in queryset.filter(disabled=True):
+            test.disabled = False
+            test.disabled_platforms = []
+            test.save()
+            count += 1
+        count = queryset.count()
+        s = "" if count == 1 else "s"
+        self.message_user(
+            request, f"Successfully enabled {count} test{s} to block merges."
+        )
+
+    actions = [disable, disable_macos, disable_windows, enable]
 
     readonly_fields = (
         "enabled",
