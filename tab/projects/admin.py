@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.timesince import timesince
 
@@ -70,7 +71,7 @@ class TestAdmin(admin.ModelAdmin):
     @admin.action(description="Disable selected tests")
     def disable(self, request, queryset):
         count = 0
-        for test in queryset.filter(disabled=False):
+        for test in queryset.filter(Q(disabled=False) | ~Q(disabled_platforms=[])):
             test.disabled = True
             test.disabled_platforms = []
             test.save()
