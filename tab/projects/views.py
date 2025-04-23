@@ -139,16 +139,14 @@ class TestResultsListView(SingleTableMixin, ListView):
         )
         test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
 
-        branch = self.request.GET.get("branch")
-        show = self.request.GET.get("show", "all")
-        platform = self.request.GET.get("platform")
-
-        if branch == "all":
-            queryset = test.results.all()
-        elif branch:
-            queryset = test.results.filter(branch=branch)
+        if branch := self.request.GET.get("branch"):
+            branches = [branch] + test.significant_branches
         else:
-            queryset = test.results.filter(branch__in=test.significant_branches)
+            branches = test.significant_branches
+        show = self.request.GET.get("show", "all")  # TODO: Expose filter in UI
+        platform = self.request.GET.get("platform")  # TODO: Expose filter in UI
+
+        queryset = test.results.filter(branch__in=branches)
         if show == "fails":
             queryset = queryset.exclude(
                 status__in={
