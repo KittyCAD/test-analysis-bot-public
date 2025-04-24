@@ -351,12 +351,6 @@ class Result(models.Model):
         return values
 
     def save(self, *args, **kwargs):
-        self.status = Status.normalize(
-            self.status,
-            markers=self.markers,
-            message=self.message,
-            error_indicators=self.test.project.error_indicators,
-        )
         if self.duration:
             self.duration = round(self.duration, 3)
         if self.message:
@@ -365,6 +359,12 @@ class Result(models.Model):
             self.target = Target.normalize(self.target)
         if self.platform:
             self.platform = Platform.normalize(self.platform)
+        self.status = Status.normalize(
+            self.status,
+            markers=self.markers,
+            message=self.message,
+            error_indicators=self.test.project.error_indicators,
+        )
 
         super().save(*args, **kwargs)
 
