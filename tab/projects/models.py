@@ -214,7 +214,7 @@ class Test(models.Model):
         if old == new:
             return False
 
-        log.debug(f"Test has new failure rate: {old*100}% => {new*100}%")
+        log.debug(f"Test has new failure rate: {old:.3%} => {new:.3%}")
         self.failure_rate = new
         return True
 
@@ -237,7 +237,7 @@ class Test(models.Model):
         if old == new:
             return False
 
-        log.debug(f"Test has new block rate: {old*100}% => {new*100}%")
+        log.debug(f"Test has new block rate: {old:.3%} => {new:.3%}")
         self.block_rate = new
         return True
 
