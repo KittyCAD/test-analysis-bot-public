@@ -74,6 +74,7 @@ class TestAdmin(admin.ModelAdmin):
         for test in queryset.filter(Q(disabled=False) | ~Q(disabled_platforms=[])):
             test.disabled = True
             test.disabled_platforms = []
+            test.disabled_user = request.user
             test.save()
             count += 1
         s = "" if count == 1 else "s"
@@ -86,6 +87,7 @@ class TestAdmin(admin.ModelAdmin):
         count = 0
         for test in queryset.exclude(disabled_platforms__contains=[Platform.MACOS]):
             test.disabled_platforms.append(Platform.MACOS)
+            test.disabled_user = request.user
             test.save()
             count += 1
         s = "" if count == 1 else "s"
@@ -99,6 +101,7 @@ class TestAdmin(admin.ModelAdmin):
         count = 0
         for test in queryset.exclude(disabled_platforms__contains=[Platform.WINDOWS]):
             test.disabled_platforms.append(Platform.WINDOWS)
+            test.disabled_user = request.user
             test.save()
             count += 1
         s = "" if count == 1 else "s"
@@ -113,6 +116,7 @@ class TestAdmin(admin.ModelAdmin):
         for test in queryset.filter(disabled=True):
             test.disabled = False
             test.disabled_platforms = []
+            test.disabled_user = request.user
             test.save()
             count += 1
         s = "" if count == 1 else "s"
@@ -133,6 +137,19 @@ class TestAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+
+    def save_model(self, request, obj, form, change):
+        if change and any(
+            field in form.changed_data
+            for field in [
+                "disabled",
+                "disabled_platform",
+                "disabled_reason",
+                "disabled_tracker",
+            ]
+        ):
+            obj.disabled_user = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Result)

@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import models
 
 import log
@@ -108,6 +109,13 @@ class Test(models.Model):
         null=True,
         blank=True,
         help_text="URL to the issue or ticket tracking the work to restore the test",
+    )
+    disabled_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="User who disabled the test",
     )
 
     enabled = models.BooleanField(

@@ -103,7 +103,11 @@ class DisabledTestsView(SingleTableMixin, FormView):
         disabled_tracker = form.cleaned_data["disabled_tracker"]
 
         tests = self.get_queryset().filter(id__in=test_ids)
-        tests.update(disabled_reason=disabled_reason, disabled_tracker=disabled_tracker)
+        tests.update(
+            disabled_reason=disabled_reason,
+            disabled_tracker=disabled_tracker,
+            disabled_user=self.request.user,
+        )
         log.info(f"{self.request.user} updated {len(tests)} tests")
 
         redirect_url = self.request.path

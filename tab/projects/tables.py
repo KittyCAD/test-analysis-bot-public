@@ -130,6 +130,7 @@ class DisabledTestTable(tables.Table):
             "a": {"target": "_blank", "rel": "noopener noreferrer"},
         },
     )
+    disabled_user = tables.Column(verbose_name="Last Updated")
 
     class Meta:
         model = Test
@@ -140,6 +141,7 @@ class DisabledTestTable(tables.Table):
             "failure_rate",
             "disabled_reason",
             "disabled_tracker",
+            "disabled_user",
         )
         order_by = "name"
 
@@ -160,6 +162,11 @@ class DisabledTestTable(tables.Table):
         return mark_safe(
             f'<a href="{value}" target="_blank" rel="noopener noreferrer">{value}</a>'
         )
+
+    def render_disabled_user(self, value):
+        if not value:
+            return ""
+        return value.email
 
 
 class TestResultTable(tables.Table):
