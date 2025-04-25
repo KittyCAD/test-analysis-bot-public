@@ -127,6 +127,14 @@ class DisabledTestTable(tables.Table):
         per_page = 10
         order_by = "name"
 
+    def render_name(self, record: Test):
+        if record.markers:
+            return render_to_string(
+                "projects/_markers.html",
+                {"label": record.name, "markers": record.markers},
+            )
+        return record.name
+
     def render_failure_rate(self, record: Test):
         return record.failure_rate_humanized
 
