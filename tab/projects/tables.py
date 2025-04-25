@@ -101,7 +101,18 @@ class DisabledTestTable(tables.Table):
         verbose_name="Test Name",
         attrs={"a": {"class": "text-body text-decoration-none fw-bold"}},
     )
-    disabled_reason = tables.Column(verbose_name="Reason")
+    failure_rate = tables.Column(
+        verbose_name="Typically Fails",
+        attrs={
+            "td": {"class": "text-center"},
+            "th": {
+                "class": "text-center",
+                "data-bs-toggle": "tooltip",
+                "title": lambda table: table._meta.model().failure_rate_help,
+            },
+        },
+    )
+    disabled_reason = tables.Column(verbose_name="Reason Disabled")
     disabled_tracker = tables.Column(verbose_name="Tracker")
 
     class Meta:
@@ -109,11 +120,15 @@ class DisabledTestTable(tables.Table):
         template_name = "django_tables2/bootstrap5.html"
         fields = (
             "name",
+            "failure_rate",
             "disabled_reason",
             "disabled_tracker",
         )
         per_page = 10
         order_by = "name"
+
+    def render_failure_rate(self, record: Test):
+        return record.failure_rate_humanized
 
 
 class TestResultTable(tables.Table):
