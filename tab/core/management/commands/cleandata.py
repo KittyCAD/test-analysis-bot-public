@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from tab.projects.models import Project, Result
+from tab.projects.models import Project, Result, Test
 
 CHUNK_SIZE = 1000
 
@@ -19,8 +19,30 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
         for project in Project.objects.all():
+            if project.test_stale_threshold:
+                self._delete_stale_tests(project, dry_run)
             if project.branch_inactive_threshold:
                 self._delete_stale_results(project, dry_run)
+
+    def _delete_stale_tests(self, project: Project, dry_run: bool):
+        self.stdout.write(
+            self.style.MIGRATE_LABEL(f"Cleaning up stale tests: {project}")
+        )
+
+        cutoff = timezone.now() - project.test_stale_threshold
+        tests = Test.objects.filter(
+            project=project,
+            updated_at__lt=cutoff,
+        )
+        count = tests.count()
+
+        if dry_run:
+            self.stdout.write(
+                self.style.WARNING(f"Would delete {count} tests: {project}")
+            )
+        else:
+            tests.delete()
+            self.stdout.write(self.style.SUCCESS(f"Deleted {count} tests: {project}"))
 
     def _delete_stale_results(self, project: Project, dry_run: bool):
         self.stdout.write(
