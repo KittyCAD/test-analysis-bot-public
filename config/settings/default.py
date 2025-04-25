@@ -18,6 +18,8 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     # 3rd-party
     "corsheaders",
+    "crispy_bootstrap5",
+    "crispy_forms",
     "django_extensions",
     "django_tables2",
     # First-party
@@ -142,3 +144,8 @@ STORAGES = {
         "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
+
+###############################################################################
+# Crispy Forms
+
+CRISPY_TEMPLATE_PACK = "bootstrap5"

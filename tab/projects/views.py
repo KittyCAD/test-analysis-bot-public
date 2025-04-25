@@ -1,13 +1,12 @@
-from datetime import timedelta
-
-from django.conf import settings
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.generic import ListView
+from django.views.generic import FormView, ListView
 
+import log
 from django_tables2 import SingleTableMixin
 
+from .forms import BulkUpdateDisabledTestsForm
 from .models import Project, Result, Status, Test
 from .tables import DisabledTestTable, ResultTable, TestResultTable, TestTable
 
@@ -58,10 +57,11 @@ class TestsView(SingleTableMixin, ListView):
         return context
 
 
-class DisabledTestsView(SingleTableMixin, ListView):
+class DisabledTestsView(SingleTableMixin, FormView):
     table_class = DisabledTestTable
     table_pagination = False
     template_name = "projects/tests-disabled.html"
+    form_class = BulkUpdateDisabledTestsForm
 
     def get_queryset(self):
         project = get_object_or_404(
@@ -94,6 +94,21 @@ class DisabledTestsView(SingleTableMixin, ListView):
             )
 
         return context
+
+    def form_valid(self, form):
+        test_ids = form.cleaned_data["test_ids"].split(",")
+        disabled_reason = form.cleaned_data["disabled_reason"]
+        disabled_tracker = form.cleaned_data["disabled_tracker"]
+
+        tests = self.get_queryset().filter(id__in=test_ids)
+        tests.update(disabled_reason=disabled_reason, disabled_tracker=disabled_tracker)
+        log.info(f"{self.request.user} updated {len(tests)} tests")
+
+        redirect_url = self.request.path
+        if search := self.request.GET.get("search"):
+            redirect_url += f"?search={search}"
+
+        return redirect(redirect_url)
 
 
 class ResultsView(SingleTableMixin, ListView):

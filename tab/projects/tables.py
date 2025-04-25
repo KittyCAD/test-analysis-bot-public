@@ -95,6 +95,17 @@ class TestTable(tables.Table):
 
 
 class DisabledTestTable(tables.Table):
+    select = tables.CheckBoxColumn(
+        accessor="id",
+        attrs={
+            "th__input": {
+                "class": "form-check-input",
+                "onclick": "this.form.querySelectorAll('tbody input[type=checkbox]').forEach(cb => cb.checked = this.checked)",
+            },
+            "td__input": {"class": "form-check-input"},
+        },
+        orderable=False,
+    )
     name = tables.LinkColumn(
         "projects:test-results",
         args=[A("project__path"), A("id")],
@@ -113,12 +124,18 @@ class DisabledTestTable(tables.Table):
         },
     )
     disabled_reason = tables.Column(verbose_name="Reason Disabled")
-    disabled_tracker = tables.Column(verbose_name="Tracker")
+    disabled_tracker = tables.Column(
+        verbose_name="Tracker",
+        attrs={
+            "a": {"target": "_blank", "rel": "noopener noreferrer"},
+        },
+    )
 
     class Meta:
         model = Test
         template_name = "django_tables2/bootstrap5.html"
         fields = (
+            "select",
             "name",
             "failure_rate",
             "disabled_reason",
@@ -136,6 +153,13 @@ class DisabledTestTable(tables.Table):
 
     def render_failure_rate(self, record: Test):
         return record.failure_rate_humanized
+
+    def render_disabled_tracker(self, value):
+        if not value:
+            return ""
+        return mark_safe(
+            f'<a href="{value}" target="_blank" rel="noopener noreferrer">{value}</a>'
+        )
 
 
 class TestResultTable(tables.Table):

@@ -2,6 +2,7 @@
 
 {% load django_tables2 %}
 {% load static %}
+{% load crispy_forms_tags %}
 
 {% block title %}
     {{ project.name }}
@@ -33,7 +34,69 @@
             </div>
         </form>
         {% render_table table %}
+        {% if table.rows and request.user.is_staff %}
+            <div class="card shadow mb-4 mt-4 border-danger">
+                <div class="card-header py-3 bg-danger text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>Bulk Update Tests
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="bulk-update-form">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6">{{ form.disabled_reason|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.disabled_tracker|as_crispy_field }}</div>
+                        </div>
+                        {{ form.test_ids }}
+                        <button type="submit" class="btn btn-danger mt-3">
+                            <i class="fa-solid fa-pen-to-square me-2"></i>Update Selected Tests
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endif %}
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('bulk-update-form');
+        const testIdsInput = form.querySelector('input[name="test_ids"]');
+        const table = document.querySelector('table');
+        const headerCheckbox = table.querySelector('thead input[type="checkbox"]');
+
+        // Handle header checkbox to select/deselect all
+        if (headerCheckbox) {
+            headerCheckbox.addEventListener('change', function() {
+                const checkboxes = table.querySelectorAll('tbody input[type="checkbox"]');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+            });
+        }
+
+        // Handle form submission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+
+            const checkboxes = table.querySelectorAll('tbody input[type="checkbox"]');
+            const selectedIds = [];
+
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    selectedIds.push(checkbox.value);
+                }
+            });
+
+            if (selectedIds.length === 0) {
+                alert('Please select at least one test to update.');
+                return;
+            }
+
+            testIdsInput.value = selectedIds.join(',');
+            form.submit(); // Submit the form programmatically
+        });
+    });
+    </script>
 {% endblock content %}
 
 {% block extra_css %}
