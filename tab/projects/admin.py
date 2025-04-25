@@ -115,7 +115,6 @@ class TestAdmin(admin.ModelAdmin):
             test.disabled_platforms = []
             test.save()
             count += 1
-        count = queryset.count()
         s = "" if count == 1 else "s"
         self.message_user(
             request, f"Successfully enabled {count} test{s} to block merges."
