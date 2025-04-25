@@ -60,6 +60,7 @@ class TestsView(SingleTableMixin, ListView):
 
 class DisabledTestsView(SingleTableMixin, ListView):
     table_class = DisabledTestTable
+    table_pagination = False
     template_name = "projects/tests-disabled.html"
 
     def get_queryset(self):

@@ -124,7 +124,6 @@ class DisabledTestTable(tables.Table):
             "disabled_reason",
             "disabled_tracker",
         )
-        per_page = 10
         order_by = "name"
 
     def render_name(self, record: Test):
