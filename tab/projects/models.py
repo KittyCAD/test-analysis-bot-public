@@ -163,13 +163,13 @@ class Test(models.Model):
     def failure_rate_humanized(self) -> str:
         if self.failure_rate < 0:
             return "—"
-        return f"{self.failure_rate*100:.1f}%"
+        return f"{self.failure_rate:.0%}"
 
     @property
     def block_rate_humanized(self) -> str:
         if self.block_rate < 0:
             return "—"
-        return f"{self.block_rate*100:.1f}%"
+        return f"{self.block_rate:.0%}"
 
     @property
     def average_duration_humanized(self) -> str:

@@ -1,6 +1,6 @@
 import re
 
-SAMPLE_COUNT = 200  # TODO: Consider making configurable per project
+SAMPLE_COUNT = 100  # TODO: Consider making configurable per project
 
 ANSI_ESCAPE = re.compile(r"\x1B[@-_][0-?]*[ -/]*[@-~]")
 
