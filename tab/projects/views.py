@@ -70,7 +70,9 @@ class DisabledTestsView(SingleTableMixin, FormView):
 
         search = self.request.GET.get("search", "").strip()
 
-        queryset = project.tests.filter(enabled=False).select_related("last_result")
+        queryset = project.tests.filter(
+            enabled=False, last_result__isnull=False
+        ).select_related("last_result")
         if search:
             queryset = queryset.filter(name__icontains=search)
         if project.test_inactive_threshold:

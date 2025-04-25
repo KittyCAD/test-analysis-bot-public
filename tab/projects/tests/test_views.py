@@ -1,6 +1,6 @@
 import pytest
 
-from ..models import Project, Test
+from ..models import Project, Status, Test
 
 
 @pytest.fixture
@@ -9,8 +9,15 @@ def project():
 
 
 @pytest.fixture
-def test(project: Project):
-    return Test.objects.create(project=project, name="test")
+def disabled_test(project: Project):
+    test = Test.objects.create(project=project, name="test", disabled=True)
+    test.results.create(
+        branch="main",
+        commit="abc123",
+        status=Status.PASSED,
+        duration=1.0,
+    )
+    return test
 
 
 def describe_projects():
@@ -31,9 +38,9 @@ def describe_tests():
 
         @pytest.mark.django_db
         def it_renders_the_test_details_page(
-            expect, client, project: Project, test: Test
+            expect, client, project: Project, disabled_test: Test
         ):
-            response = client.get(url.format(pk=test.pk))
+            response = client.get(url.format(pk=disabled_test.pk))
             expect(response.status_code) == 200
 
     def describe_disabled():
@@ -41,7 +48,7 @@ def describe_tests():
 
         @pytest.mark.django_db
         def it_renders_the_disabled_tests_page(
-            expect, client, project: Project, test: Test
+            expect, client, project: Project, disabled_test: Test
         ):
             response = client.get(url)
             expect(response.status_code) == 200
