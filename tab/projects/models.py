@@ -99,6 +99,16 @@ class Test(models.Model):
         blank=True,
         help_text="Platforms to limit the disabled override",
     )
+    disabled_reason = models.TextField(
+        default="",
+        blank=True,
+        help_text="Reason for disabling the test",
+    )
+    disabled_tracker = models.URLField(
+        null=True,
+        blank=True,
+        help_text="URL to the issue or ticket tracking the work to restore the test",
+    )
 
     enabled = models.BooleanField(
         default=False,

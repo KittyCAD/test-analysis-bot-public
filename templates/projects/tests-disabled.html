@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% load django_tables2 %}
+{% load static %}
+
+{% block title %}
+    {{ project.name }}
+{% endblock title %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">{{ project.name }}</h1>
+            <a href="{% url 'projects:tests' project.path %}"
+               class="btn btn-sm btn-outline-secondary">View All Tests</a>
+        </div>
+        <h2 class="mb-4">{{ table.rows|length }} Disabled Test{{ table.rows|length|pluralize }}</h2>
+        <form method="get" class="mb-4">
+            <div class="input-group mb-3">
+                <input type="text"
+                       name="search"
+                       value="{{ search }}"
+                       class="form-control"
+                       placeholder="Filter tests by name..."
+                       aria-label="Filter tests by name"
+                       required>
+                {% if search %}
+                    <a href="{% url 'projects:disabled-tests' project.path %}{% if enabled != 'true' %}?enabled={{ enabled }}{% endif %}"
+                       class="btn btn-outline-danger"
+                       type="button"><i class="fa-solid fa-xmark"></i></a>
+                {% endif %}
+                <button class="btn btn-outline-primary" type="submit">Search</button>
+            </div>
+        </form>
+        {% render_table table %}
+    </div>
+{% endblock content %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/tables.css' %}">
+{% endblock extra_css %}

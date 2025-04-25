@@ -9,15 +9,14 @@ from django.views.generic import ListView
 from django_tables2 import SingleTableMixin
 
 from .models import Project, Result, Status, Test
-from .tables import ResultTable, TestResultTable, TestTable
+from .tables import DisabledTestTable, ResultTable, TestResultTable, TestTable
 
 
 def index(request):
     return render(request, "projects/index.html")
 
 
-class TestsListView(SingleTableMixin, ListView):
-    model = Test
+class TestsView(SingleTableMixin, ListView):
     table_class = TestTable
     template_name = "projects/tests.html"
 
@@ -59,8 +58,44 @@ class TestsListView(SingleTableMixin, ListView):
         return context
 
 
-class ResultsListView(SingleTableMixin, ListView):
-    model = Result
+class DisabledTestsView(SingleTableMixin, ListView):
+    table_class = DisabledTestTable
+    template_name = "projects/tests-disabled.html"
+
+    def get_queryset(self):
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+
+        search = self.request.GET.get("search", "").strip()
+
+        queryset = project.tests.filter(enabled=False).select_related("last_result")
+        if search:
+            queryset = queryset.filter(name__icontains=search)
+        if project.test_inactive_threshold:
+            queryset = queryset.filter(
+                updated_at__gte=timezone.now() - project.test_inactive_threshold
+            )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["project"] = project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        context["disabled_only"] = True
+        context["search"] = self.request.GET.get("search", "").strip()
+        if self.request.user.is_staff:
+            context["admin_url"] = reverse(
+                "admin:projects_project_change", args=[project.pk]
+            )
+
+        return context
+
+
+class ResultsView(SingleTableMixin, ListView):
     table_class = ResultTable
     template_name = "projects/results.html"
 
@@ -128,8 +163,7 @@ class ResultsListView(SingleTableMixin, ListView):
         return context
 
 
-class TestResultsListView(SingleTableMixin, ListView):
-    model = Result
+class TestResultsView(SingleTableMixin, ListView):
     table_class = TestResultTable
     template_name = "projects/test-results.html"
 

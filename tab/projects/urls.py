@@ -7,18 +7,23 @@ app_name = "projects"
 urlpatterns = [
     path("", views.index, name="index"),
     path(
+        "<path:path>/tests/disabled",
+        views.DisabledTestsView.as_view(),
+        name="disabled-tests",
+    ),
+    path(
         "<path:path>/tests/<int:test_id>",
-        views.TestResultsListView.as_view(),
+        views.TestResultsView.as_view(),
         name="test-results",
     ),
     path(
         "<path:path>/results",
-        views.ResultsListView.as_view(),
+        views.ResultsView.as_view(),
         name="results",
     ),
     path(
         "<path:path>",
-        views.TestsListView.as_view(),
+        views.TestsView.as_view(),
         name="tests",
     ),
 ]

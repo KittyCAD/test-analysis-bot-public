@@ -94,6 +94,28 @@ class TestTable(tables.Table):
         return mark_safe(f'<span class="text-nowrap">{naturaltime(value)}</span>')
 
 
+class DisabledTestTable(tables.Table):
+    name = tables.LinkColumn(
+        "projects:test-results",
+        args=[A("project__path"), A("id")],
+        verbose_name="Test Name",
+        attrs={"a": {"class": "text-body text-decoration-none fw-bold"}},
+    )
+    disabled_reason = tables.Column(verbose_name="Reason")
+    disabled_tracker = tables.Column(verbose_name="Tracker")
+
+    class Meta:
+        model = Test
+        template_name = "django_tables2/bootstrap5.html"
+        fields = (
+            "name",
+            "disabled_reason",
+            "disabled_tracker",
+        )
+        per_page = 10
+        order_by = "-name"
+
+
 class TestResultTable(tables.Table):
     status = tables.Column(verbose_name="Status")
     branch = tables.Column(
