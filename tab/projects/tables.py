@@ -113,7 +113,7 @@ class DisabledTestTable(tables.Table):
             "disabled_tracker",
         )
         per_page = 10
-        order_by = "-name"
+        order_by = "name"
 
 
 class TestResultTable(tables.Table):
