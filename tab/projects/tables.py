@@ -222,7 +222,21 @@ class ResultTable(TestResultTable):
         accessor="test",
         order_by="test__name",
     )
+    test__failure_rate = tables.Column(
+        verbose_name="Typically Fails",
+        attrs={
+            "td": {"class": "text-center"},
+            "th": {"class": "text-center"},
+        },
+    )
     branch = None
+    commit = tables.Column(
+        orderable=False,
+        attrs={
+            "td": {"class": "text-center font-monospace"},
+            "th": {"class": "text-center"},
+        },
+    )
 
     def render_test(self, record: Result):
         url = reverse(
@@ -232,12 +246,16 @@ class ResultTable(TestResultTable):
             f'<a href="{url}?branch={record.branch}" class="text-body text-decoration-none fw-bold">{record.test.name}</a>'
         )
 
+    def render_test__failure_rate(self, record: Result):
+        return record.test.failure_rate_humanized
+
     class Meta:
         model = Result
         template_name = "django_tables2/bootstrap5.html"
         fields = (
             "test",
             "status",
+            "test__failure_rate",
             "commit",
             "duration",
             "target",
