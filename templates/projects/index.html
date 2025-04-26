@@ -1,9 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <p>
-        <!-- djlint:off D018 -->
-        To connect a project, consult the <a href="/api" target="_blank">API</a>
-        documentation.
-    </p>
+    <div class="container mt-4">
+        <div class="alert alert-info" role="alert">
+            <i class="fa-solid fa-circle-info me-2"></i>
+            To connect a project, consult the <a href="/api" target="_blank" class="alert-link">API</a>
+            documentation.
+        </div>
+        {% if projects %}
+            <div class="list-group">
+                {% for project in projects %}
+                    <a href="{% url 'projects:tests' project.path %}"
+                       class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{{ project.name }}</h5>
+                            <small>{{ project.updated_at|timesince }} ago</small>
+                        </div>
+                        <p class="mb-1">
+                            <small class="text-muted">{{ project.repository }}</small>
+                        </p>
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
 {% endblock content %}

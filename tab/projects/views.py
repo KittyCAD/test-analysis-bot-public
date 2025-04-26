@@ -6,13 +6,27 @@ from django.views.generic import FormView, ListView
 import log
 from django_tables2 import SingleTableMixin
 
+from tab.core.models import Organization
+
 from .forms import BulkUpdateDisabledTestsForm
 from .models import Project, Result, Status, Test
 from .tables import DisabledTestTable, ResultTable, TestResultTable, TestTable
 
 
 def index(request):
-    return render(request, "projects/index.html")
+    if not request.user.is_authenticated:
+        return render(request, "projects/index.html", {"projects": []})
+
+    email_domain = request.user.email.split("@")[1]
+    try:
+        organization = Organization.objects.get(email_domain=email_domain)
+        projects = Project.objects.filter(
+            repository__startswith=organization.repository_index
+        )
+    except Organization.DoesNotExist:
+        projects = Project.objects.none()
+
+    return render(request, "projects/index.html", {"projects": projects})
 
 
 class TestsView(SingleTableMixin, ListView):
