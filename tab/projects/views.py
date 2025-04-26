@@ -140,12 +140,7 @@ class ResultsView(SingleTableMixin, ListView):
 
         if show == "fails":
             queryset = queryset.exclude(
-                status__in={
-                    Status.PASSED,
-                    Status.XFAILED,
-                    Status.SKIPPED,
-                    Status.DISABLED,
-                }
+                status__in={Status.PASSED, Status.XFAILED, Status.SKIPPED}
             ).filter(final=True)
         if search:
             queryset = queryset.filter(test__name__icontains=search)
