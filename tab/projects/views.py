@@ -130,11 +130,9 @@ class ResultsView(SingleTableMixin, ListView):
         show = self.request.GET.get("show", "all")
         search = self.request.GET.get("search")
 
-        queryset = (
-            Result.objects.filter(test__project=project, branch=branch)
-            .order_by("-created_at")
-            .select_related("test", "test__project")
-        )
+        queryset = Result.objects.filter(
+            test__project=project, branch=branch
+        ).select_related("test", "test__project")
         latest_commit = queryset.values_list("commit", flat=True).first()
         queryset = queryset.filter(commit=latest_commit)
 

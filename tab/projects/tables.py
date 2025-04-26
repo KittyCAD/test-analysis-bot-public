@@ -291,17 +291,6 @@ class ResultTable(TestResultTable):
         },
     )
 
-    def render_test(self, record: Result):
-        url = reverse(
-            "projects:test-results", args=[record.test.project.path, record.test.id]
-        )
-        return mark_safe(
-            f'<a href="{url}?branch={record.branch}" class="text-body text-decoration-none fw-bold">{record.test.name}</a>'
-        )
-
-    def render_test__failure_rate(self, record: Result):
-        return record.test.failure_rate_humanized
-
     class Meta:
         model = Result
         template_name = "django_tables2/bootstrap5.html"
@@ -317,3 +306,19 @@ class ResultTable(TestResultTable):
         )
         per_page = 100
         order_by = "test", "target", "platform", "-created_at"
+
+    def before_render(self, request):
+        if request.GET.get("show") == "fails":
+            self.data.data = self.data.data.order_by("-status")
+        self.paginate()
+
+    def render_test(self, record: Result):
+        url = reverse(
+            "projects:test-results", args=[record.test.project.path, record.test.id]
+        )
+        return mark_safe(
+            f'<a href="{url}?branch={record.branch}" class="text-body text-decoration-none fw-bold">{record.test.name}</a>'
+        )
+
+    def render_test__failure_rate(self, record: Result):
+        return record.test.failure_rate_humanized
