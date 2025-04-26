@@ -10,16 +10,29 @@
         {% if projects %}
             <div class="list-group">
                 {% for project in projects %}
-                    <a href="{% url 'projects:tests' project.path %}"
-                       class="list-group-item list-group-item-action">
+                    <div class="list-group-item list-group-item-action project-card"
+                         style="cursor:pointer"
+                         data-href="{% url 'projects:tests' project.path %}">
                         <div class="d-flex w-100 justify-content-between">
                             <h5 class="mb-1">{{ project.name }}</h5>
-                            <small>{{ project.updated_at|timesince }} ago</small>
+                            <small>{{ project.tests.count }} test{{ project.tests.count|pluralize }}</small>
                         </div>
                         <p class="mb-1">
                             <small class="text-muted">{{ project.repository }}</small>
                         </p>
-                    </a>
+                        <div class="mt-4 d-flex flex-wrap gap-2">
+                            <a href="{% url 'projects:results' project.path %}"
+                               class="btn btn-sm btn-outline-secondary">
+                                <i class="fa-solid fa-chart-line me-1"></i>
+                                View Latest Results
+                            </a>
+                            <a href="{% url 'projects:disabled-tests' project.path %}"
+                               class="btn btn-sm btn-outline-secondary disabled-tests-btn">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                                View Disabled Tests
+                            </a>
+                        </div>
+                    </div>
                 {% endfor %}
             </div>
         {% endif %}
