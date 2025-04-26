@@ -309,9 +309,7 @@ class ResultTable(TestResultTable):
 
     def before_render(self, request):
         if request.GET.get("show") == "fails":
-            self.data.data = self.data.data.order_by(
-                "-status", "test", "target", "platform", "-created_at"
-            )
+            self.data.data = self.data.data.order_by("-status", *self._meta.order_by)
         self.paginate()
 
     def render_test(self, record: Result):
