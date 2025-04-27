@@ -20,6 +20,11 @@
             <h2 class="mb-0">
                 Latest Branch Results:
                 <code class="ms-1">{{ branch }}</code>
+                {% if merge_url %}
+                    <a href="{{ merge_url }}" target="_blank" class="ms-1">
+                        <i class="fa-solid fa-external-link-alt"></i>
+                    </a>
+                {% endif %}
             </h2>
             <div class="dropdown ms-2">
                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle"

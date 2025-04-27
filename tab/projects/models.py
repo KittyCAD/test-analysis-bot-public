@@ -330,6 +330,14 @@ class Result(models.Model):
         return f"{self.test.project.repository}/tree/{self.branch}"
 
     @property
+    def merge_url(self) -> str:
+        if number := self.metadata.get("CI_PR_NUMBER"):  # GitHub
+            return f"{self.test.project.repository}/pull/{number}"
+        if number := self.metadata.get("CI_MERGE_REQUEST_IID"):  # GitLab
+            return f"{self.test.project.repository}/-/merge_requests/{number}"
+        return ""
+
+    @property
     def commit_humanized(self) -> str:
         if not self.commit:
             return ""

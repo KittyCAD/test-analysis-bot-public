@@ -165,6 +165,15 @@ class ResultsView(SingleTableMixin, ListView):
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
+        branch = self.request.GET.get("branch", project.default_branch)
+        result = (
+            Result.objects.filter(
+                test__project=project,
+                branch=branch,
+            )
+            .order_by("-created_at")
+            .first()
+        )
         results_by_branch = (
             Result.objects.filter(
                 test__project=project,
@@ -178,7 +187,8 @@ class ResultsView(SingleTableMixin, ListView):
             )
 
         context["project"] = project
-        context["branch"] = self.request.GET.get("branch", project.default_branch)
+        context["branch"] = branch
+        context["merge_url"] = result.merge_url if result else ""
         context["branches"] = results_by_branch.values_list("branch", flat=True)
         context["search"] = self.request.GET.get("search", "").strip()
         context["show"] = self.request.GET.get("show", "all")
