@@ -110,7 +110,6 @@ def results(request, payload: ResultRequest):
     tags=["Tests"],
 )
 def share(request, payload: ShareRequest):
-
     try:
         key = request.headers.get(ApiKey.param_name)
         organization = Organization.objects.get(key=key)

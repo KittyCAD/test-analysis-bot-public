@@ -43,6 +43,7 @@ FRONTEND_DEPENDENCIES =
 install: $(BACKEND_DEPENDENCIES) $(FRONTEND_DEPENDENCIES) ## Install project dependencies
 
 $(BACKEND_DEPENDENCIES): poetry.lock
+	@ mkdir -p staticfiles
 	@ poetry config virtualenvs.in-project true
 	poetry install --without=docs
 	@ touch $@
