@@ -11,6 +11,7 @@ class Organization(models.Model):
     name = models.CharField(max_length=100)
     email_domain = models.CharField(max_length=100, blank=True)
     repository_index = models.URLField(unique=True)
+    repository_token = models.CharField(max_length=100, blank=True)
 
     key = models.CharField(max_length=32, unique=True, default=generate_key)
 

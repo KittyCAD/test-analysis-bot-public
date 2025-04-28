@@ -53,5 +53,15 @@ class ResultResponse(Schema):
     block: bool
 
 
+class ShareRequest(Schema):
+    project: str
+    branch: str
+    commit: str
+
+
+class ShareResponse(Schema):
+    tests: int
+
+
 class ErrorResponse(Schema):
     detail: str

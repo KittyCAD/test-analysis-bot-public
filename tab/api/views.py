@@ -5,12 +5,20 @@ from django.conf import settings
 from django.shortcuts import redirect
 
 import log
+from github import Github
 from ninja import NinjaAPI
 
 from tab.core.models import Organization
 from tab.projects.models import Project, Result, Test
 
-from .schemas import ApiKey, ErrorResponse, ResultRequest, ResultResponse
+from .schemas import (
+    ApiKey,
+    ErrorResponse,
+    ResultRequest,
+    ResultResponse,
+    ShareRequest,
+    ShareResponse,
+)
 
 project = tomllib.load(open("pyproject.toml", "rb"))["project"]
 api = NinjaAPI(
@@ -89,3 +97,42 @@ def results(request, payload: ResultRequest):
         status=result.status,
         block=result.block,
     )
+
+
+@api.post(
+    "/share",
+    auth=api_key,
+    response={
+        200: ShareResponse,
+        422: ErrorResponse,
+    },
+    tags=["Tests"],
+)
+def share(request, payload: ShareRequest):
+
+    try:
+        key = request.headers.get(ApiKey.param_name)
+        organization = Organization.objects.get(key=key)
+        project = Project.objects.from_repository(
+            payload.project, organization.repository_index
+        )
+    except (Organization.DoesNotExist, ValueError) as e:
+        return 422, {"detail": str(e)}
+
+    results = Result.objects.filter(
+        test__project=project, commit=payload.commit, final=True
+    )
+    count = results.count()
+
+    assert "github.com" in project.repository, "Only GitHub is supported for now"
+    github = Github(organization.repository_token)
+    repo = github.get_repo(project.path)
+    commit = repo.get_commit(payload.commit)
+    commit.create_status(
+        state="success",
+        target_url=f"https://test-analysis-bot.hawk-dinosaur.ts.net/projects/KittyCAD/modeling-app/results?branch={payload.branch}",
+        description=f"{count} test results analyzed",
+        context="Test Analysis Bot",
+    )
+
+    return 200, ShareResponse(tests=count)
