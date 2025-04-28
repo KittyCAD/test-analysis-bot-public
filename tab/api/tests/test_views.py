@@ -102,7 +102,7 @@ def describe_share():
             # Test PR: https://github.com/KittyCAD/modeling-app/pull/6544
             "project": "https://github.com/KittyCAD/modeling-app",
             "branch": "share-tab-report",
-            "commit": "63cb41d6133f24f62a516c8e542e5dd00fb56cee",
+            "commit": "90bae5f48151193e61e0e76a67cada60358c2a9c",
         }
 
     @pytest.mark.skipif(

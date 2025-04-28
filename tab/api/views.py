@@ -9,6 +9,7 @@ from github import Github
 from ninja import NinjaAPI
 
 from tab.core.models import Organization
+from tab.projects.enums import Status
 from tab.projects.models import Project, Result, Test
 
 from .schemas import (
@@ -122,17 +123,21 @@ def share(request, payload: ShareRequest):
     results = Result.objects.filter(
         test__project=project, commit=payload.commit, final=True
     )
-    count = results.count()
+    total = results.count()
+    failed = results.filter(
+        status__in=[Status.FAILED, Status.XPASSED, Status.ERROR]
+    ).count()
+    passed = total - failed
 
     assert "github.com" in project.repository, "Only GitHub is supported for now"
     github = Github(organization.repository_token)
     repo = github.get_repo(project.path)
     commit = repo.get_commit(payload.commit)
     commit.create_status(
-        state="success",
+        state="failure" if failed else "success",
         target_url=f"https://test-analysis-bot.hawk-dinosaur.ts.net/projects/KittyCAD/modeling-app/results?branch={payload.branch}",
-        description=f"{count} test results analyzed",
+        description=f"{passed} of {total} tests are passing",
         context="Test Analysis Bot",
     )
 
-    return 200, ShareResponse(tests=count)
+    return 200, ShareResponse(tests=total)
