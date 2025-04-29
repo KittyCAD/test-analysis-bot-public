@@ -21,7 +21,7 @@ class Command(BaseCommand):
         for project in Project.objects.all():
             if project.test_stale_threshold:
                 self._delete_stale_tests(project, dry_run)
-            if project.results_stale_threshold:
+            if project.result_stale_threshold:
                 self._delete_stale_results(project, dry_run)
 
     def _delete_stale_tests(self, project: Project, dry_run: bool):
@@ -49,7 +49,7 @@ class Command(BaseCommand):
             self.style.MIGRATE_LABEL(f"Cleaning up stale results: {project}")
         )
 
-        cutoff = timezone.now() - project.results_stale_threshold
+        cutoff = timezone.now() - project.result_stale_threshold
         results = Result.objects.filter(
             test__project=project,
             created_at__lt=cutoff,

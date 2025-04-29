@@ -16,7 +16,7 @@ class ProjectAdmin(admin.ModelAdmin):
         "branch_inactive_threshold_humanized",
         "test_inactive_threshold_humanized",
         "test_stale_threshold_humanized",
-        "results_stale_threshold_humanized",
+        "result_stale_threshold_humanized",
         "created_at",
         "updated_at",
     )
@@ -44,10 +44,10 @@ class ProjectAdmin(admin.ModelAdmin):
         return timesince(timezone.now() - project.test_stale_threshold)
 
     @admin.display(description="Results Stale")
-    def results_stale_threshold_humanized(self, project: Project) -> str:
-        if not project.results_stale_threshold:
+    def result_stale_threshold_humanized(self, project: Project) -> str:
+        if not project.result_stale_threshold:
             return "Never"
-        return timesince(timezone.now() - project.results_stale_threshold)
+        return timesince(timezone.now() - project.result_stale_threshold)
 
 
 @admin.register(Test)

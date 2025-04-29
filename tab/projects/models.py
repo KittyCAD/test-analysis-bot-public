@@ -46,13 +46,13 @@ class Project(models.Model):
     )
     test_inactive_threshold = models.DurationField(
         default=timedelta(days=7),
-        help_text="Tests older than this will be hidden by default",
+        help_text="Tests with no results this recent time will be hidden by default",
     )
     test_stale_threshold = models.DurationField(
         default=timedelta(days=30),
-        help_text="Tests older than this will be pruned automatically",
+        help_text="Tests with no results this recent time will be pruned automatically",
     )
-    results_stale_threshold = models.DurationField(
+    result_stale_threshold = models.DurationField(
         default=timedelta(days=7),
         help_text="Branch results older than this will be pruned automatically",
     )
