@@ -174,6 +174,23 @@ class ResultsView(SingleTableMixin, ListView):
             .order_by("-created_at")
             .first()
         )
+
+        context["project"] = project
+        context["branch"] = branch
+        context["merge_url"] = result.merge_url if result else ""
+        context["branches"] = self._get_active_branches(project, branch)
+        context["search"] = self.request.GET.get("search", "").strip()
+        context["show"] = self.request.GET.get("show", "all")
+        if self.request.user.is_staff:
+            context["admin_url"] = reverse(
+                # TODO: Link to results for this particular project instead
+                "admin:projects_project_change",
+                args=[project.pk],
+            )
+
+        return context
+
+    def _get_active_branches(self, project: Project, branch: str):
         results_by_branch = (
             Result.objects.filter(
                 test__project=project,
@@ -186,20 +203,12 @@ class ResultsView(SingleTableMixin, ListView):
                 created_at__gte=timezone.now() - project.branch_inactive_threshold
             )
 
-        context["project"] = project
-        context["branch"] = branch
-        context["merge_url"] = result.merge_url if result else ""
-        context["branches"] = results_by_branch.values_list("branch", flat=True)
-        context["search"] = self.request.GET.get("search", "").strip()
-        context["show"] = self.request.GET.get("show", "all")
-        if self.request.user.is_staff:
-            context["admin_url"] = reverse(
-                # TODO: Link to results for this particular project instead
-                "admin:projects_project_change",
-                args=[project.pk],
-            )
+        branches = list(results_by_branch.values_list("branch", flat=True))
+        if branch not in branches:
+            branches.append(branch)
+            branches.sort()
 
-        return context
+        return branches
 
 
 class TestResultsView(SingleTableMixin, ListView):
