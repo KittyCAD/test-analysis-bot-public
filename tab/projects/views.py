@@ -166,19 +166,11 @@ class ResultsView(SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
         branch = self.request.GET.get("branch", project.default_branch)
-        result = (
-            Result.objects.filter(
-                test__project=project,
-                branch=branch,
-            )
-            .order_by("-created_at")
-            .first()
-        )
 
         context["project"] = project
         context["branch"] = branch
-        context["merge_url"] = result.merge_url if result else ""
-        context["branches"] = self._get_active_branches(project, branch)
+        context["merge_url"] = self._get_merge_url(project, branch)
+        context["branches"] = self._get_active_branches(project)
         context["search"] = self.request.GET.get("search", "").strip()
         context["show"] = self.request.GET.get("show", "all")
         if self.request.user.is_staff:
@@ -190,7 +182,18 @@ class ResultsView(SingleTableMixin, ListView):
 
         return context
 
-    def _get_active_branches(self, project: Project, branch: str):
+    def _get_merge_url(self, project: Project, branch: str) -> str:
+        result = (
+            Result.objects.filter(
+                test__project=project,
+                branch=branch,
+            )
+            .order_by("-created_at")
+            .first()
+        )
+        return result.merge_url if result else ""
+
+    def _get_active_branches(self, project: Project) -> list[str]:
         results_by_branch = (
             Result.objects.filter(
                 test__project=project,
@@ -202,13 +205,7 @@ class ResultsView(SingleTableMixin, ListView):
             results_by_branch = results_by_branch.filter(
                 created_at__gte=timezone.now() - project.branch_inactive_threshold
             )
-
-        branches = list(results_by_branch.values_list("branch", flat=True))
-        if branch not in branches:
-            branches.append(branch)
-            branches.sort()
-
-        return branches
+        return list(results_by_branch.values_list("branch", flat=True))
 
 
 class TestResultsView(SingleTableMixin, ListView):
