@@ -52,6 +52,10 @@ class Project(models.Model):
         default=timedelta(days=30),
         help_text="Tests older than this will be pruned automatically",
     )
+    results_stale_threshold = models.DurationField(
+        default=timedelta(days=7),
+        help_text="Branch results older than this will be pruned automatically",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
