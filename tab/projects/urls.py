@@ -7,6 +7,11 @@ app_name = "projects"
 urlpatterns = [
     path("", views.index, name="index"),
     path(
+        "<path:path>/tests/disabled/regex",
+        views.DisabledTestsRegexView.as_view(),
+        name="disabled-tests-regex",
+    ),
+    path(
         "<path:path>/tests/disabled",
         views.DisabledTestsView.as_view(),
         name="disabled-tests",
