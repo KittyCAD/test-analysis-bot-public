@@ -21,12 +21,9 @@
             <div class="card mt-2">
                 <div class="card-body">
                     <div class="mb-0">
-                        <code>
-                            {% for row in table.rows %}
-                                {% if not forloop.first %}|{% endif %}
-                                {{ row.record.regex }}
-                            {% endfor %}
-                        </code>
+                        {# djlint:off #}
+                        <code>{% for row in table.rows %}{% if not forloop.first %}|{% endif %}{{ row.record.regex }}{% endfor %}</code>
+                        {# djlint:on #}
                     </div>
                 </div>
             </div>
