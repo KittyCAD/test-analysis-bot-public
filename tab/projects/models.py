@@ -202,8 +202,8 @@ class Test(models.Model):
 
     @property
     def regex(self) -> str:
-        name = " ".join(self.name.split(" › ")[1:])
-        return re.escape(name).replace(r"\ ", " ")
+        label = " ".join(self.name.split(" › ")[1:])
+        return re.escape(label).replace(r"\ ", " ").replace("'", ".")
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
