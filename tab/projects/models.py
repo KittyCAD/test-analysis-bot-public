@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 
 from django.conf import settings
@@ -198,6 +199,11 @@ class Test(models.Model):
         if self.disabled:
             values.append("disabled")
         return values
+
+    @property
+    def regex(self) -> str:
+        name = self.name.split(" › ")[-1]
+        return re.escape(name).replace(r"\ ", r" ")
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
