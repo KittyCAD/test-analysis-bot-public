@@ -19,8 +19,6 @@ CSRF_TRUSTED_ORIGINS = [
     "https://test-analysis-bot.corp.zoo.dev",
 ]
 
-SECURE_SSL_REDIRECT = True
-
 ###############################################################################
 # Caches
 
