@@ -135,7 +135,7 @@ class DisabledTestsView(SingleTableMixin, FormView):
 class DisabledTestsRegexView(DisabledTestsView):
     def render_to_response(self, context, **response_kwargs):
         regex = "|".join(row.record.regex for row in context["table"].rows)
-        return HttpResponse(f"'{regex}'", content_type="text/plain")
+        return HttpResponse(regex, content_type="text/plain")
 
 
 class ResultsView(SingleTableMixin, ListView):
