@@ -203,7 +203,7 @@ class Test(models.Model):
     @property
     def regex(self) -> str:
         name = self.name.split(" › ")[-1]
-        return re.escape(name).replace(r"\ ", r" ")
+        return re.sub(r"([()\[\]])", r"\\\1", name)
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
