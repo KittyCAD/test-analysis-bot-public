@@ -114,15 +114,23 @@ class DisabledTestsView(SingleTableMixin, FormView):
 
     def form_valid(self, form):
         test_ids = form.cleaned_data["test_ids"].split(",")
+        disabled = form.cleaned_data["disabled"]
         disabled_reason = form.cleaned_data["disabled_reason"]
         disabled_tracker = form.cleaned_data["disabled_tracker"]
 
         tests = self.get_queryset().filter(id__in=test_ids)
-        tests.update(
-            disabled_reason=disabled_reason,
-            disabled_tracker=disabled_tracker,
-            disabled_user=self.request.user,
-        )
+        for test in tests:
+            test.disabled = disabled
+            test.disabled_reason = disabled_reason
+            test.disabled_tracker = disabled_tracker
+            test.disabled_user = self.request.user
+            if not disabled:
+                test.disabled_platforms = []
+                if test.last_result.status in {Status.SKIPPED, Status.DISABLED}:
+                    # Modify status to hide it from this view
+                    test.last_result.status = Status.INTERRUPTED
+                    test.last_result.save()
+            test.save()
         log.info(f"{self.request.user} updated {len(tests)} tests")
 
         redirect_url = self.request.path
