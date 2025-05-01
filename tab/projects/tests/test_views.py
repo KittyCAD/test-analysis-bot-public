@@ -1,6 +1,6 @@
 import pytest
 
-from ..models import Project, Status, Test
+from ..models import Project, Result, Status, Test
 
 
 @pytest.fixture
@@ -54,6 +54,31 @@ def describe_tests():
             expect(response.status_code) == 200
             html = response.content.decode("utf-8")
             expect(html).contains("1 Disabled Test")
+
+        def describe_regex():
+            url = "/projects/foo/bar/tests/disabled/regex"
+
+            @pytest.mark.django_db
+            def it_joins_the_regex_for_each_test(
+                expect, client, project: Project, disabled_test: Test
+            ):
+                for name in ["test [abc]", "test's name"]:
+                    test = Test.objects.create(
+                        project=project,
+                        name=name,
+                        disabled=True,
+                        enabled=False,
+                    )
+                    test.results.create(
+                        branch="main",
+                        commit="abc123",
+                        status=Status.PASSED,
+                        duration=1.0,
+                    )
+                response = client.get(url)
+                expect(response.status_code) == 200
+                text = response.content.decode("utf-8")
+                expect(text) == r"'test|test \[abc\]|test'\''s name'"
 
 
 def describe_results():
