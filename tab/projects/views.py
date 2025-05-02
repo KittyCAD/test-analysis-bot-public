@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -105,6 +106,7 @@ class DisabledTestsView(SingleTableMixin, FormView):
         )
         context["disabled_only"] = True
         context["search"] = self.request.GET.get("search", "").strip()
+        context["base_url"] = settings.BASE_URL
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
                 "admin:projects_project_change", args=[project.pk]

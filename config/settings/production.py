@@ -2,6 +2,8 @@ import os
 
 from .default import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
+BASE_URL = "https://test-analysis-bot.hawk-dinosaur.ts.net"
+
 ###############################################################################
 # Core
 
@@ -10,12 +12,12 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 ALLOWED_HOSTS = [
     "0.0.0.0",
     "localhost",
-    "test-analysis-bot.hawk-dinosaur.ts.net",
+    BASE_URL.removeprefix("https://"),
     "test-analysis-bot.corp.zoo.dev",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://test-analysis-bot.hawk-dinosaur.ts.net",
+    BASE_URL,
     "https://test-analysis-bot.corp.zoo.dev",
 ]
 

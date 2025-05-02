@@ -2,6 +2,8 @@ import os
 
 from .default import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
+BASE_URL = "http://localhost:8000"
+
 ###############################################################################
 # Core
 
