@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -8,9 +9,10 @@ from django.views.generic import FormView, ListView
 import log
 from django_tables2 import SingleTableMixin
 
+from tab.core.helpers import get_or_create_user
 from tab.core.models import Organization
 
-from .forms import BulkUpdateDisabledTestsForm
+from .forms import BulkUpdateTestForm, UpdateTestForm
 from .models import Project, Result, Status, Test
 from .tables import DisabledTestTable, ResultTable, TestResultTable, TestTable
 
@@ -77,7 +79,7 @@ class DisabledTestsView(SingleTableMixin, FormView):
     table_class = DisabledTestTable
     table_pagination = False
     template_name = "projects/tests-disabled.html"
-    form_class = BulkUpdateDisabledTestsForm
+    form_class = BulkUpdateTestForm
 
     def get_queryset(self):
         project = get_object_or_404(
@@ -114,18 +116,26 @@ class DisabledTestsView(SingleTableMixin, FormView):
 
         return context
 
+    def get_initial(self):
+        return {
+            "disabled_user": (
+                self.request.user.email if self.request.user.is_authenticated else ""
+            ),
+        }
+
     def form_valid(self, form):
         test_ids = form.cleaned_data["test_ids"].split(",")
         disabled = form.cleaned_data["disabled"]
         disabled_reason = form.cleaned_data["disabled_reason"]
         disabled_tracker = form.cleaned_data["disabled_tracker"]
+        disabled_user = get_or_create_user(form.cleaned_data["disabled_user"])
 
         tests = self.get_queryset().filter(id__in=test_ids)
         for test in tests:
             test.disabled = disabled
             test.disabled_reason = disabled_reason
             test.disabled_tracker = disabled_tracker
-            test.disabled_user = self.request.user
+            test.disabled_user = disabled_user
             if not disabled:
                 test.disabled_platforms = []
                 if test.last_result.status in {Status.SKIPPED, Status.DISABLED}:
@@ -133,7 +143,10 @@ class DisabledTestsView(SingleTableMixin, FormView):
                     test.last_result.status = Status.INTERRUPTED
                     test.last_result.save()
             test.save()
+
         log.info(f"{self.request.user} updated {len(tests)} tests")
+        s = "" if len(tests) == 1 else "s"
+        messages.success(self.request, f"Successfully updated {len(tests)} test{s}.")
 
         redirect_url = self.request.path
         if search := self.request.GET.get("search"):
@@ -227,9 +240,10 @@ class ResultsView(SingleTableMixin, ListView):
         return list(results_by_branch.values_list("branch", flat=True))
 
 
-class TestResultsView(SingleTableMixin, ListView):
+class TestResultsView(SingleTableMixin, FormView):
     table_class = TestResultTable
     template_name = "projects/test-results.html"
+    form_class = UpdateTestForm
 
     def get_queryset(self):
         project = get_object_or_404(
@@ -275,3 +289,44 @@ class TestResultsView(SingleTableMixin, ListView):
             context["admin_url"] = reverse("admin:projects_test_change", args=[test.pk])
 
         return context
+
+    def get_initial(self):
+        test = get_object_or_404(
+            Test,
+            project__repository__iendswith=self.kwargs["path"].strip("/"),
+            id=self.kwargs["test_id"],
+        )
+        return {
+            "test_id": test.id,
+            "disabled": test.disabled,
+            "disabled_reason": test.disabled_reason,
+            "disabled_tracker": test.disabled_tracker,
+            "disabled_user": (
+                self.request.user.email if self.request.user.is_authenticated else ""
+            ),
+        }
+
+    def form_valid(self, form):
+        test = get_object_or_404(
+            Test,
+            project__repository__iendswith=self.kwargs["path"].strip("/"),
+            id=self.kwargs["test_id"],
+        )
+
+        test.disabled = form.cleaned_data["disabled"]
+        test.disabled_reason = form.cleaned_data["disabled_reason"]
+        test.disabled_tracker = form.cleaned_data["disabled_tracker"]
+        test.disabled_user = get_or_create_user(form.cleaned_data["disabled_user"])
+        if test.disabled:
+            test.disabled_platforms = []
+        test.save()
+
+        log.info(f"{self.request.user} updated test {test.name}")
+        modified = "disabled from" if test.disabled else "allowed to"
+        messages.success(self.request, f"Test is now {modified} blocking merges.")
+
+        redirect_url = self.request.path
+        if branch := self.request.GET.get("branch"):
+            redirect_url += f"?branch={branch}"
+
+        return redirect(redirect_url)
