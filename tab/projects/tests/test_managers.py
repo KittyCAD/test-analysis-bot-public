@@ -28,14 +28,24 @@ def describe_result_manager():
                 status=Status.FAILED,
                 final=True,
             )
+            test3 = Test.objects.create(project=project, name="test2")
+            Result.objects.create(
+                test=test3,
+                branch="main",
+                commit="abc123",
+                status=Status.FAILED,
+                final=True,
+            )
+            test3.failure_rate = 0.09
+            test3.save()
 
             total, state, description = Result.objects.get_branch_health(
                 project, "main", "abc123"
             )
 
-            expect(total) == 2
+            expect(total) == 3
             expect(state) == "failure"
-            expect(description) == "1 of 2 tests are passing"
+            expect(description) == "1 of 3 tests are passing, 1 new failure"
 
         @pytest.mark.django_db
         def it_only_counts_final_results(expect, project: Project):
