@@ -125,7 +125,7 @@ def describe_share():
         expect(mock_create_status.call_args) == mocker.call(
             state="success",
             target_url="http://testserver.com/projects/my-user/my-project/results?branch=my-branch&show=fails",
-            description="0 of 0 tests are passing",
+            description="0 of 0 passing",
             context="Test Analysis Bot",
         )
 

@@ -119,19 +119,17 @@ def share(request, payload: ShareRequest):
     except (Organization.DoesNotExist, ValueError) as e:
         return 422, {"detail": str(e)}
 
-    total, state, description = Result.objects.get_branch_health(
-        project, payload.branch, payload.commit
-    )
+    health = Result.objects.get_health(project, payload.commit)
 
     assert "github.com" in project.repository, "Only GitHub is supported for now"
     github = Github(organization.repository_token)
     repo = github.get_repo(project.path)
     commit = repo.get_commit(payload.commit)
     commit.create_status(
-        state=state,
+        state=health.state,
         target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={payload.branch}&show=fails",
-        description=description,
+        description=health.description,
         context="Test Analysis Bot",
     )
 
-    return 200, ShareResponse(tests=total)
+    return 200, ShareResponse(tests=health.total)

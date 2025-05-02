@@ -9,7 +9,7 @@ def project():
 
 
 def describe_result_manager():
-    def describe_get_branch_health():
+    def describe_get_health():
         @pytest.mark.django_db
         def it_returns_health_metrics(expect, project: Project):
             test1 = Test.objects.create(project=project, name="test1")
@@ -39,13 +39,11 @@ def describe_result_manager():
             test3.failure_rate = 0.09
             test3.save()
 
-            total, state, description = Result.objects.get_branch_health(
-                project, "main", "abc123"
-            )
+            health = Result.objects.get_health(project, "abc123")
 
-            expect(total) == 3
-            expect(state) == "failure"
-            expect(description) == "1 of 3 tests are passing, 1 new failure"
+            expect(health.total) == 3
+            expect(health.state) == "failure"
+            expect(health.description) == "1 of 3 passing, 1 new failure"
 
         @pytest.mark.django_db
         def it_only_counts_final_results(expect, project: Project):
@@ -65,10 +63,8 @@ def describe_result_manager():
                 final=True,
             )
 
-            total, state, description = Result.objects.get_branch_health(
-                project, "main", "abc123"
-            )
+            health = Result.objects.get_health(project, "abc123")
 
-            expect(total) == 1
-            expect(state) == "success"
-            expect(description) == "1 of 1 tests are passing"
+            expect(health.total) == 1
+            expect(health.state) == "success"
+            expect(health.description) == "1 of 1 passing"

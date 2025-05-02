@@ -183,6 +183,7 @@ class ResultsView(SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
         branch = self.request.GET.get("branch", project.default_branch)
+        commit = Result.objects.get_latest_commit(project, branch)
 
         context["project"] = project
         context["branch"] = branch
@@ -190,6 +191,7 @@ class ResultsView(SingleTableMixin, ListView):
         context["branches"] = self._get_active_branches(project)
         context["search"] = self.request.GET.get("search", "").strip()
         context["show"] = self.request.GET.get("show", "all")
+        context["health"] = Result.objects.get_health(project, commit)
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
                 # TODO: Link to results for this particular project instead

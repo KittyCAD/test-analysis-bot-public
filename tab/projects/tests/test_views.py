@@ -89,4 +89,4 @@ def describe_results():
         response = client.get(url)
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
-        expect(html).contains("0 results")
+        expect(html).contains("0 of 0 passing")

@@ -67,7 +67,7 @@
                            onchange="document.querySelector('input[name=show]').value = this.checked ? 'fails' : 'all'; this.form.submit()">
                     <label class="form-check-label" for="show_checkbox">Hide tests that passed or were skipped</label>
                 </div>
-                <div class="text-muted">({{ table.rows|length }} results)</div>
+                <div class="text-muted">({{ health.description }})</div>
             </div>
         </form>
     </div>
