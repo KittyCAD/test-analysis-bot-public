@@ -9,6 +9,7 @@ import log
 
 from .constants import ANSI_ESCAPE, SAMPLE_COUNT, get_default_branches
 from .enums import Platform, Status, Target
+from .managers import ResultManager
 
 
 class ProjectManager(models.Manager):
@@ -322,6 +323,8 @@ class Result(models.Model):
     metadata = models.JSONField(default=dict, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    objects: ResultManager = ResultManager()
 
     class Meta:
         ordering = ["-created_at"]

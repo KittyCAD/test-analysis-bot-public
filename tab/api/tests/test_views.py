@@ -105,7 +105,7 @@ def describe_share():
         }
 
     @pytest.mark.django_db
-    def it_returns_tests_count(expect, client, payload, mocker):
+    def it_updates_status(expect, client, payload, mocker):
         mock_github = mocker.patch("tab.api.views.Github")
         mock_repo = mock_github.return_value.get_repo.return_value
         mock_commit = mock_repo.get_commit.return_value

@@ -119,23 +119,18 @@ def share(request, payload: ShareRequest):
     except (Organization.DoesNotExist, ValueError) as e:
         return 422, {"detail": str(e)}
 
-    results = Result.objects.filter(
-        test__project=project, commit=payload.commit, final=True
+    total, state, description = Result.objects.get_branch_health(
+        project, payload.branch, payload.commit
     )
-    total = results.count()
-    failed = results.filter(
-        status__in=[Status.FAILED, Status.XPASSED, Status.ERROR]
-    ).count()
-    passed = total - failed
 
     assert "github.com" in project.repository, "Only GitHub is supported for now"
     github = Github(organization.repository_token)
     repo = github.get_repo(project.path)
     commit = repo.get_commit(payload.commit)
     commit.create_status(
-        state="failure" if failed else "success",
+        state=state,
         target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={payload.branch}&show=fails",
-        description=f"{passed} of {total} tests are passing",
+        description=description,
         context="Test Analysis Bot",
     )
 
