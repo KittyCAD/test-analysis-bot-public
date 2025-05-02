@@ -87,9 +87,11 @@
                             <div class="col-12">{{ form.disabled|as_crispy_field }}</div>
                         </div>
                         <div class="row mt-3">
-                            <div class="col-md-4">{{ form.disabled_reason|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.disabled_tracker|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.disabled_user|as_crispy_field }}</div>
+                            <div class="col-md-6">{{ form.disabled_reason|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.disabled_tracker|as_crispy_field }}
+                                {{ form.disabled_user|as_crispy_field }}
+                            </div>
                         </div>
                         <div class="d-flex mt-3">
                             <button type="submit" class="btn btn-danger">

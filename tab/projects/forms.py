@@ -11,7 +11,7 @@ class BaseUpdateTestForm(forms.Form):
     )
     disabled_reason = forms.CharField(
         required=False,
-        widget=forms.TextInput(attrs={"class": "form-control"}),
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 6}),
         label="Disabled Reason",
         help_text=Test._meta.get_field("disabled_reason").help_text,
     )
