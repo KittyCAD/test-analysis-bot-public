@@ -72,10 +72,13 @@
             </div>
         </div>
         <details class="mb-4">
-            <summary class="btn btn-outline-danger">
-                <i class="fa-solid fa-triangle-exclamation me-2"></i>Override Behavior
-            </summary>
+            <summary>Advanced Options</summary>
             <div class="card shadow mt-4 border-danger">
+                <div class="card-header py-3 bg-danger text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>Override Behavior
+                    </h6>
+                </div>
                 <div class="card-body">
                     <form method="post" id="disable-test-form">
                         {% csrf_token %}
