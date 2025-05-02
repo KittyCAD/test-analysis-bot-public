@@ -14,7 +14,7 @@ def post(client, url: str, data: dict):
         url,
         data=json.dumps(data),
         content_type="application/json",
-        headers={"X-API-Key": "my-api-key"},
+        headers={"X-API-Key": "fake-api-key"},
     )
     try:
         log.info(f"{response.status_code} response: {response.json()}")
@@ -99,29 +99,35 @@ def describe_share():
     @pytest.fixture
     def payload():
         return {
-            # Test PR: https://github.com/KittyCAD/modeling-app/pull/6544
-            "project": "https://github.com/KittyCAD/modeling-app",
-            "branch": "share-tab-report",
-            "commit": "90bae5f48151193e61e0e76a67cada60358c2a9c",
+            "project": "https://github.com/my-user/my-project",
+            "branch": "my-branch",
+            "commit": "abc123",
         }
 
-    @pytest.mark.skipif(
-        not os.getenv("GITHUB_TOKEN"),
-        reason="GITHUB_TOKEN environment variable is not set",
-    )
     @pytest.mark.django_db
-    def it_returns_tests_count(expect, client, payload):
+    def it_returns_tests_count(expect, client, payload, mocker):
+        mock_github = mocker.patch("tab.api.views.Github")
+        mock_repo = mock_github.return_value.get_repo.return_value
+        mock_commit = mock_repo.get_commit.return_value
+        mock_create_status = mock_commit.create_status
+
         Organization.objects.create(
-            name="Zoo",
-            key="my-api-key",
-            repository_index="https://github.com/KittyCAD",
-            repository_token=os.getenv("GITHUB_TOKEN", ""),
+            name="MyOrganization",
+            key="fake-api-key",
+            repository_index="https://github.com/my-user",
+            repository_token="fake-token",
         )
 
         response = post(client, url, payload)
 
         expect(response.status_code) == 200
         expect(response.json()) == {"tests": 0}
+        expect(mock_create_status.call_args) == mocker.call(
+            state="success",
+            target_url="http://testserver.com/projects/my-user/my-project/results?branch=my-branch&show=fails",
+            description="0 of 0 tests are passing",
+            context="Test Analysis Bot",
+        )
 
     @pytest.mark.parametrize(
         "project",
@@ -133,7 +139,7 @@ def describe_share():
     )
     @pytest.mark.django_db
     def it_rejects_invalid_repositories(expect, client, payload, project):
-        Organization.objects.create(name="MyOrganization", key="my-api-key")
+        Organization.objects.create(name="MyOrganization", key="fake-api-key")
 
         payload["project"] = project
         response = post(client, url, payload)

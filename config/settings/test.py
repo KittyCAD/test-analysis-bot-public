@@ -2,7 +2,7 @@ import os
 
 from .default import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
-BASE_URL = "http://example.com"
+BASE_URL = "http://testserver.com"
 
 ###############################################################################
 # Core

@@ -56,6 +56,7 @@ pytest = "^8.3.5"
 pytest-django = "*"
 pytest-describe = "*"
 pytest-expecter = "*"
+pytest-mock = "*"
 pytest-randomly = "*"
 
 # Coverage

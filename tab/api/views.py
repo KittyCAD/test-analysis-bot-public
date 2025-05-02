@@ -134,7 +134,7 @@ def share(request, payload: ShareRequest):
     commit = repo.get_commit(payload.commit)
     commit.create_status(
         state="failure" if failed else "success",
-        target_url=f"{settings.BASE_URL}/projects/KittyCAD/modeling-app/results?branch={payload.branch}&show=fails",
+        target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={payload.branch}&show=fails",
         description=f"{passed} of {total} tests are passing",
         context="Test Analysis Bot",
     )

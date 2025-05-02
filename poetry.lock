@@ -1442,6 +1442,24 @@ files = [
 ]
 
 [[package]]
+name = "pytest-mock"
+version = "3.14.0"
+description = "Thin-wrapper around the mock package for easier use with pytest"
+optional = false
+python-versions = ">=3.8"
+groups = ["dev"]
+files = [
+    {file = "pytest-mock-3.14.0.tar.gz", hash = "sha256:2719255a1efeceadbc056d6bf3df3d1c5015530fb40cf347c0f9afac88410bd0"},
+    {file = "pytest_mock-3.14.0-py3-none-any.whl", hash = "sha256:0b72c38033392a5f4621342fe11e9219ac11ec9d375f8e2a0c164539e0d70f6f"},
+]
+
+[package.dependencies]
+pytest = ">=6.2.5"
+
+[package.extras]
+dev = ["pre-commit", "pytest-asyncio", "tox"]
+
+[[package]]
 name = "pytest-randomly"
 version = "3.16.0"
 description = "Pytest plugin to randomly order tests and control random.seed."
@@ -1964,4 +1982,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "8088a4e6d1a740ca59fdfb8483e403723659d3b62aa7f45d2295f9b63d61c37e"
+content-hash = "753983b0e838031107e23f070d57b0275f95c6d87e3f4a34352f76def7cf70a0"
