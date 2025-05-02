@@ -6,6 +6,7 @@ from django.shortcuts import redirect
 
 import log
 from github import Github
+from github.GithubException import GithubException
 from ninja import NinjaAPI
 
 from tab.core.models import Organization
@@ -105,6 +106,7 @@ def results(request, payload: ResultRequest):
     auth=api_key,
     response={
         200: ShareResponse,
+        404: ErrorResponse,
         422: ErrorResponse,
     },
     tags=["Tests"],
@@ -123,8 +125,11 @@ def share(request, payload: ShareRequest):
 
     assert "github.com" in project.repository, "Only GitHub is supported for now"
     github = Github(organization.repository_token)
-    repo = github.get_repo(project.path)
-    commit = repo.get_commit(payload.commit)
+    try:
+        repo = github.get_repo(project.path)
+        commit = repo.get_commit(payload.commit)
+    except GithubException as e:
+        return 404, {"detail": str(e)}
     commit.create_status(
         state=health.state,
         target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={payload.branch}&show=fails",
