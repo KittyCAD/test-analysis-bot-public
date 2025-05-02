@@ -28,7 +28,7 @@ class Command(BaseCommand):
                 project.cleaned_at = timezone.now()
                 project.save()
 
-    def _delete_stale_tests(self, project: Project, dry_run: bool):
+    def _delete_stale_tests(self, project: Project, dry_run: bool) -> int:
         self.stdout.write(
             self.style.MIGRATE_LABEL(f"Cleaning up stale tests: {project}")
         )
@@ -44,11 +44,13 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.WARNING(f"Would delete {count} tests: {project}")
             )
-        else:
-            tests.delete()
-            self.stdout.write(self.style.SUCCESS(f"Deleted {count} tests: {project}"))
+            return 0
 
-    def _delete_stale_results(self, project: Project, dry_run: bool):
+        tests.delete()
+        self.stdout.write(self.style.SUCCESS(f"Deleted {count} tests: {project}"))
+        return count
+
+    def _delete_stale_results(self, project: Project, dry_run: bool) -> int:
         self.stdout.write(
             self.style.MIGRATE_LABEL(f"Cleaning up stale results: {project}")
         )
@@ -64,14 +66,16 @@ class Command(BaseCommand):
             self.stdout.write(
                 self.style.WARNING(f"Would delete {count} results: {project}")
             )
-        else:
-            deleted = 0
-            while True:
-                chunk_ids = results.values_list("id", flat=True)[:CHUNK_SIZE]
-                if not chunk_ids:
-                    break
-                chunk_count = Result.objects.filter(id__in=chunk_ids).delete()[0]
-                deleted += chunk_count
-                self.stdout.write(
-                    self.style.SUCCESS(f"Deleted {deleted}/{count} results: {project}")
-                )
+            return 0
+
+        deleted = 0
+        while True:
+            chunk_ids = results.values_list("id", flat=True)[:CHUNK_SIZE]
+            if not chunk_ids:
+                break
+            chunk_count = Result.objects.filter(id__in=chunk_ids).delete()[0]
+            deleted += chunk_count
+            self.stdout.write(
+                self.style.SUCCESS(f"Deleted {deleted}/{count} results: {project}")
+            )
+        return deleted
