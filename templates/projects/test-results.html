@@ -91,9 +91,15 @@
                             <div class="col-md-4">{{ form.disabled_tracker|as_crispy_field }}</div>
                             <div class="col-md-4">{{ form.disabled_user|as_crispy_field }}</div>
                         </div>
-                        <button type="submit" class="btn btn-danger mt-3">
-                            <i class="fa-solid fa-pen-to-square me-2"></i>Update Test
-                        </button>
+                        <div class="d-flex mt-3">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Update Test
+                            </button>
+                            <a href="{% url 'projects:disabled-tests' project.path %}"
+                               class="btn btn-outline-secondary ms-auto">
+                                <i class="fa-solid fa-list me-2"></i>View All Disabled Tests
+                            </a>
+                        </div>
                     </form>
                 </div>
             </div>
