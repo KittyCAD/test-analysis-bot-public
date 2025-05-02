@@ -34,6 +34,7 @@ class Project(models.Model):
         help_text="Branch results older than this will be pruned automatically",
     )
 
+    cleaned_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -19,10 +19,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
         for project in Project.objects.all():
+            count = 0
             if project.test_stale_threshold:
-                self._delete_stale_tests(project, dry_run)
+                count += self._delete_stale_tests(project, dry_run)
             if project.result_stale_threshold:
-                self._delete_stale_results(project, dry_run)
+                count += self._delete_stale_results(project, dry_run)
+            if count:
+                project.cleaned_at = timezone.now()
+                project.save()
 
     def _delete_stale_tests(self, project: Project, dry_run: bool):
         self.stdout.write(

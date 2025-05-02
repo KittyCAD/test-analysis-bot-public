@@ -17,13 +17,14 @@ class ProjectAdmin(admin.ModelAdmin):
         "test_inactive_threshold_humanized",
         "test_stale_threshold_humanized",
         "result_stale_threshold_humanized",
+        "cleaned_at",
         "created_at",
         "updated_at",
     )
-    ordering = ("-updated_at",)
-    list_filter = ("created_at", "updated_at")
+    ordering = ("repository",)
+    list_filter = ("cleaned_at", "created_at", "updated_at")
 
-    readonly_fields = ("created_at", "updated_at")
+    readonly_fields = ("cleaned_at", "created_at", "updated_at")
 
     @admin.display(description="Branches Inactive")
     def branch_inactive_threshold_humanized(self, project: Project) -> str:
