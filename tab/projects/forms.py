@@ -12,19 +12,20 @@ class BaseUpdateTestForm(forms.Form):
     disabled_reason = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={"class": "form-control"}),
-        label="Reason Disabled",
+        label="Disabled Reason",
         help_text=Test._meta.get_field("disabled_reason").help_text,
     )
     disabled_tracker = forms.CharField(
         required=False,
         widget=forms.TextInput(attrs={"class": "form-control"}),
-        label="Tracker",
+        label="Tracker Link",
         help_text=Test._meta.get_field("disabled_tracker").help_text,
     )
     disabled_user = forms.EmailField(
         widget=forms.EmailInput(attrs={"class": "form-control"}),
         required=True,
         label="Your Email",
+        help_text="Person who last updated this override behavior",
     )
 
 
