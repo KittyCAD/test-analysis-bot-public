@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 import pytest
 
 from ..models import Project, Result, Status, Test
@@ -68,3 +70,28 @@ def describe_result_manager():
             expect(health.total) == 1
             expect(health.state) == "success"
             expect(health.description) == "1 of 1 passing"
+
+        @pytest.mark.django_db
+        def it_returns_pending_if_less_than_half_of_tests_are_active(
+            expect, project: Project
+        ):
+            for i in range(3):
+                Test.objects.create(
+                    project=project,
+                    name=f"test_{i}",
+                    updated_at=timezone.now(),
+                )
+            test = Test.objects.first()
+            Result.objects.create(
+                test=test,
+                branch="main",
+                commit="abc123",
+                status=Status.FAILED,
+                final=True,
+            )
+
+            health = Result.objects.get_health(project, "abc123")
+
+            expect(health.total) == 1
+            expect(health.state) == "pending"
+            expect(health.description) == "0 of 1 passing"
