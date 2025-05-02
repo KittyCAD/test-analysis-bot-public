@@ -71,7 +71,7 @@
                 </div>
             </div>
         </div>
-        <details class="mb-4">
+        <details class="mb-4" {% if test.failure_rate > 0.25 %}open{% endif %}>
             <summary>Advanced Options</summary>
             <div class="card shadow mt-4 border-danger">
                 <div class="card-header py-3 bg-danger text-white">
