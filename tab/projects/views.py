@@ -117,11 +117,19 @@ class DisabledTestsView(SingleTableMixin, FormView):
         return context
 
     def get_initial(self):
-        return {
+        tests = self.get_queryset()
+        initial = {
             "disabled_user": (
                 self.request.user.email if self.request.user.is_authenticated else ""
             ),
         }
+        reasons = set(t.disabled_reason for t in tests)
+        if len(reasons) == 1:
+            initial["disabled_reason"] = reasons.pop()
+        trackers = set(t.disabled_tracker for t in tests)
+        if len(trackers) == 1:
+            initial["disabled_tracker"] = trackers.pop()
+        return initial
 
     def form_valid(self, form):
         test_ids = form.cleaned_data["test_ids"].split(",")
