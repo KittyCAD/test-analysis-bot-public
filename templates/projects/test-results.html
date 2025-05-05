@@ -72,7 +72,18 @@
             </div>
         </div>
         <details class="mb-4" {% if test.failure_rate > 0.25 %}open{% endif %}>
-            <summary>Advanced Options</summary>
+            <summary>
+                Advanced Options
+                {% if platform %}
+                    <span class="float-end">
+                        <a href="?{% if search %}search={{ search }}&{% endif %}branch={{ branch }}{% if show != 'all' %}&show={{ show }}{% endif %}"
+                           class="btn btn-outline-danger align-baseline">
+                            platform:{{ platform }}
+                            <i class="fa-solid fa-xmark ms-1"></i>
+                        </a>
+                    </span>
+                {% endif %}
+            </summary>
             <div class="card shadow mt-4 border-danger">
                 <div class="card-header py-3 bg-danger text-white">
                     <h6 class="m-0 font-weight-bold">

@@ -179,8 +179,9 @@ class ResultsView(SingleTableMixin, ListView):
         )
 
         branch = self.request.GET.get("branch", project.default_branch)
-        show = self.request.GET.get("show", "all")
         search = self.request.GET.get("search")
+        platform = self.request.GET.get("platform")
+        show = self.request.GET.get("show", "all")
 
         queryset = Result.objects.filter(
             test__project=project, branch=branch
@@ -188,12 +189,14 @@ class ResultsView(SingleTableMixin, ListView):
         latest_commit = queryset.values_list("commit", flat=True).first()
         queryset = queryset.filter(commit=latest_commit)
 
+        if search:
+            queryset = queryset.filter(test__name__icontains=search)
+        if platform:
+            queryset = queryset.filter(platform=platform)
         if show == "fails":
             queryset = queryset.exclude(
                 status__in={Status.PASSED, Status.XFAILED, Status.SKIPPED}
             ).filter(final=True)
-        if search:
-            queryset = queryset.filter(test__name__icontains=search)
 
         return queryset
 
@@ -211,6 +214,7 @@ class ResultsView(SingleTableMixin, ListView):
         context["merge_url"] = self._get_merge_url(project, branch)
         context["branches"] = self._get_active_branches(project)
         context["search"] = self.request.GET.get("search", "").strip()
+        context["platform"] = self.request.GET.get("platform", "").strip()
         context["show"] = self.request.GET.get("show", "all")
         context["health"] = Result.objects.get_health(project, commit)
         if self.request.user.is_staff:
@@ -264,7 +268,7 @@ class TestResultsView(SingleTableMixin, FormView):
         else:
             branches = test.significant_branches
         show = self.request.GET.get("show", "all")  # TODO: Expose filter in UI
-        platform = self.request.GET.get("platform")  # TODO: Expose filter in UI
+        platform = self.request.GET.get("platform")
 
         queryset = test.results.filter(branch__in=branches)
         if show == "fails":
@@ -292,6 +296,7 @@ class TestResultsView(SingleTableMixin, FormView):
         context["project"] = project
         context["test"] = test
         context["branch"] = self.request.GET.get("branch")
+        context["platform"] = self.request.GET.get("platform", "").strip()
         context["show"] = self.request.GET.get("show", "all")
         if self.request.user.is_staff:
             context["admin_url"] = reverse("admin:projects_test_change", args=[test.pk])
