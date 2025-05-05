@@ -169,6 +169,10 @@ class Test(models.Model):
         return branches
 
     @property
+    def show_advanced_options(self) -> bool:
+        return bool(self.last_result) and self.failure_rate > 0.25
+
+    @property
     def markers(self) -> list[str]:
         metadata = self.last_result.metadata if self.last_result else {}
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
