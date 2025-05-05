@@ -365,6 +365,13 @@ class Result(models.Model):
             values.append("disabled")
         return values
 
+    @property
+    def originated_from_branch(self) -> bool:
+        return (
+            self.branch == self.test.original_branch
+            and self.branch not in self.test.project.default_branches
+        )
+
     def save(self, *args, **kwargs):
         if self.duration:
             self.duration = round(self.duration, 3)

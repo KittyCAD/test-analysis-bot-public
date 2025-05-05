@@ -102,6 +102,22 @@ def describe_result():
             result = Result(test=test, status=Status.FAILED, platform=Platform.MACOS)
             expect(result.markers) == []
 
+    def describe_originated_from_branch():
+        def it_detects_if_branch_is_original_and_not_default(expect):
+            project = Project()
+
+            test = Test(project=project, name="test1", original_branch="my-branch")
+            result = Result(test=test, branch="my-branch")
+            expect(result.originated_from_branch) == True
+
+            test = Test(project=project, name="test2", original_branch="my-branch")
+            result = Result(test=test, branch="main")
+            expect(result.originated_from_branch) == False
+
+            test = Test(project=project, name="test3", original_branch="main")
+            result = Result(test=test, branch="main")
+            expect(result.originated_from_branch) == False
+
     def describe_save():
         @pytest.mark.django_db
         def it_cleans_message(expect):

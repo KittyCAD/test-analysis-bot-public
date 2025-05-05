@@ -321,9 +321,6 @@ class ResultTable(TestResultTable):
         )
 
     def render_test__failure_rate(self, record: Result):
-        if (
-            record.branch == record.test.original_branch
-            and record.branch not in record.test.project.default_branches
-        ):
+        if record.originated_from_branch:
             return "—"
         return record.test.failure_rate_humanized
