@@ -264,17 +264,11 @@ class TestResultsView(SingleTableMixin, FormView):
         )
         test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
 
-        branch = self.request.GET.get("branch")  # TODO: Expose filter in UI
+        branch = self.request.GET.get("branch")
         show = self.request.GET.get("show", "all")  # TODO: Expose filter in UI
         platform = self.request.GET.get("platform")
 
-        if branch == ALL_BRANCHES:
-            queryset = test.results.all()
-        else:
-            branches = test.significant_branches
-            if branch:
-                branches.append(branch)
-            queryset = test.results.filter(branch__in=branches)
+        queryset = Result.objects.filter_with_default_branches(test, branch)
         if show == "fails":
             queryset = queryset.exclude(
                 status__in={

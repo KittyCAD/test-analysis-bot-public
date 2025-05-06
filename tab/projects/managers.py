@@ -8,11 +8,12 @@ from django.utils import timezone
 
 import log
 
+from .constants import ALL_BRANCHES
 from .enums import Status
 from .types import Health
 
 if TYPE_CHECKING:
-    from .models import Project
+    from .models import Project, Test
 
 
 class ProjectManager(models.Manager):
@@ -41,6 +42,16 @@ class ProjectManager(models.Manager):
 
 
 class ResultManager(models.Manager):
+    def filter_with_default_branches(self, test: Test, branch: str | None):
+        if branch == ALL_BRANCHES:
+            results = self.filter(test=test)
+        elif branch:
+            branches = [branch] + test.significant_branches
+            results = self.filter(test=test, branch__in=branches)
+        else:
+            results = self.filter(test=test, branch__in=test.significant_branches)
+        return results.select_related("test__project")
+
     def get_latest_commit(self, project: Project, branch: str) -> str:
         queryset = self.filter(test__project=project, branch=branch).select_related(
             "test", "test__project"
