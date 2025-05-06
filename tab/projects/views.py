@@ -12,6 +12,7 @@ from django_tables2 import SingleTableMixin
 from tab.core.helpers import get_or_create_user
 from tab.core.models import Organization
 
+from .constants import ALL_BRANCHES
 from .forms import BulkUpdateTestForm, UpdateTestForm
 from .models import Project, Result, Status, Test
 from .tables import DisabledTestTable, ResultTable, TestResultTable, TestTable
@@ -263,14 +264,17 @@ class TestResultsView(SingleTableMixin, FormView):
         )
         test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
 
-        if branch := self.request.GET.get("branch"):
-            branches = [branch] + test.significant_branches
-        else:
-            branches = test.significant_branches
+        branch = self.request.GET.get("branch")  # TODO: Expose filter in UI
         show = self.request.GET.get("show", "all")  # TODO: Expose filter in UI
         platform = self.request.GET.get("platform")
 
-        queryset = test.results.filter(branch__in=branches)
+        if branch == ALL_BRANCHES:
+            queryset = test.results.all()
+        else:
+            branches = test.significant_branches
+            if branch:
+                branches.append(branch)
+            queryset = test.results.filter(branch__in=branches)
         if show == "fails":
             queryset = queryset.exclude(
                 status__in={
