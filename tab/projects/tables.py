@@ -316,8 +316,10 @@ class ResultTable(TestResultTable):
         url = reverse(
             "projects:test-results", args=[record.test.project.path, record.test.id]
         )
+        if record.branch != record.test.project.default_branch:
+            url += f"?branch={record.branch}"
         return mark_safe(
-            f'<a href="{url}?branch={record.branch}" class="text-body text-decoration-none fw-bold">{record.test.name}</a>'
+            f'<a href="{url}" class="text-body text-decoration-none fw-bold">{record.test.name}</a>'
         )
 
     def render_test__failure_rate(self, record: Result):
