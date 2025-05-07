@@ -72,10 +72,8 @@ def describe_result_manager():
             expect(health.description) == "1 of 1 passing"
 
         @pytest.mark.django_db
-        def it_returns_pending_if_less_than_half_of_tests_are_active(
-            expect, project: Project
-        ):
-            for i in range(3):
+        def it_returns_pending_when_more_results_expected(expect, project: Project):
+            for i in range(4):
                 Test.objects.create(
                     project=project,
                     name=f"test_{i}",

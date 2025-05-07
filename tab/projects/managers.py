@@ -71,7 +71,7 @@ class ResultManager(models.Manager):
         expected = project.tests.filter(
             updated_at__gte=timezone.now() - project.test_inactive_threshold
         ).count()
-        if total < expected / 2:
+        if total < expected * 0.75:
             state = "pending"
         elif failed:
             state = "failure"
