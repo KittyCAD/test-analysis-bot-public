@@ -85,12 +85,12 @@ class Test(models.Model):
     disabled_reason = models.TextField(
         default="",
         blank=True,
-        help_text="Reason for disabling the test",
+        help_text="Explanation of why the test is temporarily disabled",
     )
     disabled_tracker = models.URLField(
         null=True,
         blank=True,
-        help_text="URL to the issue or ticket tracking the work to restore the test",
+        help_text="URL of the ticket tracking the work to restore the test",
     )
     disabled_user = models.ForeignKey(
         User,
@@ -113,7 +113,7 @@ class Test(models.Model):
     block_rate = models.FloatField(
         default=-1,
         editable=False,
-        help_text="Effective failure rate with reruns and disabled excluded",
+        help_text="Effective failure rate with reruns and ignored failures excluded",
     )
     average_duration = models.FloatField(
         default=-1,
@@ -128,6 +128,11 @@ class Test(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def regex(self) -> str:
+        label = self.name.split(" › ")[-1]
+        return re.escape(label).replace(r"\ ", " ").replace("'", r"'\''")
 
     @property
     def failure_rate_help(self) -> str:
@@ -180,11 +185,6 @@ class Test(models.Model):
         if self.disabled:
             values.append("disabled")
         return values
-
-    @property
-    def regex(self) -> str:
-        label = self.name.split(" › ")[-1]
-        return re.escape(label).replace(r"\ ", " ").replace("'", r"'\''")
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
@@ -241,6 +241,7 @@ class Test(models.Model):
                 Status.FAILED,
                 Status.XPASSED,
                 Status.XFAILED,
+                Status.DISABLED,
             ],
             duration__gt=0,
         ).order_by("-created_at")
