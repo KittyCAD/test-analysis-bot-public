@@ -13,7 +13,7 @@ class Status(models.TextChoices):
     XFAILED = "xfailed", "Expected Failure"
     XPASSED = "xpassed", "Unexpected Pass"
 
-    DISABLED = "disabled", "Disabled"
+    DISABLED = "disabled", "Ignored Failure"
 
     @classmethod
     def normalize(
@@ -56,10 +56,10 @@ class Status(models.TextChoices):
                 return "danger"
             case self.ERROR | self.TIMEDOUT:
                 return "warning"
-            case self.SKIPPED | self.DISABLED:
+            case self.DISABLED:
                 return "info"
             case _:
-                return "dark"
+                return "secondary"
 
 
 class Target(models.TextChoices):
