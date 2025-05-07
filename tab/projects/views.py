@@ -307,14 +307,16 @@ class TestResultsView(SingleTableMixin, FormView):
             project__repository__iendswith=self.kwargs["path"].strip("/"),
             id=self.kwargs["test_id"],
         )
+        original_email = test.disabled_user.email if test.disabled_user else ""
+        current_email = (
+            self.request.user.email if self.request.user.is_authenticated else ""
+        )
         return {
             "test_id": test.id,
             "disabled": test.disabled,
             "disabled_reason": test.disabled_reason,
             "disabled_tracker": test.disabled_tracker,
-            "disabled_user": (
-                self.request.user.email if self.request.user.is_authenticated else ""
-            ),
+            "disabled_user": original_email or current_email,
         }
 
     def form_valid(self, form):
