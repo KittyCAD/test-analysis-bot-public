@@ -156,11 +156,12 @@ class DisabledTestTable(tables.Table):
     def render_failure_rate(self, record: Test):
         return record.failure_rate_humanized
 
-    def render_disabled_tracker(self, value):
+    def render_disabled_tracker(self, value: str, record: Test):
         if not value:
             return ""
+        label = value.removeprefix(record.project.repository).strip("/")
         return mark_safe(
-            f'<a href="{value}" target="_blank" rel="noopener noreferrer">{value}</a>'
+            f'<a href="{value}" target="_blank" rel="noopener noreferrer">{label}</a>'
         )
 
     def render_disabled_user(self, value):
