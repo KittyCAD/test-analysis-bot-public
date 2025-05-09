@@ -5,14 +5,12 @@ from django.conf import settings
 from django.shortcuts import redirect
 
 import log
-from github import Github
-from github.GithubException import GithubException
 from ninja import NinjaAPI
 
 from tab.core.models import Organization
-from tab.projects.enums import Status
 from tab.projects.models import Project, Result, Test
 
+from .helpers import update_status
 from .schemas import (
     ApiKey,
     ErrorResponse,
@@ -122,19 +120,6 @@ def share(request, payload: ShareRequest):
         return 422, {"detail": str(e)}
 
     health = Result.objects.get_health(project, payload.commit)
-
-    assert "github.com" in project.repository, "Only GitHub is supported for now"
-    github = Github(organization.repository_token)
-    try:
-        repo = github.get_repo(project.path)
-        commit = repo.get_commit(payload.commit)
-    except GithubException as e:
-        return 404, {"detail": str(e)}
-    commit.create_status(
-        state=health.state,
-        target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={payload.branch}&show=fails",
-        description=health.description,
-        context="Test Analysis Bot",
-    )
+    update_status(organization, project, payload.commit, payload.branch, health)
 
     return 200, ShareResponse(tests=health.total)
