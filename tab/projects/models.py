@@ -13,7 +13,7 @@ from .managers import ProjectManager, ResultManager
 
 
 class Project(models.Model):
-    repository = models.URLField(unique=True)
+    repository = models.URLField(unique=True, db_index=True)
     default_branches = models.JSONField(default=get_default_branches)
     error_indicators = models.JSONField(default=list, blank=True)
 
@@ -34,9 +34,9 @@ class Project(models.Model):
         help_text="Branch results older than this will be pruned automatically",
     )
 
-    cleaned_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    cleaned_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
     objects: ProjectManager = ProjectManager()
 
@@ -68,14 +68,13 @@ class Project(models.Model):
 class Test(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tests")
 
-    name = models.CharField(max_length=1000)
+    name = models.CharField(max_length=1000, db_index=True)
     original_branch = models.CharField(max_length=100, default="")
     original_commit = models.CharField(max_length=100, default="")
     metadata = models.JSONField(default=dict, blank=True)
 
     disabled = models.BooleanField(
-        default=False,
-        help_text="Forces the test to be disabled",
+        default=False, help_text="Forces the test to be disabled", db_index=True
     )
     disabled_platforms = models.JSONField(
         default=list,
@@ -104,6 +103,7 @@ class Test(models.Model):
         default=False,
         editable=False,
         help_text="Test is allowed to block merges and releases",
+        db_index=True,
     )
     failure_rate = models.FloatField(
         default=-1,
@@ -123,8 +123,15 @@ class Test(models.Model):
         "Result", on_delete=models.SET_NULL, null=True, related_name="+"
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["project", "name"]),
+            models.Index(fields=["project", "disabled"]),
+            models.Index(fields=["project", "enabled"]),
+        ]
 
     def __str__(self):
         return self.name
@@ -290,25 +297,34 @@ class Test(models.Model):
 class Result(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="results")
 
-    branch = models.CharField(max_length=100, default="")
-    commit = models.CharField(max_length=100, default="")
-    target = models.CharField(max_length=100, null=True, choices=Target.choices)
-    platform = models.CharField(max_length=100, null=True, choices=Platform.choices)
+    branch = models.CharField(max_length=100, default="", db_index=True)
+    commit = models.CharField(max_length=100, default="", db_index=True)
+    target = models.CharField(
+        max_length=100, null=True, choices=Target.choices, db_index=True
+    )
+    platform = models.CharField(
+        max_length=100, null=True, choices=Platform.choices, db_index=True
+    )
     final = models.BooleanField(
-        default=True, help_text="Indicates this was the final retry"
+        default=True, help_text="Indicates this was the final retry", db_index=True
     )
 
-    status = models.CharField(max_length=20, choices=Status.choices)
+    status = models.CharField(max_length=20, choices=Status.choices, db_index=True)
     duration = models.FloatField(null=True)
     message = models.TextField(null=True, blank=True)
     metadata = models.JSONField(default=dict, blank=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     objects: ResultManager = ResultManager()
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["test", "branch", "commit"]),
+            models.Index(fields=["test", "branch", "created_at"]),
+            models.Index(fields=["test", "status", "final"]),
+        ]
 
     def __str__(self):
         status = Status(self.status).label
