@@ -69,8 +69,7 @@ class ResultManager(models.Manager):
 
         assert "github.com" in project.repository, "Only GitHub is supported for now"
         expected = project.tests.filter(
-            enabled=True,
-            updated_at__gte=timezone.now() - project.test_inactive_threshold,
+            updated_at__gte=timezone.now() - project.test_inactive_threshold
         ).count()
         if total < expected * 0.75:
             state = "pending"
