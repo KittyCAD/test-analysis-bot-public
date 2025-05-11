@@ -10,6 +10,10 @@ from .constants import SAMPLE_COUNT
 from .models import Result, Status, Test
 
 
+def wrap(name: str) -> str:
+    return mark_safe(name.replace("_", "_<wbr>"))
+
+
 class TestTable(tables.Table):
     name = tables.LinkColumn(
         "projects:test-results",
@@ -69,12 +73,10 @@ class TestTable(tables.Table):
         order_by = "-failure_rate"
 
     def render_name(self, record: Test):
-        if record.markers:
-            return render_to_string(
-                "projects/_markers.html",
-                {"label": record.name, "markers": record.markers},
-            )
-        return record.name
+        return render_to_string(
+            "projects/_markers.html",
+            {"label": wrap(record.name), "markers": record.markers},
+        )
 
     def render_enabled(self, value):
         icon = "check" if value else "xmark"
@@ -146,12 +148,10 @@ class DisabledTestTable(tables.Table):
         order_by = "name"
 
     def render_name(self, record: Test):
-        if record.markers:
-            return render_to_string(
-                "projects/_markers.html",
-                {"label": record.name, "markers": record.markers},
-            )
-        return record.name
+        return render_to_string(
+            "projects/_markers.html",
+            {"label": wrap(record.name), "markers": record.markers},
+        )
 
     def render_failure_rate(self, record: Test):
         return record.failure_rate_humanized
@@ -319,7 +319,7 @@ class ResultTable(TestResultTable):
         )
         if record.branch != record.test.project.default_branch:
             url += f"?branch={record.branch}"
-        name = record.test.name.replace("_", "_<wbr>")
+        name = wrap(record.test.name)
         return mark_safe(
             f'<a href="{url}" class="text-body text-decoration-none fw-bold">{name}</a>'
         )
