@@ -47,19 +47,37 @@ class ResultRequest(ModelSchema):
         }
 
 
-# TODO: Use Django Ninja to enforce this or at least display in the docs
 class BulkResultRequest(Schema):
     project: str
     branch: str
     commit: str
-    tests: UploadedFile = File(...)
 
     class Config:
-        arbitrary_types_allowed = True
+        model_fields = [
+            "project",
+            "branch",
+            "commit",
+            "tests",
+        ]
+
+    @classmethod
+    def get_metadata(cls, request_body: dict) -> dict:
+        return {
+            k: v for k, v in request_body.items() if k not in cls.Config.model_fields
+        }
+
+    def get_model_fields(self) -> dict:
+        return {
+            field: getattr(self, field)
+            for field in self.__class__.Config.model_fields
+            if field not in ["project", "tests"]
+        }
 
 
 class BulkResultResponse(Schema):
     project: str
+    branch: str
+    commit: str
     tests: int
 
 
@@ -77,6 +95,9 @@ class ShareRequest(Schema):
 
 
 class ShareResponse(Schema):
+    project: str
+    branch: str
+    commit: str
     tests: int
 
 

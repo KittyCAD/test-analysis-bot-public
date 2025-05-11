@@ -5,7 +5,7 @@ import log
 import pytest
 
 from tab.core.models import Organization
-from tab.projects.models import Test
+from tab.projects.models import Result, Test
 
 
 def post_json(client, url: str, data: dict):
@@ -117,15 +117,34 @@ def describe_bulk_results():
             "branch": "main",
             "commit": "abc123",
             "tests": junit_xml.open("rb"),
+            "EXTRA": "foobar",
         }
 
     @pytest.mark.django_db
     def it_creates_tests_from_junit_xml(expect, client, payload):
         response = post_form(client, url, payload)
-
         expect(response.json()) == {
             "project": "my-user › my-project",
+            "branch": "main",
+            "commit": "abc123",
             "tests": 25,
+        }
+        test: Test = Test.objects.first()  # type: ignore[assignment]
+        expect(test.original_branch) == "main"
+        expect(test.original_commit) == "abc123"
+        expect(test.metadata) == {"EXTRA": "foobar"}
+        result: Result = Result.objects.first()  # type: ignore[assignment]
+        expect(result.branch) == "main"
+        expect(result.commit) == "abc123"
+        expect(result.metadata) == {"EXTRA": "foobar"}
+
+    @pytest.mark.django_db
+    def it_requires_tests_as_file_upload(expect, client, payload):
+        del payload["tests"]
+        response = post_form(client, url, payload)
+        expect(response.status_code) == 422
+        expect(response.json()) == {
+            "detail": "Include 'tests' as a JUnit XML file upload.",
         }
 
 
@@ -158,7 +177,12 @@ def describe_share():
         response = post_json(client, url, payload)
 
         expect(response.status_code) == 200
-        expect(response.json()) == {"tests": 0}
+        expect(response.json()) == {
+            "project": "my-user › my-project",
+            "branch": "my-branch",
+            "commit": "abc123",
+            "tests": 0,
+        }
         expect(mock_create_status.call_args) == mocker.call(
             state="success",
             target_url="http://testserver.com/projects/my-user/my-project/results?branch=my-branch&show=fails",

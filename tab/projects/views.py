@@ -12,7 +12,6 @@ from django_tables2 import SingleTableMixin
 from tab.core.helpers import get_or_create_user
 from tab.core.models import Organization
 
-from .constants import ALL_BRANCHES
 from .forms import BulkUpdateTestForm, UpdateTestForm
 from .models import Project, Result, Status, Test
 from .tables import DisabledTestTable, ResultTable, TestResultTable, TestTable

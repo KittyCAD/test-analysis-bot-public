@@ -5,7 +5,7 @@ from django.conf import settings
 from django.shortcuts import redirect
 
 import log
-from ninja import NinjaAPI
+from ninja import Form, NinjaAPI
 
 from tab.core.models import Organization
 from tab.projects.models import Project, Result, Test
@@ -13,6 +13,7 @@ from tab.projects.models import Project, Result, Test
 from .helpers import parse_junit_xml, update_status
 from .schemas import (
     ApiKey,
+    BulkResultRequest,
     BulkResultResponse,
     ErrorResponse,
     ResultRequest,
@@ -109,33 +110,35 @@ def results(request, payload: ResultRequest):
     },
     tags=["Tests"],
 )
-def bulk_results(request):
+def bulk_results(request, payload: Form[BulkResultRequest]):
     try:
-        project_url = request.POST.get("project")
-        branch = request.POST.get("branch")
-        commit = request.POST.get("commit")
-
-        if not all([project_url, branch, commit]):
-            return 422, {"detail": "Missing required fields"}
-
         if hasattr(settings, "TEST"):
             log.warning("Skipping ownership check for tests")
-            project = Project.objects.from_repository(project_url)
+            project = Project.objects.from_repository(payload.project)
         else:
             key = request.headers.get(ApiKey.param_name)
             organization = Organization.objects.get(key=key)
             project = Project.objects.from_repository(
-                project_url, organization.repository_index
+                payload.project, organization.repository_index
             )
     except ValueError as e:
         return 422, {"detail": str(e)}
 
-    if "tests" not in request.FILES:
-        return 422, {"detail": "No test results file provided"}
-    content = request.FILES["tests"].read().decode("utf-8")
-    count = parse_junit_xml(content, project, branch, commit)
-    response = BulkResultResponse(project=str(project), tests=count)
-    return 200, response.dict()
+    if tests := request.FILES.get("tests"):
+        content = tests.read().decode("utf-8")
+        metadata = BulkResultRequest.get_metadata(request.POST.dict())
+        count = parse_junit_xml(
+            content, project, payload.branch, payload.commit, metadata
+        )
+        response = BulkResultResponse(
+            project=str(project),
+            branch=payload.branch,
+            commit=payload.commit,
+            tests=count,
+        )
+        return 200, response.dict()
+
+    return 422, {"detail": "Include 'tests' as a JUnit XML file upload."}
 
 
 @api.post(
@@ -161,4 +164,9 @@ def share(request, payload: ShareRequest):
     health = Result.objects.get_health(project, payload.commit)
     update_status(organization, project, payload.commit, payload.branch, health)
 
-    return 200, ShareResponse(tests=health.total)
+    return 200, ShareResponse(
+        project=str(project),
+        branch=payload.branch,
+        commit=payload.commit,
+        tests=health.total,
+    )

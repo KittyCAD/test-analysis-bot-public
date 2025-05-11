@@ -11,7 +11,9 @@ from tab.projects.models import Project, Result, Test
 from tab.projects.types import Health
 
 
-def parse_junit_xml(content: str, project: Project, branch: str, commit: str) -> int:
+def parse_junit_xml(
+    content: str, project: Project, branch: str, commit: str, metadata: dict
+) -> int:
     count = 0
     xml = ET.fromstring(content)
     root_name = xml.get("name", "")
@@ -53,6 +55,7 @@ def parse_junit_xml(content: str, project: Project, branch: str, commit: str) ->
                 defaults=dict(
                     original_branch=branch,
                     original_commit=commit,
+                    metadata=metadata,
                 ),
             )
 
@@ -64,6 +67,7 @@ def parse_junit_xml(content: str, project: Project, branch: str, commit: str) ->
                 status=status,
                 duration=duration,
                 message=message,
+                metadata=metadata,
             )
             count += 1
 
