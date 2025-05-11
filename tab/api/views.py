@@ -10,9 +10,10 @@ from ninja import NinjaAPI
 from tab.core.models import Organization
 from tab.projects.models import Project, Result, Test
 
-from .helpers import update_status
+from .helpers import parse_junit_xml, update_status
 from .schemas import (
     ApiKey,
+    BulkResultResponse,
     ErrorResponse,
     ResultRequest,
     ResultResponse,
@@ -97,6 +98,44 @@ def results(request, payload: ResultRequest):
         status=result.status,
         block=result.block,
     )
+
+
+@api.post(
+    "/results/bulk",
+    auth=api_key,
+    response={
+        200: BulkResultResponse,
+        422: ErrorResponse,
+    },
+    tags=["Tests"],
+)
+def bulk_results(request):
+    try:
+        project_url = request.POST.get("project")
+        branch = request.POST.get("branch")
+        commit = request.POST.get("commit")
+
+        if not all([project_url, branch, commit]):
+            return 422, {"detail": "Missing required fields"}
+
+        if hasattr(settings, "TEST"):
+            log.warning("Skipping ownership check for tests")
+            project = Project.objects.from_repository(project_url)
+        else:
+            key = request.headers.get(ApiKey.param_name)
+            organization = Organization.objects.get(key=key)
+            project = Project.objects.from_repository(
+                project_url, organization.repository_index
+            )
+    except ValueError as e:
+        return 422, {"detail": str(e)}
+
+    if "tests" not in request.FILES:
+        return 422, {"detail": "No test results file provided"}
+    content = request.FILES["tests"].read().decode("utf-8")
+    count = parse_junit_xml(content, project, branch, commit)
+    response = BulkResultResponse(project=str(project), tests=count)
+    return 200, response.dict()
 
 
 @api.post(

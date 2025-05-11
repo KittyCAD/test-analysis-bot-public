@@ -319,8 +319,9 @@ class ResultTable(TestResultTable):
         )
         if record.branch != record.test.project.default_branch:
             url += f"?branch={record.branch}"
+        name = record.test.name.replace("_", "_<wbr>")
         return mark_safe(
-            f'<a href="{url}" class="text-body text-decoration-none fw-bold">{record.test.name}</a>'
+            f'<a href="{url}" class="text-body text-decoration-none fw-bold">{name}</a>'
         )
 
     def render_test__failure_rate(self, record: Result):
