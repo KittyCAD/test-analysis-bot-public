@@ -26,7 +26,7 @@ def index(request):
         organization = Organization.objects.get(email_domain=email_domain)
         projects = Project.objects.filter(
             repository__startswith=organization.repository_index
-        )
+        ).order_by("repository")
     except Organization.DoesNotExist:
         projects = Project.objects.none()
 
