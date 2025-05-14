@@ -14,11 +14,18 @@ from .managers import ProjectManager, ResultManager
 
 class Project(models.Model):
     repository = models.URLField(unique=True, db_index=True)
-    default_branches = models.JSONField(default=get_default_branches)
-    error_indicators = models.JSONField(default=list, blank=True)
+    default_branches = models.JSONField(
+        default=get_default_branches,
+        help_text="Results from these branches will be considered in computed metrics",
+    )
     sample_count = models.IntegerField(
         default=100,
         help_text="Number of recent test results to consider in computed metrics",
+    )
+    error_indicators = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Message fragments that indicate there was a setup error rather than failure",
     )
 
     branch_inactive_threshold = models.DurationField(
@@ -27,11 +34,11 @@ class Project(models.Model):
     )
     test_inactive_threshold = models.DurationField(
         default=timedelta(days=7),
-        help_text="Tests with no results this recent time will be hidden by default",
+        help_text="Tests with no results this recent will be hidden by default",
     )
     test_stale_threshold = models.DurationField(
         default=timedelta(days=30),
-        help_text="Tests with no results this recent time will be pruned automatically",
+        help_text="Tests with no results this recent will be pruned automatically",
     )
     result_stale_threshold = models.DurationField(
         default=timedelta(days=7),
