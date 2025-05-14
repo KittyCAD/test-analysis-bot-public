@@ -28,9 +28,17 @@ def index(request):
             repository__startswith=organization.repository_index
         ).order_by("repository")
     except Organization.DoesNotExist:
+        organization = None
         projects = Project.objects.none()
 
-    return render(request, "projects/index.html", {"projects": projects})
+    context: dict = {"projects": projects}
+    if request.user.is_staff:
+        if organization:
+            context["admin_url"] = reverse(
+                "admin:core_organization_change", args=[organization.pk]
+            )
+
+    return render(request, "projects/index.html", context)
 
 
 class TestsView(SingleTableMixin, ListView):
@@ -218,10 +226,11 @@ class ResultsView(SingleTableMixin, ListView):
         context["show"] = self.request.GET.get("show", "all")
         context["health"] = Result.objects.get_health(project, commit)
         if self.request.user.is_staff:
-            context["admin_url"] = reverse(
-                # TODO: Link to results for this particular project instead
-                "admin:projects_project_change",
-                args=[project.pk],
+            context["admin_url"] = (
+                reverse(
+                    "admin:projects_result_changelist",
+                )
+                + f"?test__project__repository={project.repository}"
             )
 
         return context

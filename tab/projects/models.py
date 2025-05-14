@@ -7,7 +7,7 @@ from django.db import models
 
 import log
 
-from .constants import ANSI_ESCAPE, SAMPLE_COUNT, get_default_branches
+from .constants import ANSI_ESCAPE, get_default_branches
 from .enums import Platform, Status, Target
 from .managers import ProjectManager, ResultManager
 
@@ -16,6 +16,10 @@ class Project(models.Model):
     repository = models.URLField(unique=True, db_index=True)
     default_branches = models.JSONField(default=get_default_branches)
     error_indicators = models.JSONField(default=list, blank=True)
+    sample_count = models.IntegerField(
+        default=100,
+        help_text="Number of recent test results to consider in computed metrics",
+    )
 
     branch_inactive_threshold = models.DurationField(
         default=timedelta(days=7),
@@ -201,7 +205,7 @@ class Test(models.Model):
         if not results.exists():
             return False
 
-        results = results[:SAMPLE_COUNT]
+        results = results[: self.project.sample_count]
         failed = sum(
             result.status
             in {Status.FAILED, Status.XPASSED, Status.ERROR, Status.DISABLED}
@@ -225,7 +229,7 @@ class Test(models.Model):
         if not results.exists():
             return False
 
-        results = results[:SAMPLE_COUNT]
+        results = results[: self.project.sample_count]
         failed = sum(
             result.status in {Status.FAILED, Status.XPASSED, Status.ERROR}
             for result in results
@@ -255,7 +259,7 @@ class Test(models.Model):
         if not results.exists():
             return False
 
-        results = results[:SAMPLE_COUNT]
+        results = results[: self.project.sample_count]
         durations = [result.duration for result in results if result.duration]
         if not durations:
             return False

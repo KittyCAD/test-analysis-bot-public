@@ -6,7 +6,6 @@ from django.utils.safestring import mark_safe
 import django_tables2 as tables
 from django_tables2 import A
 
-from .constants import SAMPLE_COUNT
 from .models import Result, Status, Test
 
 
@@ -216,8 +215,13 @@ class TestResultTable(tables.Table):
             "duration",
             "created_at",
         )
-        per_page = SAMPLE_COUNT
         order_by = "-created_at"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.data.data.exists():
+            result: Result = self.data.data.first()
+            self._meta.per_page = result.test.project.sample_count
 
     def render_status(self, record: Result):
         status = Status(record.status)
