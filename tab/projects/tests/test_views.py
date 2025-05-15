@@ -86,7 +86,15 @@ def describe_results():
 
     @pytest.mark.django_db
     def it_renders_the_results_page(expect, client, project: Project):
+        Result.objects.create(
+            test=Test.objects.create(project=project, name="test"),
+            branch="main",
+            commit="abc123",
+            status=Status.PASSED,
+            duration=1.0,
+        )
+
         response = client.get(url)
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
-        expect(html).contains("0 of 0 passing")
+        expect(html).contains("1 of 1 passing")

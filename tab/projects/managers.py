@@ -75,12 +75,12 @@ class ResultManager(models.Manager):
         passed = total - failed
 
         log.info(
-            f"Processed results for {project} @ {commit}: "
-            f"{total} of {expected} expected total, "
-            f"{passed} of {expected_passed} expected passing"
+            f"Processed expected results for {project} @ {commit[:7]}: "
+            f"{passed} of {expected_passed} passing, "
+            f"{total} of {expected} total"
         )
         assert "github.com" in project.repository, "Only GitHub is supported for now"
-        if total < expected * 0.95 and passed < expected_passed * 0.95:
+        if passed < expected_passed * 0.95 and total < expected * 0.95:
             state = "pending"
         elif failed:
             state = "failure"
