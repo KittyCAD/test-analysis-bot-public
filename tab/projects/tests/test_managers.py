@@ -74,7 +74,7 @@ def describe_result_manager():
         @pytest.mark.django_db
         def it_identifies_new_failures(expect, project: Project):
             # Create tests and results for the default branch
-            for i in range(4):
+            for i in range(20):
                 test = Test.objects.create(
                     project=project,
                     name=f"test_{i}",
@@ -105,6 +105,6 @@ def describe_result_manager():
 
             health = Result.objects.get_health(project, "def456")
 
-            expect(health.total) == 4
+            expect(health.total) == 20
             expect(health.state) == "failure"
-            expect(health.description) == "3 of 4 passing, 1 new failure"
+            expect(health.description) == "19 of 20 passing, 1 new failure"
