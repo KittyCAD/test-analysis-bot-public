@@ -75,7 +75,7 @@ class ResultManager(models.Manager):
         passed = total - failed
 
         log.info(
-            f"Processed expected results for {project} @ {commit[:7]}: "
+            f"Processed expected results for {project.path} @ {commit[:7]}: "
             f"{passed} of {expected_passed} passing, "
             f"{total} of {expected} total"
         )
