@@ -64,6 +64,7 @@ class ResultManager(models.Manager):
             test__project=project, commit=latest_commit, final=True
         )
         expected = latest_results.count()
+        expected_passed = latest_results.filter(status=Status.PASSED).count()
 
         results = self.filter(test__project=project, commit=commit, final=True)
         total = results.count()
@@ -74,10 +75,12 @@ class ResultManager(models.Manager):
         passed = total - failed
 
         log.info(
-            f"Processed results for {project} @ {commit}: {total} of {expected} expected"
+            f"Processed results for {project} @ {commit}: "
+            f"{total} of {expected} expected total, "
+            f"{passed} of {expected_passed} expected passing"
         )
         assert "github.com" in project.repository, "Only GitHub is supported for now"
-        if total < expected * 0.95:
+        if total < expected * 0.95 and passed < expected_passed * 0.95:
             state = "pending"
         elif failed:
             state = "failure"
