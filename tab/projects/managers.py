@@ -53,12 +53,18 @@ class ResultManager(models.Manager):
         return results.select_related("test__project")
 
     def get_latest_commit(self, project: Project, branch: str) -> str:
-        queryset = self.filter(test__project=project, branch=branch).select_related(
-            "test", "test__project"
+        queryset = self.filter(test__project=project, branch=branch).order_by(
+            "-created_at"
         )
         return queryset.values_list("commit", flat=True).first()
 
     def get_health(self, project: Project, commit: str) -> Health:
+        latest_commit = self.get_latest_commit(project, project.default_branch)
+        latest_results = self.filter(
+            test__project=project, commit=latest_commit, final=True
+        )
+        expected = latest_results.count()
+
         results = self.filter(test__project=project, commit=commit, final=True)
         total = results.count()
         failed_results = results.filter(
@@ -68,9 +74,6 @@ class ResultManager(models.Manager):
         passed = total - failed
 
         assert "github.com" in project.repository, "Only GitHub is supported for now"
-        expected = project.tests.filter(
-            updated_at__gte=timezone.now() - project.test_inactive_threshold
-        ).count()
         if total < expected * 0.75:
             state = "pending"
         elif failed:

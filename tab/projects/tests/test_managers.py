@@ -72,24 +72,39 @@ def describe_result_manager():
             expect(health.description) == "1 of 1 passing"
 
         @pytest.mark.django_db
-        def it_returns_pending_when_more_results_expected(expect, project: Project):
+        def it_identifies_new_failures(expect, project: Project):
+            # Create tests and results for the default branch
             for i in range(4):
-                Test.objects.create(
+                test = Test.objects.create(
                     project=project,
                     name=f"test_{i}",
                     updated_at=timezone.now(),
                 )
-            test = Test.objects.first()
-            Result.objects.create(
-                test=test,
-                branch="main",
-                commit="abc123",
-                status=Status.FAILED,
-                final=True,
-            )
+                Result.objects.create(
+                    test=test,
+                    branch=project.default_branch,
+                    commit="abc123",
+                    status=Status.PASSED,
+                    final=True,
+                )
 
-            health = Result.objects.get_health(project, "abc123")
+            # Create results for the commit we're checking, including a new failure
+            for i, test in enumerate(Test.objects.all()):
+                status = Status.FAILED if i == 0 else Status.PASSED
+                Result.objects.create(
+                    test=test,
+                    branch="my-branch",
+                    commit="def456",
+                    status=status,
+                    final=True,
+                )
+                # Set failure rate to 0 for the failing test after creating the result
+                if i == 0:
+                    test.failure_rate = 0.0
+                    test.save()
 
-            expect(health.total) == 1
-            expect(health.state) == "pending"
-            expect(health.description) == "0 of 1 passing"
+            health = Result.objects.get_health(project, "def456")
+
+            expect(health.total) == 4
+            expect(health.state) == "failure"
+            expect(health.description) == "3 of 4 passing, 1 new failure"
