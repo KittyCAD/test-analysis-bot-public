@@ -80,7 +80,7 @@ class ResultManager(models.Manager):
             f"{total} of {expected} total"
         )
         assert "github.com" in project.repository, "Only GitHub is supported for now"
-        if passed < expected_passed * 0.95 and total < expected * 0.95:
+        if passed < expected_passed * 0.95 or total < expected * 0.95:
             state = "pending"
         elif failed:
             state = "failure"
