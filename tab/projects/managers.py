@@ -81,7 +81,7 @@ class ResultManager(models.Manager):
         log.info(
             f"Processed expected results for {project.path} @ {commit[:7]}: "
             f"{passed} of {expected_passed} passing, "
-            f"started {round(age.total_seconds(), 2)}s ago"
+            f"started {round(age.total_seconds(), 2)} seconds ago"
         )
         assert "github.com" in project.repository, "Only GitHub is supported for now"
         if passed < expected_passed and age < PENDING_THRESHOLD:
