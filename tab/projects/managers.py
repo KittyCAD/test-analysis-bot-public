@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -8,7 +9,7 @@ from django.utils import timezone
 
 import log
 
-from .constants import ALL_BRANCHES
+from .constants import ALL_BRANCHES, PENDING_THRESHOLD
 from .enums import Status
 from .types import Health
 
@@ -63,7 +64,6 @@ class ResultManager(models.Manager):
         latest_results = self.filter(
             test__project=project, commit=latest_commit, final=True
         )
-        expected = latest_results.count()
         expected_passed = latest_results.filter(status=Status.PASSED).count()
 
         results = self.filter(test__project=project, commit=commit, final=True)
@@ -74,13 +74,17 @@ class ResultManager(models.Manager):
         failed = failed_results.count()
         passed = total - failed
 
+        if first_result := results.order_by("created_at").first():
+            age = timezone.now() - first_result.created_at  # type: ignore[attr-defined]
+        else:
+            age = timedelta()
         log.info(
             f"Processed expected results for {project.path} @ {commit[:7]}: "
             f"{passed} of {expected_passed} passing, "
-            f"{total} of {expected} total"
+            f"started {age} ago"
         )
         assert "github.com" in project.repository, "Only GitHub is supported for now"
-        if passed < expected_passed * 0.95 or total < expected * 0.95:
+        if passed < expected_passed and age < PENDING_THRESHOLD:
             state = "pending"
         elif failed:
             state = "failure"

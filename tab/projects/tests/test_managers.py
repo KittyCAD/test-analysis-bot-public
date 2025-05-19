@@ -1,7 +1,10 @@
+from datetime import timedelta
+
 from django.utils import timezone
 
 import pytest
 
+from ..constants import PENDING_THRESHOLD
 from ..models import Project, Result, Status, Test
 
 
@@ -74,11 +77,10 @@ def describe_result_manager():
         @pytest.mark.django_db
         def it_identifies_new_failures(expect, project: Project):
             # Create tests and results for the default branch
-            for i in range(20):
+            for i in range(3):
                 test = Test.objects.create(
                     project=project,
-                    name=f"test_{i}",
-                    updated_at=timezone.now(),
+                    name=f"test_{i+1}",
                 )
                 Result.objects.create(
                     test=test,
@@ -91,20 +93,29 @@ def describe_result_manager():
             # Create results for the commit we're checking, including a new failure
             for i, test in enumerate(Test.objects.all()):
                 status = Status.FAILED if i == 0 else Status.PASSED
-                Result.objects.create(
+                result = Result.objects.create(
                     test=test,
                     branch="my-branch",
                     commit="def456",
                     status=status,
                     final=True,
                 )
-                # Set failure rate to 0 for the failing test after creating the result
-                if i == 0:
-                    test.failure_rate = 0.0
-                    test.save()
 
             health = Result.objects.get_health(project, "def456")
 
-            expect(health.total) == 20
+            expect(health.total) == 3
+            expect(health.state) == "pending"
+            expect(health.description) == "2 of 3 passing, 1 new failure"
+
+            # Simulate results being old enough to no longer be pending
+            result = Result.objects.filter(branch="my-branch").first()
+            result.created_at = (
+                timezone.now() - PENDING_THRESHOLD - timedelta(minutes=1)
+            )
+            result.save()
+
+            health = Result.objects.get_health(project, "def456")
+
+            expect(health.total) == 3
             expect(health.state) == "failure"
-            expect(health.description) == "19 of 20 passing, 1 new failure"
+            expect(health.description) == "2 of 3 passing, 1 new failure"
