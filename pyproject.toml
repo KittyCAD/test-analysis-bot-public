@@ -37,7 +37,7 @@ minilog = "*"
 pygithub = "^2.6.1"
 
 # Deployment
-gunicorn = "^20.1.0"
+gunicorn = "^23.0.0"
 whitenoise = "^6.9.0"
 
 [tool.poetry.group.dev.dependencies]
