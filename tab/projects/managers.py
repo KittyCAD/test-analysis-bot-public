@@ -78,6 +78,7 @@ class ResultManager(models.Manager):
             age = timezone.now() - first_result.created_at  # type: ignore[attr-defined]
         else:
             age = timedelta()
+        commit = commit or "???"  # TODO: Add a test for this
         log.info(
             f"Processed expected results for {project.path} @ {commit[:7]}: "
             f"{passed} of {expected_passed} passing, "
