@@ -82,6 +82,11 @@ class Suite(models.Model):
     )
     name = models.CharField(max_length=100, db_index=True)
 
+    supports_override = models.BooleanField(
+        default=False,
+        help_text="Indicates the suite is configured to allow disabling tests",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
