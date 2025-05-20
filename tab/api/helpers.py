@@ -7,12 +7,17 @@ from github import Github, GithubException
 
 from tab.core.models import Organization
 from tab.projects.enums import Status
-from tab.projects.models import Project, Result, Test
+from tab.projects.models import Project, Result, Suite, Test
 from tab.projects.types import Health
 
 
 def parse_junit_xml(
-    content: str, project: Project, branch: str, commit: str, metadata: dict
+    content: str,
+    project: Project,
+    suite: Suite,
+    branch: str,
+    commit: str,
+    metadata: dict,
 ) -> int:
     count = 0
     xml = ET.fromstring(content)
@@ -53,11 +58,18 @@ def parse_junit_xml(
                 project=project,
                 name=name,
                 defaults=dict(
+                    suite=suite,
                     original_branch=branch,
                     original_commit=commit,
                     metadata=metadata,
                 ),
             )
+            if test.suite != suite:
+                test.suite = suite
+                test.original_branch = test.original_branch or branch
+                test.original_commit = test.original_commit or commit
+                test.metadata = test.metadata or metadata
+                test.save()
 
             # Create result
             Result.objects.create(

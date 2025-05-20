@@ -45,6 +45,7 @@ def describe_results():
     def payload():
         return {
             "project": "https://github.com/my-user/my-project",
+            "suite": "e2e",
             "branch": "main",
             "commit": "abc123",
             "test": "my feature › my test",
@@ -58,6 +59,7 @@ def describe_results():
         expect(response.status_code) == 201
         expect(response.json()) == {
             "project": "my-user › my-project",
+            "suite": "e2e",
             "test": "my feature › my test",
             "status": "passed",
             "block": False,
@@ -91,6 +93,7 @@ def describe_results():
         expect(response.status_code) == 201
         expect(response.json()) == {
             "project": "my-user › my-project",
+            "suite": "e2e",
             "test": "my feature › my test",
             "status": "passed",
             "block": False,
@@ -114,6 +117,7 @@ def describe_bulk_results():
         junit_xml = Path(__file__).parent / "files" / "junit.xml"
         return {
             "project": "https://github.com/my-user/my-project",
+            "suite": "unit",
             "branch": "main",
             "commit": "abc123",
             "tests": junit_xml.open("rb"),
@@ -125,6 +129,7 @@ def describe_bulk_results():
         response = post_form(client, url, payload)
         expect(response.json()) == {
             "project": "my-user › my-project",
+            "suite": "unit",
             "branch": "main",
             "commit": "abc123",
             "tests": 25,
@@ -132,11 +137,11 @@ def describe_bulk_results():
         test: Test = Test.objects.first()  # type: ignore[assignment]
         expect(test.original_branch) == "main"
         expect(test.original_commit) == "abc123"
-        expect(test.metadata) == {"EXTRA": "foobar"}
+        expect(test.metadata) == {"EXTRA": "foobar", "suite": "unit"}
         result: Result = Result.objects.first()  # type: ignore[assignment]
         expect(result.branch) == "main"
         expect(result.commit) == "abc123"
-        expect(result.metadata) == {"EXTRA": "foobar"}
+        expect(result.metadata) == {"EXTRA": "foobar", "suite": "unit"}
 
     @pytest.mark.django_db
     def it_requires_tests_as_file_upload(expect, client, payload):

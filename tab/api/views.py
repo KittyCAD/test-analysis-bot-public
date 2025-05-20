@@ -103,6 +103,7 @@ def results(request, payload: ResultRequest):
 
     return status, ResultResponse(
         project=str(project),
+        suite=str(suite),
         test=str(test),
         status=result.status,
         block=result.block,
@@ -132,14 +133,21 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
     except ValueError as e:
         return 422, {"detail": str(e)}
 
+    suite, created = Suite.objects.get_or_create(project=project, name=payload.suite)
+    if created:
+        log.info(f"Created suite: {suite}")
+    else:
+        log.info(f"Found suite: {suite}")
+
     if tests := request.FILES.get("tests"):
         content = tests.read().decode("utf-8")
         metadata = BulkResultRequest.get_metadata(request.POST.dict())
         count = parse_junit_xml(
-            content, project, payload.branch, payload.commit, metadata
+            content, project, suite, payload.branch, payload.commit, metadata
         )
         response = BulkResultResponse(
             project=str(project),
+            suite=str(suite),
             branch=payload.branch,
             commit=payload.commit,
             tests=count,
