@@ -76,8 +76,24 @@ class Project(models.Model):
         self.repository = ProjectManager.clean_repository(self.repository)
 
 
+class Suite(models.Model):
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name="suites"
+    )
+    name = models.CharField(max_length=100, db_index=True)
+
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Test(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tests")
+    suite = models.ForeignKey(
+        Suite, null=True, on_delete=models.SET_NULL, related_name="tests"
+    )
 
     name = models.CharField(max_length=1000, db_index=True)
     original_branch = models.CharField(max_length=100, default="")

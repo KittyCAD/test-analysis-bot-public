@@ -1,11 +1,11 @@
 from django.conf import settings
 
 import log
-from ninja import File, ModelSchema, Schema
-from ninja.files import UploadedFile
+from ninja import ModelSchema, Schema
 from ninja.security import APIKeyHeader
 
 from tab.core.models import Organization
+from tab.projects.constants import DEFAULT_SUITE
 from tab.projects.models import Result
 
 
@@ -22,6 +22,7 @@ class ApiKey(APIKeyHeader):
 class ResultRequest(ModelSchema):
     project: str
     test: str
+    suite: str = DEFAULT_SUITE
 
     class Config:
         model = Result
@@ -43,12 +44,13 @@ class ResultRequest(ModelSchema):
         return {
             field: getattr(self, field)
             for field in self.__class__.model_fields
-            if field not in ["project", "test"]
+            if field not in ["project", "suite", "test"]
         }
 
 
 class BulkResultRequest(Schema):
     project: str
+    suite: str = DEFAULT_SUITE
     branch: str
     commit: str
 
@@ -70,7 +72,7 @@ class BulkResultRequest(Schema):
         return {
             field: getattr(self, field)
             for field in self.__class__.Config.model_fields
-            if field not in ["project", "tests"]
+            if field not in ["project", "suite", "tests"]
         }
 
 

@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.utils.timesince import timesince
 
-from .models import Platform, Project, Result, Test
+from .models import Platform, Project, Result, Suite, Test
 
 
 @admin.register(Project)
@@ -49,6 +49,16 @@ class ProjectAdmin(admin.ModelAdmin):
         if not project.result_stale_threshold:
             return "Never"
         return timesince(timezone.now() - project.result_stale_threshold)
+
+
+@admin.register(Suite)
+class SuiteAdmin(admin.ModelAdmin):
+    search_fields = ("project__repository", "name")
+    list_display = ("id", "project", "name", "created_at", "updated_at")
+    ordering = ("-updated_at",)
+    list_filter = ("name",)
+
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(Test)

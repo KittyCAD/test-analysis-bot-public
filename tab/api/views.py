@@ -8,7 +8,7 @@ import log
 from ninja import Form, NinjaAPI
 
 from tab.core.models import Organization
-from tab.projects.models import Project, Result, Test
+from tab.projects.models import Project, Result, Suite, Test
 
 from .helpers import parse_junit_xml, update_status
 from .schemas import (
@@ -62,11 +62,18 @@ def results(request, payload: ResultRequest):
     except ValueError as e:
         return 422, {"detail": str(e)}
 
+    suite, created = Suite.objects.get_or_create(project=project, name=payload.suite)
+    if created:
+        log.info(f"Created suite: {suite}")
+    else:
+        log.info(f"Found suite: {suite}")
+
     metadata = ResultRequest.get_metadata(json.loads(request.body))
     test, created = Test.objects.get_or_create(
         project=project,
         name=payload.test,
         defaults=dict(
+            suite=suite,
             original_branch=payload.branch,
             original_commit=payload.commit,
             metadata=metadata,
@@ -75,8 +82,9 @@ def results(request, payload: ResultRequest):
     if created:
         status = 201
         log.info(f"Created test: {test}")
-    elif payload.branch and not test.original_branch:
+    elif (test.suite != suite) or (payload.branch and not test.original_branch):
         status = 200
+        test.suite = suite
         test.original_branch = test.original_branch or payload.branch
         test.original_commit = test.original_commit or payload.commit
         test.metadata = test.metadata or metadata
