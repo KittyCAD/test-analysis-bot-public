@@ -53,13 +53,17 @@ class ResultManager(models.Manager):
             results = self.filter(test=test, branch__in=test.significant_branches)
         return results.select_related("test__project")
 
-    def get_latest_commit(self, project: Project, branch: str) -> str:
+    def get_latest_commit(self, project: Project, branch: str) -> str | None:
         queryset = self.filter(test__project=project, branch=branch).order_by(
             "-created_at"
         )
         return queryset.values_list("commit", flat=True).first()
 
-    def get_health(self, project: Project, commit: str) -> Health:
+    def get_health(self, project: Project, commit: str | None) -> Health:
+        assert "github.com" in project.repository, "Only GitHub is supported for now"
+        if not commit:
+            return Health(total=0, state="pending", description="no results")
+
         latest_commit = self.get_latest_commit(project, project.default_branch)
         latest_results = self.filter(
             test__project=project, commit=latest_commit, final=True
@@ -78,13 +82,11 @@ class ResultManager(models.Manager):
             age = timezone.now() - first_result.created_at  # type: ignore[attr-defined]
         else:
             age = timedelta()
-        commit = commit or "???"  # TODO: Add a test for this
         log.info(
             f"Processed expected results for {project.path} @ {commit[:7]}: "
             f"{passed} of {expected_passed} passing, "
             f"started {round(age.total_seconds(), 2)} seconds ago"
         )
-        assert "github.com" in project.repository, "Only GitHub is supported for now"
         if passed < expected_passed and age < PENDING_THRESHOLD:
             state = "pending"
         elif failed:
