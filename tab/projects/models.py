@@ -181,6 +181,30 @@ class Test(models.Model):
         return re.escape(label).replace(r"\ ", " ").replace("'", r"'\''")
 
     @property
+    def significant_branches(self) -> list[str]:
+        branches = list(self.project.default_branches)
+        if self.original_branch and self.original_branch not in branches:
+            branches.insert(0, self.original_branch)
+        if settings.DEBUG:
+            branches.insert(0, "")  # unknown local branch
+        return branches
+
+    @property
+    def original_commit_url(self) -> str:
+        if not self.original_commit:
+            return ""
+        return f"{self.project.repository}/commit/{self.original_commit}"
+
+    @property
+    def markers(self) -> list[str]:
+        metadata = self.last_result.metadata if self.last_result else {}
+        # TODO: Consider making 'annotations' and/or 'tags' a proper field
+        values = metadata.get("annotations", []) + metadata.get("tags", [])
+        if self.disabled:
+            values.append("disabled")
+        return values
+
+    @property
     def failure_rate_humanized(self) -> str:
         if self.failure_rate < 0:
             return "—"
@@ -199,26 +223,8 @@ class Test(models.Model):
         return f"{self.average_duration:.1f}s"
 
     @property
-    def significant_branches(self) -> list[str]:
-        branches = list(self.project.default_branches)
-        if self.original_branch and self.original_branch not in branches:
-            branches.insert(0, self.original_branch)
-        if settings.DEBUG:
-            branches.insert(0, "")  # unknown local branch
-        return branches
-
-    @property
     def show_advanced_options(self) -> bool:
         return bool(self.last_result) and self.failure_rate > 0.25
-
-    @property
-    def markers(self) -> list[str]:
-        metadata = self.last_result.metadata if self.last_result else {}
-        # TODO: Consider making 'annotations' and/or 'tags' a proper field
-        values = metadata.get("annotations", []) + metadata.get("tags", [])
-        if self.disabled:
-            values.append("disabled")
-        return values
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
@@ -361,6 +367,30 @@ class Result(models.Model):
         return f"{status} after {duration} on {branch!r} at {commit}"
 
     @property
+    def markers(self) -> list[str]:
+        metadata = self.metadata
+        # TODO: Consider making 'annotations' and/or 'tags' a proper field
+        values = metadata.get("annotations", []) + metadata.get("tags", [])
+        if self.test.disabled_platforms:
+            if self.platform in self.test.disabled_platforms:
+                values.append("disabled")
+        elif self.test.disabled:
+            values.append("disabled")
+        return values
+
+    @property
+    def command(self) -> str:
+        if not self.test.suite:
+            return ""
+        if pattern := self.test.suite.local_command:
+            try:
+                return pattern.format(test=self.test)
+            except (KeyError, AttributeError) as e:
+                log.error(f"Invalid local command for {self.test.suite}: {e!r}")
+                return pattern
+        return ""
+
+    @property
     def branch_url(self) -> str:
         if not self.branch:
             return ""
@@ -387,6 +417,13 @@ class Result(models.Model):
         return f"{self.test.project.repository}/commit/{self.commit}"
 
     @property
+    def originated_from_branch(self) -> bool:
+        return (
+            self.branch == self.test.original_branch
+            and self.branch not in self.test.project.default_branches
+        )
+
+    @property
     def block(self) -> bool:
         return self.status in {
             Status.FAILED,
@@ -400,37 +437,6 @@ class Result(models.Model):
         if self.duration is None or self.duration < 0:
             return "—"
         return f"{self.duration:.1f}s"
-
-    @property
-    def markers(self) -> list[str]:
-        metadata = self.metadata
-        # TODO: Consider making 'annotations' and/or 'tags' a proper field
-        values = metadata.get("annotations", []) + metadata.get("tags", [])
-        if self.test.disabled_platforms:
-            if self.platform in self.test.disabled_platforms:
-                values.append("disabled")
-        elif self.test.disabled:
-            values.append("disabled")
-        return values
-
-    @property
-    def originated_from_branch(self) -> bool:
-        return (
-            self.branch == self.test.original_branch
-            and self.branch not in self.test.project.default_branches
-        )
-
-    @property
-    def command(self) -> str:
-        if not self.test.suite:
-            return ""
-        if pattern := self.test.suite.local_command:
-            try:
-                return pattern.format(test=self.test)
-            except (KeyError, AttributeError) as e:
-                log.error(f"Invalid local command for {self.test.suite}: {e!r}")
-                return pattern
-        return ""
 
     def save(self, *args, **kwargs):
         if self.duration:
