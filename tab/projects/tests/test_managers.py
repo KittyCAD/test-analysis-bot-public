@@ -41,7 +41,7 @@ def describe_result_manager():
                 status=Status.FAILED,
                 final=True,
             )
-            test3.failure_rate = 0.09
+            test3.block_rate = 0.04
             test3.save()
 
             health = Result.objects.get_health(project, "abc123")

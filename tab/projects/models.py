@@ -174,18 +174,6 @@ class Test(models.Model):
         return re.escape(label).replace(r"\ ", " ").replace("'", r"'\''")
 
     @property
-    def failure_rate_help(self) -> str:
-        return self._meta.get_field("failure_rate").help_text  # type: ignore
-
-    @property
-    def block_rate_help(self) -> str:
-        return self._meta.get_field("block_rate").help_text  # type: ignore
-
-    @property
-    def enabled_help(self) -> str:
-        return self._meta.get_field("enabled").help_text  # type: ignore
-
-    @property
     def failure_rate_humanized(self) -> str:
         if self.failure_rate < 0:
             return "—"

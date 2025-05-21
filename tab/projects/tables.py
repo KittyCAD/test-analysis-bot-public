@@ -33,7 +33,7 @@ class TestTable(tables.Table):
             "th": {
                 "class": "text-center",
                 "data-bs-toggle": "tooltip",
-                "title": lambda table: table._meta.model().failure_rate_help,
+                "title": Test._meta.get_field("failure_rate").help_text,
             },
         },
     )
@@ -44,7 +44,7 @@ class TestTable(tables.Table):
             "th": {
                 "class": "text-center",
                 "data-bs-toggle": "tooltip",
-                "title": lambda table: table._meta.model().block_rate_help,
+                "title": Test._meta.get_field("block_rate").help_text,
             },
         },
     )
@@ -120,7 +120,7 @@ class DisabledTestTable(tables.Table):
             "th": {
                 "class": "text-center",
                 "data-bs-toggle": "tooltip",
-                "title": lambda table: table._meta.model().failure_rate_help,
+                "title": Test._meta.get_field("failure_rate").help_text,
             },
         },
     )
@@ -275,11 +275,15 @@ class ResultTable(TestResultTable):
         accessor="test",
         order_by="test__name",
     )
-    test__failure_rate = tables.Column(
-        verbose_name="Typically Fails",
+    test__block_rate = tables.Column(
+        verbose_name="Typically Blocks",
         attrs={
             "td": {"class": "text-center"},
-            "th": {"class": "text-center"},
+            "th": {
+                "class": "text-center",
+                "data-bs-toggle": "tooltip",
+                "title": Test._meta.get_field("block_rate").help_text,
+            },
         },
     )
     branch = None
@@ -297,7 +301,7 @@ class ResultTable(TestResultTable):
         fields = (
             "test",
             "status",
-            "test__failure_rate",
+            "test__block_rate",
             "commit",
             "duration",
             "target",
@@ -323,7 +327,7 @@ class ResultTable(TestResultTable):
             f'<a href="{url}" class="text-body text-decoration-none fw-bold">{name}</a>'
         )
 
-    def render_test__failure_rate(self, record: Result):
+    def render_test__block_rate(self, record: Result):
         if record.originated_from_branch:
             return "—"
-        return record.test.failure_rate_humanized
+        return record.test.block_rate_humanized

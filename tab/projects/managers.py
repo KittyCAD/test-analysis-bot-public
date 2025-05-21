@@ -9,7 +9,7 @@ from django.utils import timezone
 
 import log
 
-from .constants import ALL_BRANCHES, PENDING_THRESHOLD
+from .constants import ALL_BRANCHES, NEW_FAILURE_THRESHOLD, PENDING_THRESHOLD
 from .enums import Status
 from .types import Health
 
@@ -95,7 +95,9 @@ class ResultManager(models.Manager):
             state = "success"
 
         description = f"{passed} of {total} passing"
-        if new_failed := failed_results.filter(test__failure_rate__lt=0.1).count():
+        if new_failed := failed_results.filter(
+            test__block_rate__lt=NEW_FAILURE_THRESHOLD
+        ).count():
             s = "" if new_failed == 1 else "s"
             description += f", {new_failed} new failure{s}"
 
