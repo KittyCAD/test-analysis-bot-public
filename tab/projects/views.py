@@ -132,6 +132,9 @@ class DisabledTestsView(SingleTableMixin, FormView):
                 self.request.user.email if self.request.user.is_authenticated else ""
             ),
         }
+        emails = set(t.disabled_user.email for t in tests if t.disabled_user)
+        if len(emails) == 1:
+            initial["disabled_user"] = emails.pop()
         reasons = set(t.disabled_reason for t in tests)
         if len(reasons) == 1:
             initial["disabled_reason"] = reasons.pop()
