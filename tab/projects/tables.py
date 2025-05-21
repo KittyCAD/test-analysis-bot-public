@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 import django_tables2 as tables
+import log
 from django_tables2 import A
 
 from .models import Result, Status, Test
@@ -313,8 +314,14 @@ class ResultTable(TestResultTable):
 
     def before_render(self, request):
         if request.GET.get("show") == "fails":
+            log.debug(f"Overriding {self._meta.order_by=} to show disabled tests last")
             self.data.data = self.data.data.order_by("-status", *self._meta.order_by)
-        self.paginate()
+            page = request.GET.get("page")
+            try:
+                page = int(page)
+            except (TypeError, ValueError):
+                page = 1
+            self.paginate(page=page)
 
     def render_test(self, record: Result):
         url = reverse(
