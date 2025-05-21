@@ -49,7 +49,6 @@ class ResultRequest(ModelSchema):
 
 
 class ResultResponse(Schema):
-    project: str
     suite: str
     test: str
     status: str
@@ -85,7 +84,6 @@ class BulkResultRequest(Schema):
 
 
 class BulkResultResponse(Schema):
-    project: str
     suite: str
     branch: str
     commit: str

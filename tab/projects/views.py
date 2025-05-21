@@ -194,7 +194,7 @@ class ResultsView(SingleTableMixin, ListView):
 
         queryset = Result.objects.filter(
             test__project=project, branch=branch
-        ).select_related("test", "test__project")
+        ).select_related("test", "test__project", "test__suite")
         latest_commit = queryset.values_list("commit", flat=True).first()
         queryset = queryset.filter(commit=latest_commit)
 

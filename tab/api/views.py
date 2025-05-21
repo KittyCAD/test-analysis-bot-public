@@ -102,7 +102,6 @@ def results(request, payload: ResultRequest):
     log.info(f"Created result: {result}")
 
     return status, ResultResponse(
-        project=str(project),
         suite=str(suite),
         test=str(test),
         status=result.status,
@@ -146,7 +145,6 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
             content, project, suite, payload.branch, payload.commit, metadata
         )
         response = BulkResultResponse(
-            project=str(project),
             suite=str(suite),
             branch=payload.branch,
             commit=payload.commit,

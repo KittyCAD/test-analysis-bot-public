@@ -6,6 +6,12 @@ from django.utils.timesince import timesince
 from .models import Platform, Project, Result, Suite, Test
 
 
+class SuiteInline(admin.TabularInline):
+    model = Suite
+    max_num = 0
+    fields = ("name", "local_command", "supports_override")
+
+
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
     search_fields = ("repository", "error_indicators")
@@ -23,8 +29,6 @@ class ProjectAdmin(admin.ModelAdmin):
     )
     ordering = ("repository",)
     list_filter = ("cleaned_at", "created_at", "updated_at")
-
-    readonly_fields = ("cleaned_at", "created_at", "updated_at")
 
     @admin.display(description="Branches Inactive")
     def branch_inactive_threshold_humanized(self, project: Project) -> str:
@@ -49,6 +53,9 @@ class ProjectAdmin(admin.ModelAdmin):
         if not project.result_stale_threshold:
             return "Never"
         return timesince(timezone.now() - project.result_stale_threshold)
+
+    readonly_fields = ("cleaned_at", "created_at", "updated_at")
+    inlines = [SuiteInline]
 
 
 @admin.register(Suite)

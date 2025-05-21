@@ -1,18 +1,14 @@
 <button type="button"
         class="btn btn-sm btn-outline-dark"
         data-bs-toggle="modal"
-        data-bs-target="#message-{{ result.pk }}">
+        data-bs-target="#details-{{ result.pk }}">
     <i class="fa-solid fa-maximize"></i>
 </button>
-<div class="modal fade"
-     id="message-{{ result.pk }}"
-     tabindex="-1"
-     aria-labelledby="messageLabel-{{ result.pk }}"
-     aria-hidden="true">
+<div class="modal fade" id="details-{{ result.pk }}" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="messageLabel-{{ result.pk }}">Result Details</h5>
+                <h5 class="modal-title">Result Details</h5>
                 <button type="button"
                         class="btn-close"
                         data-bs-dismiss="modal"
@@ -20,6 +16,10 @@
             </div>
             <div class="modal-body">
                 <pre class="mb-0">{{ result.message }}</pre>
+                {% if result.command %}
+                    <hr>
+                    <pre class="mb-0"><code>{{ result.command }}</code></pre>
+                {% endif %}
             </div>
         </div>
     </div>

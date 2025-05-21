@@ -7,7 +7,7 @@ from django.db import models
 
 import log
 
-from .constants import ANSI_ESCAPE, get_default_branches
+from .constants import ANSI_ESCAPE, DEFAULT_SUITE, get_default_branches
 from .enums import Platform, Status, Target
 from .managers import ProjectManager, ResultManager
 
@@ -86,12 +86,19 @@ class Suite(models.Model):
         default=False,
         help_text="Indicates the suite is configured to allow disabling tests",
     )
+    local_command = models.TextField(
+        default="",
+        blank=True,
+        help_text="Pattern to run individual tests locally",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
     def __str__(self):
-        return self.name
+        if self.name == DEFAULT_SUITE:
+            return str(self.project)
+        return f"{self.project} › {self.name}"
 
 
 class Test(models.Model):
@@ -412,6 +419,18 @@ class Result(models.Model):
             self.branch == self.test.original_branch
             and self.branch not in self.test.project.default_branches
         )
+
+    @property
+    def command(self) -> str:
+        if not self.test.suite:
+            return ""
+        if pattern := self.test.suite.local_command:
+            try:
+                return pattern.format(test=self.test)
+            except (KeyError, AttributeError) as e:
+                log.error(f"Invalid local command for {self.test.suite}: {e!r}")
+                return pattern
+        return ""
 
     def save(self, *args, **kwargs):
         if self.duration:

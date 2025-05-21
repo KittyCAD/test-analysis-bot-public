@@ -1,13 +1,31 @@
 import pytest
 
+from ..constants import DEFAULT_SUITE
 from ..enums import Platform, Status
-from ..models import Project, Result, Test
+from ..models import Project, Result, Suite, Test
 
 
 def describe_project():
     def it_formats_name(expect):
         project = Project(repository="https://github.com/MyUser/my_repo")
         expect(project.name) == "MyUser › my_repo"
+
+
+def describe_suite():
+    def describe_str():
+        def it_formats_name(expect):
+            suite = Suite(
+                project=Project(repository="https://github.com/MyUser/my_repo"),
+                name="my_suite",
+            )
+            expect(str(suite)) == "MyUser › my_repo › my_suite"
+
+        def it_formats_name_with_default(expect):
+            suite = Suite(
+                project=Project(repository="https://github.com/MyUser/my_repo"),
+                name=DEFAULT_SUITE,
+            )
+            expect(str(suite)) == "MyUser › my_repo"
 
 
 def describe_test():

@@ -51,7 +51,7 @@ class ResultManager(models.Manager):
             results = self.filter(test=test, branch__in=branches)
         else:
             results = self.filter(test=test, branch__in=test.significant_branches)
-        return results.select_related("test__project")
+        return results.select_related("test__project", "test__suite")
 
     def get_latest_commit(self, project: Project, branch: str) -> str | None:
         queryset = self.filter(test__project=project, branch=branch).order_by(

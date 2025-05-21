@@ -58,8 +58,7 @@ def describe_results():
 
         expect(response.status_code) == 201
         expect(response.json()) == {
-            "project": "my-user › my-project",
-            "suite": "e2e",
+            "suite": "my-user › my-project › e2e",
             "test": "my feature › my test",
             "status": "passed",
             "block": False,
@@ -92,8 +91,7 @@ def describe_results():
 
         expect(response.status_code) == 201
         expect(response.json()) == {
-            "project": "my-user › my-project",
-            "suite": "e2e",
+            "suite": "my-user › my-project › e2e",
             "test": "my feature › my test",
             "status": "passed",
             "block": False,
@@ -128,8 +126,7 @@ def describe_bulk_results():
     def it_creates_tests_from_junit_xml(expect, client, payload):
         response = post_form(client, url, payload)
         expect(response.json()) == {
-            "project": "my-user › my-project",
-            "suite": "unit",
+            "suite": "my-user › my-project › unit",
             "branch": "main",
             "commit": "abc123",
             "tests": 25,
