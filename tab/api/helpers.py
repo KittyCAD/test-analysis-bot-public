@@ -64,8 +64,8 @@ def parse_junit_xml(
                     metadata=metadata,
                 ),
             )
-            if test.suite != suite:
-                test.suite = suite
+            if not all([test.suite, test.original_branch, test.original_commit]):
+                test.suite = test.suite or suite
                 test.original_branch = test.original_branch or branch
                 test.original_commit = test.original_commit or commit
                 test.metadata = test.metadata or metadata

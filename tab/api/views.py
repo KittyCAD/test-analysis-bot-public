@@ -82,9 +82,9 @@ def results(request, payload: ResultRequest):
     if created:
         status = 201
         log.info(f"Created test: {test}")
-    elif (test.suite != suite) or (payload.branch and not test.original_branch):
+    elif not all([test.suite, test.original_branch, test.original_commit]):
         status = 200
-        test.suite = suite
+        test.suite = test.suite or suite
         test.original_branch = test.original_branch or payload.branch
         test.original_commit = test.original_commit or payload.commit
         test.metadata = test.metadata or metadata
