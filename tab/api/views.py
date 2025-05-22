@@ -96,6 +96,7 @@ def results(request, payload: ResultRequest):
 
     result = Result.objects.create(
         test=test,
+        suite=suite,
         **payload.get_model_fields(),
         metadata=metadata,
     )

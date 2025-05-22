@@ -330,6 +330,9 @@ class Test(models.Model):
 
 
 class Result(models.Model):
+    suite = models.ForeignKey(
+        Suite, null=True, on_delete=models.SET_NULL, related_name="results"
+    )
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="results")
 
     branch = models.CharField(max_length=100, default="", db_index=True)
@@ -382,14 +385,13 @@ class Result(models.Model):
 
     @property
     def command(self) -> str:
-        if not self.test.suite:
-            return ""
-        if pattern := self.test.suite.local_command:
-            try:
-                return pattern.format(test=self.test)
-            except (KeyError, AttributeError) as e:
-                log.error(f"Invalid local command for {self.test.suite}: {e!r}")
-                return pattern
+        if suite := self.suite or self.test.suite:
+            if pattern := suite.local_command:
+                try:
+                    return pattern.format(test=self.test)
+                except (KeyError, AttributeError) as e:
+                    log.error(f"Invalid local command for {suite}: {e!r}")
+                    return pattern
         return ""
 
     @property

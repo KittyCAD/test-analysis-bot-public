@@ -74,6 +74,7 @@ def parse_junit_xml(
             # Create result
             Result.objects.create(
                 test=test,
+                suite=suite,
                 branch=branch,
                 commit=commit,
                 status=status,
