@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import messages
 from django.db import models
+from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -101,7 +102,11 @@ class DisabledTestsView(SingleTableMixin, FormView):
             enabled=False, last_result__isnull=False
         ).select_related("last_result", "disabled_user")
         if search:
-            queryset = queryset.filter(name__icontains=search)
+            queryset = queryset.filter(
+                Q(name__icontains=search)
+                | Q(disabled_reason__icontains=search)
+                | Q(disabled_tracker__icontains=search)
+            )
         if project.test_inactive_threshold:
             queryset = queryset.filter(
                 updated_at__gte=timezone.now() - project.test_inactive_threshold

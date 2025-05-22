@@ -38,8 +38,7 @@
                        name="search"
                        value="{{ search }}"
                        class="form-control"
-                       placeholder="Filter tests by name..."
-                       aria-label="Filter tests by name"
+                       placeholder="Filter tests by name, reason, or tracker..."
                        required>
                 {% if search %}
                     <a href="{% url 'projects:disabled-tests' project.path %}{% if enabled != 'true' %}?enabled={{ enabled }}{% endif %}"
