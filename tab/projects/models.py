@@ -124,11 +124,13 @@ class Test(models.Model):
         default="",
         blank=True,
         help_text="Explanation of why the test is temporarily disabled",
+        db_index=True,
     )
     disabled_tracker = models.URLField(
         null=True,
         blank=True,
         help_text="URL of the ticket tracking the work to restore the test",
+        db_index=True,
     )
     disabled_user = models.ForeignKey(
         User,
