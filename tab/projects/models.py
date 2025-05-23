@@ -175,7 +175,7 @@ class Test(models.Model):
         ]
 
     def __str__(self):
-        if self.suite:
+        if self.suite and self.suite.name != DEFAULT_SUITE:
             return f"{self.suite.name} › {self.name}"
         return self.name
 

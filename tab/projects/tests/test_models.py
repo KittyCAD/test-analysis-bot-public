@@ -31,7 +31,25 @@ def describe_suite():
 def describe_test():
     @pytest.fixture
     def project():
-        return Project.objects.create(repository="https://github.com/foo/bar")
+        return Project(repository="https://github.com/foo/bar")
+
+    @pytest.fixture
+    def suite(project):
+        return Suite(project=project, name="my-suite")
+
+    def describe_str():
+        def it_formats_name(expect, project):
+            test = Test(project=project, name="my-test")
+            expect(str(test)) == "my-test"
+
+        def it_formats_name_with_suite(expect, project, suite):
+            test = Test(project=project, suite=suite, name="my-test")
+            expect(str(test)) == "my-suite › my-test"
+
+        def it_formats_name_with_default_suite(expect, project, suite):
+            suite.name = DEFAULT_SUITE
+            test = Test(project=project, suite=suite, name="my-test")
+            expect(str(test)) == "my-test"
 
     def describe_significant_branches():
         def it_includes_default_and_original_branches(expect):
@@ -47,11 +65,13 @@ def describe_test():
     def describe_update_failure_rate():
         @pytest.mark.django_db
         def it_returns_false_if_no_results(expect, project: Project):
+            project.save()
             test = project.tests.create(name="my-test")
             expect(test.update_failure_rate()) == False
 
         @pytest.mark.django_db
         def it_computes_failure_rate(expect, project: Project):
+            project.save()
             test: Test = project.tests.create(
                 name="my-test", original_branch="my-branch"
             )
@@ -79,11 +99,13 @@ def describe_test():
     def describe_update_average_duration():
         @pytest.mark.django_db
         def it_returns_false_if_no_results(expect, project: Project):
+            project.save()
             test: Test = project.tests.create(name="my-test")
             expect(test.update_average_duration()) == False
 
         @pytest.mark.django_db
         def it_computes_average_duration(expect, project: Project):
+            project.save()
             test: Test = project.tests.create(
                 name="my-test", original_branch="my-branch"
             )
