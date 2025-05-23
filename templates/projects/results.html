@@ -73,7 +73,7 @@
                            id="show_checkbox"
                            {% if show == "fails" %}checked{% endif %}
                            onchange="document.querySelector('input[name=show]').value = this.checked ? 'fails' : 'all'; this.form.submit()">
-                    <label class="form-check-label" for="show_checkbox">Hide tests that passed or were skipped</label>
+                    <label class="form-check-label" for="show_checkbox">Hide retries and tests that passed or were skipped</label>
                 </div>
                 <div class="text-muted">({{ health.description }})</div>
             </div>
