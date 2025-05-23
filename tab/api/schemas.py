@@ -21,8 +21,8 @@ class ApiKey(APIKeyHeader):
 
 class ResultRequest(ModelSchema):
     project: str
-    test: str
     suite: str = DEFAULT_SUITE
+    test: str
 
     class Config:
         model = Result

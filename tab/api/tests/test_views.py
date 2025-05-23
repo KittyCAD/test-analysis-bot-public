@@ -46,9 +46,9 @@ def describe_results():
         return {
             "project": "https://github.com/my-user/my-project",
             "suite": "e2e",
+            "test": "my feature › my test",
             "branch": "main",
             "commit": "abc123",
-            "test": "my feature › my test",
             "status": "passed",
         }
 
@@ -59,7 +59,7 @@ def describe_results():
         expect(response.status_code) == 201
         expect(response.json()) == {
             "suite": "my-user › my-project › e2e",
-            "test": "my feature › my test",
+            "test": "e2e › my feature › my test",
             "status": "passed",
             "block": False,
         }
@@ -92,7 +92,7 @@ def describe_results():
         expect(response.status_code) == 201
         expect(response.json()) == {
             "suite": "my-user › my-project › e2e",
-            "test": "my feature › my test",
+            "test": "e2e › my feature › my test",
             "status": "passed",
             "block": False,
         }

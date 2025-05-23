@@ -75,7 +75,7 @@ class TestTable(tables.Table):
     def render_name(self, record: Test):
         return render_to_string(
             "projects/_markers.html",
-            {"label": wrap(record.full_name), "markers": record.markers},
+            {"label": wrap(str(record)), "markers": record.markers},
         )
 
     def render_enabled(self, value):
@@ -150,7 +150,7 @@ class DisabledTestTable(tables.Table):
     def render_name(self, record: Test):
         return render_to_string(
             "projects/_markers.html",
-            {"label": wrap(record.full_name), "markers": record.markers},
+            {"label": wrap(str(record)), "markers": record.markers},
         )
 
     def render_failure_rate(self, record: Test):
@@ -329,7 +329,7 @@ class ResultTable(TestResultTable):
         )
         if record.branch != record.test.project.default_branch:
             url += f"?branch={record.branch}"
-        label = wrap(record.full_name)
+        label = wrap(str(record.test))
         return mark_safe(
             f'<a href="{url}" class="text-body text-decoration-none fw-bold">{label}</a>'
         )
