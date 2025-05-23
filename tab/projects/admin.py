@@ -70,7 +70,15 @@ class SuiteAdmin(admin.ModelAdmin):
 
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
-    search_fields = ("project__repository", "name")
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("project", "suite", "last_result")
+        )
+
+    search_fields = ("project__repository", "suite__name", "name")
     list_display = (
         "id",
         "project",
@@ -179,6 +187,10 @@ class TestAdmin(admin.ModelAdmin):
 
 @admin.register(Result)
 class ResultAdmin(admin.ModelAdmin):
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("test__project")
+
     search_fields = (
         "test__project__repository",
         "test__name",
@@ -213,8 +225,5 @@ class ResultAdmin(admin.ModelAdmin):
     @admin.display(description="Commit")
     def _commit(self, result: Result):
         return result.commit_humanized
-
-    def get_queryset(self, request):
-        return super().get_queryset(request).select_related("test__project")
 
     readonly_fields = ("markers", "created_at")

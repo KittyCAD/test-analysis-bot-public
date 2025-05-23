@@ -57,7 +57,9 @@ class TestsView(SingleTableMixin, ListView):
 
         queryset = project.tests.select_related("suite", "last_result")
         if search:
-            queryset = queryset.filter(name__icontains=search)
+            queryset = queryset.filter(
+                Q(suite__name__icontains=search) | Q(name__icontains=search)
+            )
         if enabled == "true":
             queryset = queryset.filter(enabled=True)
         elif enabled == "false":
@@ -103,7 +105,8 @@ class DisabledTestsView(SingleTableMixin, FormView):
         ).select_related("suite", "last_result", "disabled_user")
         if search:
             queryset = queryset.filter(
-                Q(name__icontains=search)
+                Q(suite__name__icontains=search)
+                | Q(name__icontains=search)
                 | Q(disabled_reason__icontains=search)
                 | Q(disabled_tracker__icontains=search)
             )
@@ -207,7 +210,9 @@ class ResultsView(SingleTableMixin, ListView):
         queryset = queryset.filter(commit=latest_commit)
 
         if search:
-            queryset = queryset.filter(test__name__icontains=search)
+            queryset = queryset.filter(
+                Q(suite__name__icontains=search) | Q(test__name__icontains=search)
+            )
         if platform:
             queryset = queryset.filter(platform=platform)
         if show == "fails":
