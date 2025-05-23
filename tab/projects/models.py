@@ -374,6 +374,12 @@ class Result(models.Model):
         return f"{status} after {duration} on {branch!r} at {commit}"
 
     @property
+    def test_name(self) -> str:
+        if self.suite and self.suite.name != DEFAULT_SUITE:
+            return f"{self.suite.name} › {self.test.name}"
+        return self.test.name
+
+    @property
     def markers(self) -> list[str]:
         metadata = self.metadata
         # TODO: Consider making 'annotations' and/or 'tags' a proper field

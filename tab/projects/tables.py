@@ -329,7 +329,7 @@ class ResultTable(TestResultTable):
         )
         if record.branch != record.test.project.default_branch:
             url += f"?branch={record.branch}"
-        label = wrap(str(record.test))
+        label = wrap(record.test_name)
         return mark_safe(
             f'<a href="{url}" class="text-body text-decoration-none fw-bold">{label}</a>'
         )
