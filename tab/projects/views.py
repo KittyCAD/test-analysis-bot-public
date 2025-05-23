@@ -55,7 +55,7 @@ class TestsView(SingleTableMixin, ListView):
         search = self.request.GET.get("search", "").strip()
         enabled = self.request.GET.get("enabled", "true")
 
-        queryset = project.tests.select_related("last_result")
+        queryset = project.tests.select_related("suite", "last_result")
         if search:
             queryset = queryset.filter(name__icontains=search)
         if enabled == "true":
@@ -100,7 +100,7 @@ class DisabledTestsView(SingleTableMixin, FormView):
 
         queryset = project.tests.filter(
             enabled=False, last_result__isnull=False
-        ).select_related("last_result", "disabled_user")
+        ).select_related("suite", "last_result", "disabled_user")
         if search:
             queryset = queryset.filter(
                 Q(name__icontains=search)

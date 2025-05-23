@@ -178,6 +178,12 @@ class Test(models.Model):
         return self.name
 
     @property
+    def full_name(self) -> str:
+        if self.suite:
+            return f"{self.suite.name} › {self.name}"
+        return self.name
+
+    @property
     def regex(self) -> str:
         label = self.name.split(" › ")[-1]
         return re.escape(label).replace(r"\ ", " ").replace("'", r"'\''")
@@ -370,6 +376,12 @@ class Result(models.Model):
         branch = self.branch or "???"
         commit = self.commit_humanized if self.commit else "???"
         return f"{status} after {duration} on {branch!r} at {commit}"
+
+    @property
+    def full_name(self) -> str:
+        if self.suite:
+            return f"{self.suite.name} › {self.test.name}"
+        return self.test.name
 
     @property
     def markers(self) -> list[str]:
