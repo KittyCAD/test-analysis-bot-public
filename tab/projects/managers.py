@@ -96,7 +96,7 @@ class ResultManager(models.Manager):
 
         description = f"{passed} of {total} passing"
         if new_failed := failed_results.filter(
-            test__block_rate__lt=NEW_FAILURE_THRESHOLD
+            test__failure_rate__lt=NEW_FAILURE_THRESHOLD
         ).count():
             s = "" if new_failed == 1 else "s"
             description += f", {new_failed} new failure{s}"
