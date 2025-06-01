@@ -5,7 +5,7 @@
     <i class="fa-solid fa-maximize"></i>
 </button>
 <div class="modal fade" id="details-{{ result.pk }}" tabindex="-1">
-    <div class="modal-dialog modal-xl">
+    <div class="modal-dialog modal-xl wide-modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Result Details</h5>
@@ -42,6 +42,9 @@
 }
 .comment {
     color: #6c757d;
+}
+.wide-modal {
+    max-width: 95vw;
 }
 </style>
 <script>
