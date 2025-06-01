@@ -209,6 +209,10 @@ class Test(models.Model):
         return values
 
     @property
+    def command(self) -> list[tuple[str, bool]]:
+        return self.last_result.command if self.last_result else []
+
+    @property
     def failure_rate_humanized(self) -> str:
         if self.failure_rate < 0:
             return "—"
