@@ -392,15 +392,23 @@ class Result(models.Model):
         return values
 
     @property
-    def command(self) -> str:
+    def command(self) -> list[tuple[str, bool]]:
+        """Returns a list of (line, copyable) tuples."""
+
+        def copyable(line: str) -> bool:
+            line = line.strip()
+            return bool(line) and not line.startswith("#")
+
         if suite := self.suite or self.test.suite:
             if pattern := suite.local_command:
                 try:
-                    return pattern.format(test=self.test)
+                    command = pattern.format(test=self.test)
+                    lines = command.split("\n")
+                    return [(line, copyable(line)) for line in lines]
                 except (KeyError, AttributeError) as e:
                     log.error(f"Invalid local command for {suite}: {e!r}")
-                    return pattern
-        return ""
+                    return [(pattern, False)]
+        return []
 
     @property
     def branch_url(self) -> str:
