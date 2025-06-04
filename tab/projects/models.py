@@ -415,7 +415,9 @@ class Result(models.Model):
                     lines = command.split("\n")
                     return [
                         (CHECKOUT_COMMAND.format(branch=self.branch), True),
+                        ("\n", False),
                         ("# then", False),
+                        ("\n", False),
                     ] + [(line, copyable(line)) for line in lines]
 
                 except (KeyError, AttributeError) as e:

@@ -152,7 +152,9 @@ def describe_result():
                     "git fetch origin && git checkout my-branch && git reset --hard origin/my-branch",
                     True,
                 ),
+                ("\n", False),
                 ("# then", False),
+                ("\n", False),
                 ("pytest my-test", True),
             ]
 
