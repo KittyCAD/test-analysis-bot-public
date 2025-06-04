@@ -7,7 +7,12 @@ from django.db import models
 
 import log
 
-from .constants import ANSI_ESCAPE, DEFAULT_SUITE, get_default_branches
+from .constants import (
+    ANSI_ESCAPE,
+    CHECKOUT_COMMAND,
+    DEFAULT_SUITE,
+    get_default_branches,
+)
 from .enums import Platform, Status, Target
 from .managers import ProjectManager, ResultManager
 
@@ -408,10 +413,15 @@ class Result(models.Model):
                 try:
                     command = pattern.format(test=self.test)
                     lines = command.split("\n")
-                    return [(line, copyable(line)) for line in lines]
+                    return [
+                        (CHECKOUT_COMMAND.format(branch=self.branch), True),
+                        ("# then", False),
+                    ] + [(line, copyable(line)) for line in lines]
+
                 except (KeyError, AttributeError) as e:
-                    log.error(f"Invalid local command for {suite}: {e!r}")
-                    return [(pattern, False)]
+                    error = repr(e)
+                    log.error(f"Invalid local command for {suite}: {error}")
+                    return [(pattern, False), (f"# invalid pattern: {error}", False)]
         return []
 
     @property

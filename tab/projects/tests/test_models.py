@@ -142,6 +142,20 @@ def describe_result():
             result = Result(test=test, status=Status.FAILED, platform=Platform.MACOS)
             expect(result.markers) == []
 
+    def describe_command():
+        def it_includes_checkout_command(expect):
+            test = Test(name="my-test")
+            suite = Suite(name="my-suite", local_command="pytest {test.name}")
+            result = Result(test=test, branch="my-branch", suite=suite)
+            expect(result.command) == [
+                (
+                    "git fetch origin && git checkout my-branch && git reset --hard origin/my-branch",
+                    True,
+                ),
+                ("# then", False),
+                ("pytest my-test", True),
+            ]
+
     def describe_originated_from_branch():
         def it_detects_if_branch_is_original_and_not_default(expect):
             project = Project()
