@@ -313,8 +313,14 @@ class TestResultsView(SingleTableMixin, FormView):
         )
         test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
 
+        if "expand" in self.request.GET:
+            expand = self.request.GET["expand"] == "true"
+        else:
+            expand = bool(test.last_result) and test.failure_rate > 0.25
+
         context["project"] = project
         context["test"] = test
+        context["expand"] = expand
         context["branch"] = self.request.GET.get("branch")
         context["platform"] = self.request.GET.get("platform", "").strip()
         context["show"] = self.request.GET.get("show", "all")

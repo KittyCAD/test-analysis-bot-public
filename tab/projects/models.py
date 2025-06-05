@@ -235,10 +235,6 @@ class Test(models.Model):
             return "—"
         return f"{self.average_duration:.1f}s"
 
-    @property
-    def show_advanced_options(self) -> bool:
-        return bool(self.last_result) and self.failure_rate > 0.25
-
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
         results = self.results.filter(
