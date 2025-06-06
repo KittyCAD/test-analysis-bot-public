@@ -51,6 +51,33 @@ def describe_test():
             test = Test(project=project, suite=suite, name="my-test")
             expect(str(test)) == "my-test"
 
+    def describe_enabled():
+        @pytest.mark.django_db
+        def it_is_true_if_last_result(expect, project: Project):
+            project.save()
+            test = Test.objects.create(project=project, name="my-test")
+            test.results.create(test=test, branch="main", status=Status.PASSED)
+            expect(test.enabled) == True
+
+        @pytest.mark.django_db
+        def it_is_false_if_last_result_is_skipped(expect, project: Project):
+            project.save()
+            test = Test.objects.create(project=project, name="my-test")
+            test.results.create(test=test, branch="main", status=Status.SKIPPED)
+            expect(test.enabled) == False
+
+        @pytest.mark.django_db
+        def it_is_true_if_any_results_for_latest_commit(expect, project: Project):
+            project.save()
+            test = Test.objects.create(project=project, name="my-test")
+            test.results.create(
+                test=test, branch="main", commit="abc123", status=Status.PASSED
+            )
+            test.results.create(
+                test=test, branch="main", commit="abc123", status=Status.SKIPPED
+            )
+            expect(test.enabled) == True
+
     def describe_significant_branches():
         def it_includes_default_and_original_branches(expect):
             project = Project(

@@ -321,11 +321,7 @@ class Test(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            self.last_result = (
-                self.results.filter(branch=self.project.default_branch)
-                .order_by("-created_at")
-                .first()
-            )
+            self._update_last_result()
         if self.disabled_platforms:
             self.disabled = True
         self.enabled = bool(
@@ -334,6 +330,23 @@ class Test(models.Model):
             and self.last_result.status not in {Status.SKIPPED, Status.DISABLED}
         )
         super().save(*args, **kwargs)
+
+    def _update_last_result(self):
+        self.last_result = (
+            self.results.filter(branch=self.project.default_branch)
+            .order_by("-created_at")
+            .first()
+        )
+        if self.last_result and self.last_result.status == Status.SKIPPED:
+            if result := (
+                self.results.filter(
+                    branch=self.last_result.branch, commit=self.last_result.commit
+                )
+                .exclude(status=Status.SKIPPED)
+                .order_by("-created_at")
+                .first()
+            ):
+                self.last_result = result
 
 
 class Result(models.Model):
