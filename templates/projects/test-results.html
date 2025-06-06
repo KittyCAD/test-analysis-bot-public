@@ -101,7 +101,7 @@
                             <i class="fa-solid fa-play-circle me-2"></i>Rerun Locally
                         </h6>
                     </div>
-                    <div class="command-output bg-light text-dark p-3 rounded-bottom">
+                    <div class="bg-light text-dark p-3 rounded-bottom command">
                         {% for line, copyable in test.command %}
                             <div class="d-flex align-items-center mb-1">
                                 <pre class="mb-0 flex-grow-1 font-monospace"><code>{% if copyable %}<span class="text-success prompt">$ </span>{% endif %}{% if not copyable %}<span class="text-muted">{% endif %}{{ line }}{% if not copyable %}</span>{% endif %}</code></pre>
@@ -163,6 +163,21 @@
     <style>
         .prompt {
             user-select: none;
+        }
+        .command pre {
+            position: relative;
+            overflow: hidden;
+            padding-right: 20px; /* Fade before the copy */
+        }
+        .command pre::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 20px;  /* Fade before the copy */
+            height: 100%;
+            background: linear-gradient(to right, transparent, #f8f9fa);
+            pointer-events: none;
         }
         .comment {
             color: #6c757d;

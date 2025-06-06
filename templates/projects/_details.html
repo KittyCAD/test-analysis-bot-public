@@ -17,7 +17,7 @@
             <div class="modal-body">
                 <pre class="mb-0">{{ result.message }}</pre>
                 {% if result.command %}
-                    <div class="command-output bg-dark text-light rounded mt-4 p-3">
+                    <div class="bg-dark text-light rounded mt-4 p-3 command">
                         {% for line, copyable in result.command %}
                             <div class="d-flex align-items-center mb-1">
                                 <pre class="mb-0 flex-grow-1 font-monospace"><code>{% if copyable %}<span class="text-success prompt">$ </span>{% endif %}{% if not copyable %}<span class="comment">{% endif %}{{ line }}{% if not copyable %}</span>{% endif %}</code></pre>
@@ -37,14 +37,39 @@
     </div>
 </div>
 <style>
+.wide-modal {
+    max-width: 95vw;
+}
 .prompt {
     user-select: none;
 }
+.command pre {
+    position: relative;
+    overflow: hidden;
+    padding-right: 20px; /* Fade before the copy button */
+}
+.bg-light.command pre::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 100%;
+    background: linear-gradient(to right, transparent, #f8f9fa);
+    pointer-events: none;
+}
+.bg-dark.command pre::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 100%;
+    background: linear-gradient(to right, transparent, #212529);
+    pointer-events: none;
+}
 .comment {
     color: #6c757d;
-}
-.wide-modal {
-    max-width: 95vw;
 }
 </style>
 <script>
