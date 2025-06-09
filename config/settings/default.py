@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from django.contrib import messages
+
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -151,6 +153,13 @@ STORAGES = {
 
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+MESSAGE_TAGS = {
+    messages.DEBUG: "alert-secondary",
+    messages.INFO: "alert-info",
+    messages.SUCCESS: "alert-success",
+    messages.WARNING: "alert-warning",
+    messages.ERROR: "alert-danger",
+}
 
 ###############################################################################
 # Email

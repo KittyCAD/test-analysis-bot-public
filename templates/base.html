@@ -63,13 +63,6 @@
                                     <i class="fa-solid fa-table me-1"></i>
                                     Admin
                                 </a>
-                            {% else %}
-                                <a class="btn btn-outline-secondary"
-                                   href="{% url 'admin:index' %}"
-                                   target="_blank">
-                                    <i class="fa-solid fa-table me-1"></i>
-                                    Admin
-                                </a>
                             {% endif %}
                         </li>
                         {% if user.is_authenticated %}
@@ -94,7 +87,7 @@
         {% if messages %}
             <div class="container">
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible">
+                    <div class="alert {{ message.tags }} alert-dismissible">
                         {{ message }}
                         <button type="button"
                                 class="btn-close"

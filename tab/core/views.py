@@ -9,14 +9,21 @@ from django.shortcuts import redirect, render
 import log
 
 from .helpers import generate_otp, get_or_create_user, send_otp_email
+from .models import Organization
 
 
 def login(request):
     if request.method == "POST":
+        email = request.POST.get("email")
+        domain = email.split("@")[1]
+        if not Organization.objects.filter(email_domain__iexact=domain).exists():
+            messages.error(request, "No organization found for that email domain.")
+            return render(request, "core/login.html")
+
         if submitted_otp := request.POST.get("otp"):
-            email = request.POST.get("email")
             log.info(f"Verifying OTP for {email}")
             stored_otp = cache.get(f"otp:{email}")
+
             if stored_otp and submitted_otp == stored_otp:
                 user = get_or_create_user(email)
                 auth_login(request, user)
@@ -26,12 +33,12 @@ def login(request):
                 messages.error(request, "Invalid OTP. Please try again.")
                 return render(request, "core/verify.html", {"email": email})
         else:
-            email = request.POST.get("email")
             log.info(f"Sending OTP to {email}")
             otp = generate_otp()
             cache.set(f"otp:{email}", otp, timeout=600)
             send_otp_email(email, otp)
             return render(request, "core/verify.html", {"email": email})
+
     return render(request, "core/login.html")
 
 
