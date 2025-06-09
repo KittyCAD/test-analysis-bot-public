@@ -59,17 +59,34 @@
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
                             {% if admin_url %}
-                                <a class="nav-link text-danger" href="{{ admin_url }}" target="_blank">
+                                <a class="btn btn-outline-danger" href="{{ admin_url }}" target="_blank">
                                     <i class="fa-solid fa-table me-1"></i>
                                     Admin
                                 </a>
                             {% else %}
-                                <a class="nav-link" href="{% url 'admin:index' %}" target="_blank">
+                                <a class="btn btn-outline-secondary"
+                                   href="{% url 'admin:index' %}"
+                                   target="_blank">
                                     <i class="fa-solid fa-table me-1"></i>
                                     Admin
                                 </a>
                             {% endif %}
                         </li>
+                        {% if user.is_authenticated %}
+                            <li class="nav-item">
+                                <a class="btn btn-outline-secondary ms-2" href="{% url 'logout' %}">
+                                    <i class="fa-solid fa-right-from-bracket me-1"></i>
+                                    Logout
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="btn btn-outline-light ms-2" href="{% url 'login' %}">
+                                    <i class="fa-solid fa-right-to-bracket me-1"></i>
+                                    Login
+                                </a>
+                            </li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
