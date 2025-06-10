@@ -17,12 +17,12 @@ def get_or_create_user(email: str) -> User:
         return User.objects.get(email__iexact=email)
     except User.DoesNotExist:
         log.warning(f"User {email} does not exist, creating it automatically")
-        username = email.lower().split("@")[0]
-        for count in range(10):
+        username = base_username = email.lower().split("@")[0]
+        for count in range(1, 10):
             if count > 1:
-                username = f"{username}{count}"
-        with suppress(IntegrityError):
-            return User.objects.create_user(username=username, email=email.lower())
+                username = f"{base_username}{count}"
+            with suppress(IntegrityError):
+                return User.objects.create_user(username=username, email=email.lower())
     raise ValueError(f"Unable to generate username for {email}")
 
 
