@@ -1,0 +1,40 @@
+{% load static %}
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'projects:index' %}">
+            <img src="{% static 'favicon/favicon.svg' %}"
+                 alt="Logo"
+                 width="30"
+                 height="30"
+                 class="d-inline-block align-text-top me-2">
+            Test Analysis Bot
+        </a>
+        <button class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto d-flex gap-2">
+                <li class="nav-item">
+                    {% if admin_url %}
+                        <a class="btn btn-outline-danger" href="{{ admin_url }}" target="_blank">
+                            <i class="fa-solid fa-table me-1"></i>
+                            Admin
+                        </a>
+                    {% endif %}
+                </li>
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="btn btn-outline-secondary" href="{% url 'logout' %}">
+                            <i class="fa-solid fa-right-from-bracket me-1"></i>
+                            Logout
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
