@@ -1,12 +1,13 @@
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.views.generic import FormView, ListView
+from django.views.generic import FormView, ListView, TemplateView
 
 import log
 from django_tables2 import SingleTableMixin
@@ -19,31 +20,33 @@ from .models import Project, Result, Status, Test
 from .tables import DisabledTestTable, ResultTable, TestResultTable, TestTable
 
 
-def index(request):
-    if not request.user.is_authenticated:
-        return render(request, "projects/index.html", {"projects": []})
+class IndexView(LoginRequiredMixin, TemplateView):
+    template_name = "projects/index.html"
 
-    email_domain = request.user.email.split("@")[1]
-    try:
-        organization = Organization.objects.get(email_domain=email_domain)
-        projects = Project.objects.filter(
-            repository__startswith=organization.repository_index
-        ).order_by("repository")
-    except Organization.DoesNotExist:
-        organization = None
-        projects = Project.objects.none()
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
-    context: dict = {"projects": projects}
-    if request.user.is_staff:
-        if organization:
+        assert self.request.user.is_authenticated
+        email_domain = self.request.user.email.split("@")[1]
+        try:
+            organization = Organization.objects.get(email_domain=email_domain)
+            projects = Project.objects.filter(
+                repository__startswith=organization.repository_index
+            ).order_by("repository")
+        except Organization.DoesNotExist:
+            organization = None
+            projects = Project.objects.none()
+
+        context["projects"] = projects
+        if self.request.user.is_staff and organization:
             context["admin_url"] = reverse(
                 "admin:core_organization_change", args=[organization.pk]
             )
 
-    return render(request, "projects/index.html", context)
+        return context
 
 
-class TestsView(SingleTableMixin, ListView):
+class TestsView(LoginRequiredMixin, SingleTableMixin, ListView):
     table_class = TestTable
     template_name = "projects/tests.html"
 
@@ -87,7 +90,7 @@ class TestsView(SingleTableMixin, ListView):
         return context
 
 
-class DisabledTestsView(SingleTableMixin, FormView):
+class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
     table_class = DisabledTestTable
     table_pagination = False
     template_name = "projects/tests-disabled.html"
@@ -184,12 +187,16 @@ class DisabledTestsView(SingleTableMixin, FormView):
 
 
 class DisabledTestsRegexView(DisabledTestsView):
+    def dispatch(self, request, *args, **kwargs):
+        """Disable authentication for this view to work with local test runners."""
+        return super(FormView, self).dispatch(request, *args, **kwargs)
+
     def render_to_response(self, context, **response_kwargs):
         regex = "|".join(row.record.regex for row in context["table"].rows)
         return HttpResponse(f"'{regex}'", content_type="text/plain")
 
 
-class ResultsView(SingleTableMixin, ListView):
+class ResultsView(LoginRequiredMixin, SingleTableMixin, ListView):
     table_class = ResultTable
     template_name = "projects/results.html"
 
@@ -275,7 +282,7 @@ class ResultsView(SingleTableMixin, ListView):
         return list(results_by_branch.values_list("branch", flat=True))
 
 
-class TestResultsView(SingleTableMixin, FormView):
+class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
     table_class = TestResultTable
     template_name = "projects/test-results.html"
     form_class = UpdateTestForm

@@ -5,7 +5,11 @@ from . import views
 app_name = "projects"
 
 urlpatterns = [
-    path("", views.index, name="index"),
+    path(
+        "",
+        views.IndexView.as_view(),
+        name="index",
+    ),
     path(
         "<path:path>/tests/disabled/regex",
         views.DisabledTestsRegexView.as_view(),

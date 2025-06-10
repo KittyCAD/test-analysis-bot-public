@@ -24,8 +24,8 @@ def describe_projects():
     url = "/projects/foo/bar"
 
     @pytest.mark.django_db
-    def it_renders_the_projects_page(expect, client, project: Project):
-        response = client.get(url)
+    def it_renders_the_projects_page(expect, admin_client, project: Project):
+        response = admin_client.get(url)
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
         expect(html).contains("foo › bar")
@@ -38,9 +38,9 @@ def describe_tests():
 
         @pytest.mark.django_db
         def it_renders_the_test_details_page(
-            expect, client, project: Project, disabled_test: Test
+            expect, admin_client, project: Project, disabled_test: Test
         ):
-            response = client.get(url.format(pk=disabled_test.pk))
+            response = admin_client.get(url.format(pk=disabled_test.pk))
             expect(response.status_code) == 200
 
     def describe_disabled():
@@ -48,9 +48,9 @@ def describe_tests():
 
         @pytest.mark.django_db
         def it_renders_the_disabled_tests_page(
-            expect, client, project: Project, disabled_test: Test
+            expect, admin_client, project: Project, disabled_test: Test
         ):
-            response = client.get(url)
+            response = admin_client.get(url)
             expect(response.status_code) == 200
             html = response.content.decode("utf-8")
             expect(html).contains("1 Disabled Test")
@@ -75,6 +75,7 @@ def describe_tests():
                         status=Status.PASSED,
                         duration=1.0,
                     )
+
                 response = client.get(url)
                 expect(response.status_code) == 200
                 text = response.content.decode("utf-8")
@@ -85,7 +86,7 @@ def describe_results():
     url = "/projects/foo/bar/results"
 
     @pytest.mark.django_db
-    def it_renders_the_results_page(expect, client, project: Project):
+    def it_renders_the_results_page(expect, admin_client, project: Project):
         Result.objects.create(
             test=Test.objects.create(project=project, name="test"),
             branch="main",
@@ -94,7 +95,7 @@ def describe_results():
             duration=1.0,
         )
 
-        response = client.get(url)
+        response = admin_client.get(url)
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
         expect(html).contains("1 of 1 passing")

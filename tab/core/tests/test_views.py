@@ -5,7 +5,7 @@ from ..models import Organization
 
 
 def describe_login():
-    url = "/login/"
+    url = "/accounts/login/"
 
     @pytest.fixture
     def organization():

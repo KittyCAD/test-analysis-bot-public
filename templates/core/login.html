@@ -24,7 +24,8 @@
                                     <i class="fa-solid fa-paper-plane me-1"></i>
                                     Submit
                                 </button>
-                                <a href="{% url 'admin:login' %}" class="btn btn-outline-danger">
+                                <a href="{% url 'admin:login' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}"
+                                   class="btn btn-outline-danger">
                                     <i class="fa-solid fa-table me-1"></i>
                                     Admin
                                 </a>
