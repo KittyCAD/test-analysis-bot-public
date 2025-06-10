@@ -113,6 +113,7 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
                 | Q(name__icontains=search)
                 | Q(disabled_reason__icontains=search)
                 | Q(disabled_tracker__icontains=search)
+                | Q(disabled_user__email__icontains=search)
             )
         if project.test_inactive_threshold:
             queryset = queryset.filter(
