@@ -397,5 +397,12 @@ class MetricsView(LoginRequiredMixin, TemplateView):
 
         context["project"] = project
         context["disabled_test_metrics"] = get_disabled_test_metrics(project)
+        if self.request.user.is_staff:
+            context["admin_url"] = (
+                reverse(
+                    "admin:projects_test_changelist",
+                )
+                + f"?project__repository={project.repository}"
+            )
 
         return context

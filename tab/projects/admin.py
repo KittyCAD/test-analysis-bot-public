@@ -78,7 +78,12 @@ class TestAdmin(admin.ModelAdmin):
             .select_related("project", "suite", "last_result")
         )
 
-    search_fields = ("project__repository", "suite__name", "name")
+    search_fields = (
+        "project__repository",
+        "suite__name",
+        "name",
+        "disabled_user__email",
+    )
     list_display = (
         "id",
         "project",
