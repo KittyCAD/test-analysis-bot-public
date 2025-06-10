@@ -16,6 +16,7 @@ from tab.core.helpers import get_or_create_user
 from tab.core.models import Organization
 
 from .forms import BulkUpdateTestForm, UpdateTestForm
+from .helpers import get_disabled_test_metrics
 from .models import Project, Result, Status, Test
 from .tables import DisabledTestTable, ResultTable, TestResultTable, TestTable
 
@@ -382,3 +383,19 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             redirect_url += f"?branch={branch}"
 
         return redirect(redirect_url)
+
+
+class MetricsView(LoginRequiredMixin, TemplateView):
+    template_name = "projects/metrics.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+
+        context["project"] = project
+        context["disabled_test_metrics"] = get_disabled_test_metrics(project)
+
+        return context

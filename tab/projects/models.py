@@ -109,7 +109,7 @@ class Suite(models.Model):
 class Test(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tests")
     suite = models.ForeignKey(
-        Suite, null=True, on_delete=models.SET_NULL, related_name="tests"
+        Suite, null=True, blank=True, on_delete=models.SET_NULL, related_name="tests"
     )
 
     name = models.CharField(max_length=1000, db_index=True)

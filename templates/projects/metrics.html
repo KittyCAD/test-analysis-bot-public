@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {{ project.name }}
+{% endblock title %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="d-flex align-items-center mb-4">
+            <h1 class="mb-0">{{ project.name }}</h1>
+            <a href="{% url 'projects:tests' project.path %}"
+               class="btn btn-sm btn-outline-primary ms-3">
+                <i class="fa-solid fa-arrow-left"></i>
+                View Project
+            </a>
+        </div>
+        <h2 class="mb-4">Test Metrics</h2>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Disabled by User</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Total Count</th>
+                                <th>Still Disabled</th>
+                                <th>Since Fixed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user, stats in disabled_test_metrics.items %}
+                                <tr>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ stats.total }}</td>
+                                    <td>{{ stats.disabled }}</td>
+                                    <td>{{ stats.enabled }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

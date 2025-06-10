@@ -99,3 +99,16 @@ def describe_results():
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
         expect(html).contains("1 of 1 passing")
+
+
+def describe_metrics():
+    url = "/projects/foo/bar/metrics"
+
+    @pytest.mark.django_db
+    def it_renders_the_metrics_page(expect, admin_client, admin_user, project: Project):
+        project.tests.create(name="my-test", disabled_user=admin_user)
+
+        response = admin_client.get(url)
+        expect(response.status_code) == 200
+        html = response.content.decode("utf-8")
+        expect(html).contains(admin_user.email)
