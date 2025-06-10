@@ -9,14 +9,26 @@
                         <h1 class="h3 mb-0">Login via Email</h1>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted mb-4">We'll email you a one-time password to authenticate.</p>
+                        <p class="text-muted mb-4">
+                            We'll send you a generated, one-time password to your email.
+                            If you are an administrator, you can also login with your password.
+                        </p>
                         <form method="post">
                             {% csrf_token %}
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email Address:</label>
                                 <input type="email" class="form-control" id="email" name="email" required>
                             </div>
-                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <div class="d-flex justify-content-between">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa-solid fa-paper-plane me-1"></i>
+                                    Submit
+                                </button>
+                                <a href="{% url 'admin:login' %}" class="btn btn-outline-danger">
+                                    <i class="fa-solid fa-table me-1"></i>
+                                    Admin
+                                </a>
+                            </div>
                         </form>
                     </div>
                 </div>
