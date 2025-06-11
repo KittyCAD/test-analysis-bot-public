@@ -10,13 +10,16 @@ def project():
 
 @pytest.fixture
 def disabled_test(project: Project):
-    test = Test.objects.create(project=project, name="test", disabled=True)
+    test = Test.objects.create(project=project, name="test")
     test.results.create(
         branch="main",
         commit="abc123",
         status=Status.PASSED,
         duration=1.0,
     )
+    test.disabled = True
+    test.failure_rate = 0.25
+    test.save()
     return test
 
 
@@ -63,18 +66,16 @@ def describe_tests():
                 expect, client, project: Project, disabled_test: Test
             ):
                 for name in ["test [abc]", "test's name"]:
-                    test = Test.objects.create(
-                        project=project,
-                        name=name,
-                        disabled=True,
-                        enabled=False,
-                    )
+                    test = Test.objects.create(project=project, name=name)
                     test.results.create(
                         branch="main",
                         commit="abc123",
                         status=Status.PASSED,
                         duration=1.0,
                     )
+                    test.disabled = True
+                    test.failure_rate = 0.25
+                    test.save()
 
                 response = client.get(url)
                 expect(response.status_code) == 200

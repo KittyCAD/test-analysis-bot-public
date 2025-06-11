@@ -51,6 +51,34 @@ def describe_test():
             test = Test(project=project, suite=suite, name="my-test")
             expect(str(test)) == "my-test"
 
+    def describe_disabled():
+
+        @pytest.mark.django_db
+        def it_is_set_if_disabled_for_any_platform(expect, project: Project):
+            project.save()
+            test = Test.objects.create(
+                project=project, name="my-test", disabled_platforms=[Platform.WINDOWS]
+            )
+            expect(test.disabled) == True
+
+        @pytest.mark.django_db
+        def it_is_cleared_after_zero_failures(expect, admin_user, project: Project):
+            project.save()
+            test = Test.objects.create(
+                project=project,
+                name="my-test",
+                disabled=True,
+                disabled_user=admin_user,
+                failure_rate=0.25,
+            )
+            expect(test.disabled) == True
+
+            test.failure_rate = 0
+            test.save()
+            expect(test.disabled) == False
+            expect(test.disabled_platforms) == []
+            expect(test.disabled_user) == admin_user
+
     def describe_enabled():
         @pytest.mark.django_db
         def it_is_true_if_last_result(expect, project: Project):
