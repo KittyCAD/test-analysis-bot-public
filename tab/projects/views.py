@@ -176,7 +176,7 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
             test.disabled_user = disabled_user
             if not disabled:
                 test.disabled_platforms = []
-                if test.last_result.status in {Status.SKIPPED, Status.DISABLED}:
+                if test.last_result.status in Status.test_disabled():
                     # Modify status to hide it from this view
                     test.last_result.status = Status.INTERRUPTED
                     test.last_result.save()
@@ -230,9 +230,9 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, ListView):
         if platform:
             queryset = queryset.filter(platform=platform)
         if show == "fails":
-            queryset = queryset.exclude(
-                status__in={Status.PASSED, Status.XFAILED, Status.SKIPPED}
-            ).filter(final=True)
+            queryset = queryset.exclude(status__in=Status.merge_allowed()).filter(
+                final=True
+            )
 
         return queryset
 
@@ -306,14 +306,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
 
         queryset = Result.objects.filter_with_default_branches(test, branch)
         if show == "fails":
-            queryset = queryset.exclude(
-                status__in={
-                    Status.PASSED,
-                    Status.XPASSED,
-                    Status.SKIPPED,
-                    Status.DISABLED,
-                }
-            )
+            queryset = queryset.exclude(status__in=Status.merge_allowed())
         if platform:
             queryset = queryset.filter(platform=platform)
 

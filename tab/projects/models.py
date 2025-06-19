@@ -244,11 +244,7 @@ class Test(models.Model):
             return False
 
         results = results[: self.project.sample_count]
-        failed = sum(
-            result.status
-            in {Status.FAILED, Status.XPASSED, Status.ERROR, Status.DISABLED}
-            for result in results
-        )
+        failed = sum(result.status in Status.test_failed() for result in results)
         new = round(failed / len(results), 6)
 
         if old == new:
@@ -268,10 +264,7 @@ class Test(models.Model):
             return False
 
         results = results[: self.project.sample_count]
-        failed = sum(
-            result.status in {Status.FAILED, Status.XPASSED, Status.ERROR}
-            for result in results
-        )
+        failed = sum(result.status in Status.merge_blocked() for result in results)
         new = round(failed / len(results), 6)
 
         if old == new:
@@ -285,13 +278,7 @@ class Test(models.Model):
         old = self.average_duration
         results = self.results.filter(
             branch__in=self.significant_branches,
-            status__in=[
-                Status.PASSED,
-                Status.FAILED,
-                Status.XPASSED,
-                Status.XFAILED,
-                Status.DISABLED,
-            ],
+            status__in=Status.measurable(),
             duration__gt=0,
         ).order_by("-created_at")
         if not results.exists():
@@ -332,7 +319,7 @@ class Test(models.Model):
         self.enabled = bool(
             not self.disabled
             and self.last_result
-            and self.last_result.status not in {Status.SKIPPED, Status.DISABLED}
+            and self.last_result.status not in Status.test_disabled()
         )
         super().save(*args, **kwargs)
 

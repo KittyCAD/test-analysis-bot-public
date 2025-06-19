@@ -61,6 +61,31 @@ class Status(models.TextChoices):
             case _:
                 return "secondary"
 
+    @classmethod
+    def test_failed(cls):
+        """Statuses that indicate a test has failed."""
+        return {cls.FAILED, cls.XPASSED, cls.ERROR, cls.TIMEDOUT, cls.DISABLED}
+
+    @classmethod
+    def test_disabled(cls):
+        """Statuses that indicate a test is disabled."""
+        return {cls.SKIPPED, cls.DISABLED}
+
+    @classmethod
+    def merge_blocked(cls):
+        """Statuses that prevent a branch from being merged."""
+        return {cls.FAILED, cls.XPASSED, cls.ERROR, cls.TIMEDOUT}
+
+    @classmethod
+    def merge_allowed(cls):
+        """Status that indicate a branch can be merged."""
+        return {cls.PASSED, cls.XPASSED, cls.SKIPPED, cls.DISABLED}
+
+    @classmethod
+    def measurable(cls):
+        """Statuses that should be considered for average duration."""
+        return {cls.PASSED, cls.FAILED, cls.XPASSED, cls.XFAILED, cls.DISABLED}
+
 
 class Target(models.TextChoices):
     WEB = "web", "Web"
