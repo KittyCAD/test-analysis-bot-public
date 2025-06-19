@@ -11,8 +11,23 @@
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="mb-0">{{ project.name }}</h1>
-            <a href="{% url 'projects:results' project.path %}"
-               class="btn btn-sm btn-outline-secondary">View Latest Results</a>
+            <div class="btn-group">
+                <a href="{% url 'projects:results' project.path %}"
+                   class="btn btn-sm btn-outline-dark fs-7">View Latest Results</a>
+                <button type="button"
+                        class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split fs-7"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item"
+                           style="font-size: 0.875rem"
+                           href="{% url 'projects:disabled-tests' project.path %}">View Disabled Tests</a>
+                    </li>
+                </ul>
+            </div>
         </div>
         <form method="get" class="mb-4">
             <div class="input-group mb-3">
