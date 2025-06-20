@@ -10,6 +10,7 @@ class SuiteInline(admin.TabularInline):
     model = Suite
     max_num = 0
     fields = ("name", "local_command", "supports_override")
+    show_change_link = True
 
 
 @admin.register(Project)
