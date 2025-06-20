@@ -61,10 +61,10 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Suite)
 class SuiteAdmin(admin.ModelAdmin):
-    search_fields = ("project__repository", "name")
+    search_fields = ("name", "project__repository")
     list_display = ("id", "project", "name", "created_at", "updated_at")
     ordering = ("-updated_at",)
-    list_filter = ("name",)
+    list_filter = ("name", "project__repository")
 
     readonly_fields = ("created_at", "updated_at")
 
