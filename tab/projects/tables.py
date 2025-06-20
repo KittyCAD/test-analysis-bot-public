@@ -14,6 +14,20 @@ def wrap(name: str) -> str:
     return mark_safe(name.replace("_", "_<wbr>"))
 
 
+def color(
+    text: str, value: float, lower_threshold: float, upper_threshold: float
+) -> str:
+    if value > upper_threshold:
+        brightness = 1.0
+    elif value < lower_threshold:
+        brightness = 0.0
+    else:
+        brightness = (value - lower_threshold) / (upper_threshold - lower_threshold)
+    return mark_safe(
+        f'<span class="text-danger" style="filter: brightness({brightness});">{text}</span>'
+    )
+
+
 class TestTable(tables.Table):
     name = tables.LinkColumn(
         "projects:test-results",
@@ -84,12 +98,33 @@ class TestTable(tables.Table):
         return mark_safe(f'<i class="fa-solid fa-{icon} text-{color}"></i>')
 
     def render_failure_rate(self, record: Test):
+        if suite := record.suite:
+            return color(
+                record.failure_rate_humanized,
+                record.failure_rate,
+                suite.failure_rate_lower_threshold,
+                suite.failure_rate_upper_threshold,
+            )
         return record.failure_rate_humanized
 
     def render_block_rate(self, record: Test):
+        if suite := record.suite:
+            return color(
+                record.block_rate_humanized,
+                record.block_rate,
+                suite.block_rate_lower_threshold,
+                suite.block_rate_upper_threshold,
+            )
         return record.block_rate_humanized
 
     def render_average_duration(self, record: Test):
+        if suite := record.suite:
+            return color(
+                record.average_duration_humanized,
+                record.average_duration,
+                suite.average_duration_lower_threshold,
+                suite.average_duration_upper_threshold,
+            )
         return record.average_duration_humanized
 
     def render_updated_at(self, value):
@@ -154,6 +189,13 @@ class DisabledTestTable(tables.Table):
         )
 
     def render_failure_rate(self, record: Test):
+        if suite := record.suite:
+            return color(
+                record.failure_rate_humanized,
+                record.failure_rate,
+                suite.failure_rate_lower_threshold,
+                suite.failure_rate_upper_threshold,
+            )
         return record.failure_rate_humanized
 
     def render_disabled_tracker(self, value: str, record: Test):
@@ -337,4 +379,11 @@ class ResultTable(TestResultTable):
     def render_test__block_rate(self, record: Result):
         if record.originated_from_branch:
             return "—"
+        if suite := record.test.suite:
+            return color(
+                record.test.block_rate_humanized,
+                record.test.block_rate,
+                suite.block_rate_lower_threshold,
+                suite.block_rate_upper_threshold,
+            )
         return record.test.block_rate_humanized

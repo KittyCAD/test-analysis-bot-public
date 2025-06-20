@@ -97,6 +97,25 @@ class Suite(models.Model):
         help_text="Pattern to run individual tests locally",
     )
 
+    failure_rate_upper_threshold = models.FloatField(
+        default=0.5, help_text="Upper threshold to consider unacceptable"
+    )
+    failure_rate_lower_threshold = models.FloatField(
+        default=0.1, help_text="Lower threshold to consider acceptable"
+    )
+    block_rate_upper_threshold = models.FloatField(
+        default=0.25, help_text="Upper threshold to consider unacceptable"
+    )
+    block_rate_lower_threshold = models.FloatField(
+        default=0.05, help_text="Lower threshold to consider acceptable"
+    )
+    average_duration_upper_threshold = models.FloatField(
+        default=60, help_text="Upper threshold to consider unacceptable"
+    )
+    average_duration_lower_threshold = models.FloatField(
+        default=30, help_text="Lower threshold to consider acceptable"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
