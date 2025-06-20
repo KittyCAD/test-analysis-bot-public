@@ -12,20 +12,30 @@
 {% block content %}
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="d-flex align-items-center">
-                <h1 class="mb-0">{{ project.name }}</h1>
+            <h1 class="mb-0">{{ project.name }}</h1>
+            <div class="btn-group">
                 <a href="{% url 'projects:tests' project.path %}"
-                   class="btn btn-sm btn-outline-primary ms-3">
-                    <i class="fa-solid fa-arrow-left"></i> View Project
-                </a>
+                   class="btn btn-sm btn-outline-dark">View All Tests</a>
+                <button type="button"
+                        class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    {% if branch %}
+                        <li>
+                            <a class="dropdown-item small"
+                               href="{% url 'projects:results' project.path %}?branch={{ branch }}">View All Results</a>
+                        </li>
+                    {% else %}
+                        <li>
+                            <a class="dropdown-item small"
+                               href="{% url 'projects:results' project.path %}">View Latest Results</a>
+                        </li>
+                    {% endif %}
+                </ul>
             </div>
-            {% if branch %}
-                <a href="{% url 'projects:results' project.path %}?branch={{ branch }}"
-                   class="btn btn-sm btn-outline-secondary">View All Results</a>
-            {% else %}
-                <a href="{% url 'projects:results' project.path %}"
-                   class="btn btn-sm btn-outline-secondary">View Latest Results</a>
-            {% endif %}
         </div>
         <h2 class="mb-4">{% include "projects/_markers.html" with label=test markers=test.markers %}</h2>
         <div class="card mb-4">
