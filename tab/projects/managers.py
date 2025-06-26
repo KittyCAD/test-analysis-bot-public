@@ -72,9 +72,7 @@ class ResultManager(models.Manager):
 
         results = self.filter(test__project=project, commit=commit, final=True)
         total = results.count()
-        failed_results = results.filter(
-            status__in=[Status.FAILED, Status.XPASSED, Status.ERROR]
-        )
+        failed_results = results.filter(status__in=Status.merge_blocked())
         failed = failed_results.count()
         passed = total - failed
 
