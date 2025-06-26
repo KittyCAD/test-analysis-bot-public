@@ -132,7 +132,7 @@ class Test(models.Model):
     )
 
     name = models.CharField(max_length=1000, db_index=True)
-    original_branch = models.CharField(max_length=100, default="")
+    original_branch = models.CharField(max_length=500, default="")
     original_commit = models.CharField(max_length=100, default="")
     metadata = models.JSONField(default=dict, blank=True)
 
@@ -366,7 +366,7 @@ class Result(models.Model):
     )
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="results")
 
-    branch = models.CharField(max_length=100, default="", db_index=True)
+    branch = models.CharField(max_length=500, default="", db_index=True)
     commit = models.CharField(max_length=100, default="", db_index=True)
     target = models.CharField(
         max_length=100, null=True, choices=Target.choices, db_index=True
