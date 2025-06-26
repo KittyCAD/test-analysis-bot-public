@@ -79,7 +79,7 @@ class Status(models.TextChoices):
     @classmethod
     def merge_allowed(cls):
         """Status that indicate a branch can be merged."""
-        return {cls.PASSED, cls.XPASSED, cls.SKIPPED, cls.DISABLED}
+        return {cls.PASSED, cls.XFAILED, cls.SKIPPED, cls.DISABLED}
 
     @classmethod
     def measurable(cls):
