@@ -3,7 +3,7 @@ import xml.etree.ElementTree as ET
 from django.conf import settings
 
 import log
-from github import Github, GithubException
+from github import Auth, Github, GithubException, GithubIntegration
 
 from tab.core.models import Organization
 from tab.projects.enums import Status
@@ -96,11 +96,23 @@ def update_status(
 ):
     assert "github.com" in project.repository, "Only GitHub is supported for now"
 
-    if not organization.repository_token:
+    if organization.github_app_id and organization.github_app_private_key:
+        log.debug("Authenticating with GitHub App")
+        auth = Auth.AppAuth(
+            organization.github_app_id, organization.github_app_private_key
+        )
+        integration = GithubIntegration(auth=auth)
+        installation = integration.get_org_installation(
+            organization.repository_index.removeprefix("https://github.com/")
+        )
+        github = installation.get_github_for_installation()
+    elif organization.repository_token:
+        log.debug("Authenticating with repository token")
+        github = Github(organization.repository_token)
+    else:
         log.warning(f"{organization} has no repository token")
         return
 
-    github = Github(organization.repository_token)
     try:
         repo = github.get_repo(project.path)
         commit = repo.get_commit(sha)

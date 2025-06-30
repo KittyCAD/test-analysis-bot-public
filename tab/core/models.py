@@ -12,6 +12,8 @@ class Organization(models.Model):
     email_domain = models.CharField(max_length=100, blank=True)
     repository_index = models.URLField(unique=True)
     repository_token = models.CharField(max_length=100, blank=True)
+    github_app_id = models.IntegerField(null=True, blank=True)
+    github_app_private_key = models.TextField(null=True, blank=True)
 
     key = models.CharField(max_length=32, unique=True, default=generate_key)
 
