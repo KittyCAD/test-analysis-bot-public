@@ -68,13 +68,16 @@ class ResultManager(models.Manager):
         latest_results = self.filter(
             test__project=project, commit=latest_commit, final=True
         )
-        expected_passed = latest_results.filter(status=Status.PASSED).count()
+        expected_passed = latest_results.filter(
+            status__in=Status.merge_allowed()
+        ).count()
 
         results = self.filter(test__project=project, commit=commit, final=True)
-        total = results.count()
+        passed_results = results.filter(status__in=Status.merge_allowed())
         failed_results = results.filter(status__in=Status.merge_blocked())
+        total = results.count()
+        passed = passed_results.count()
         failed = failed_results.count()
-        passed = total - failed
 
         if first_result := results.order_by("created_at").first():
             age = timezone.now() - first_result.created_at  # type: ignore[attr-defined]
