@@ -117,10 +117,13 @@ def update_status(
         repo = github.get_repo(project.path)
         commit = repo.get_commit(sha)
     except GithubException as e:
-        return 404, {"detail": str(e)}
+        message = str(e)
+        log.error(f"Unable to update status for {project.path} @ {sha}: {message}")
+        return 404, {"detail": message}
     commit.create_status(
         state=health.state,
         target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={branch}&show=fails",
         description=health.description,
         context="Test Analysis Bot",
     )
+    log.info(f"Updated status for {project.path} @ {sha}: {health.state}")
