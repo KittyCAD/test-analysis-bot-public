@@ -61,10 +61,14 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Suite)
 class SuiteAdmin(admin.ModelAdmin):
-    search_fields = ("name", "project__repository")
-    list_display = ("id", "project", "name", "created_at", "updated_at")
+    search_fields = ("project__repository", "name", "local_command")
+    list_display = ("id", "project", "name", "command", "created_at", "updated_at")
     ordering = ("-updated_at",)
     list_filter = ("name", "project__repository")
+
+    @admin.display(description="Command")
+    def command(self, suite: Suite):
+        return suite.local_command.split("\n")[0]
 
     readonly_fields = ("created_at", "updated_at")
 
