@@ -213,7 +213,12 @@ class Test(models.Model):
     @property
     def regex(self) -> str:
         label = self.name.split(" › ")[-1]
-        return re.escape(label).replace(r"\ ", " ").replace("'", r"'\''")
+        return (
+            re.escape(label)
+            .replace(r"\ ", " ")  # remove excessive escaping of spaces
+            .replace("'", r"'\''")
+            .replace(" > ", " ")  # fix for vitest pattern matching
+        )
 
     @property
     def significant_branches(self) -> list[str]:

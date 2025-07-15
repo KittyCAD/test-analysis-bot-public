@@ -51,8 +51,23 @@ def describe_test():
             test = Test(project=project, suite=suite, name="my-test")
             expect(str(test)) == "my-test"
 
-    def describe_disabled():
+    def describe_regex():
+        @pytest.mark.parametrize(
+            ("name", "regex"),
+            [
+                ("my-test", r"my\-test"),
+                ("my suite › my test", "my test"),
+                (
+                    "roundOffWithUnits > returns the original string",
+                    "roundOffWithUnits returns the original string",
+                ),
+            ],
+        )
+        def it_escapes_special_characters(expect, name, regex):
+            test = Test(name=name)
+            expect(test.regex) == regex
 
+    def describe_disabled():
         @pytest.mark.django_db
         def it_is_set_if_disabled_for_any_platform(expect, project: Project):
             project.save()
