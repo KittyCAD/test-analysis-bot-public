@@ -218,6 +218,7 @@ class Test(models.Model):
             .replace(r"\ ", " ")  # remove excessive escaping of spaces
             .replace("'", r"'\''")
             .replace(" > ", " ")  # fix for vitest pattern matching
+            .strip()
         )
 
     @property

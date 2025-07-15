@@ -61,6 +61,10 @@ def describe_test():
                     "roundOffWithUnits > returns the original string",
                     "roundOffWithUnits returns the original string",
                 ),
+                (
+                    " name with extra spaces ",
+                    "name with extra spaces",
+                ),
             ],
         )
         def it_escapes_special_characters(expect, name, regex):
