@@ -62,7 +62,15 @@ class ProjectAdmin(admin.ModelAdmin):
 @admin.register(Suite)
 class SuiteAdmin(admin.ModelAdmin):
     search_fields = ("project__repository", "name", "local_command")
-    list_display = ("id", "project", "name", "command", "created_at", "updated_at")
+    list_display = (
+        "id",
+        "project",
+        "name",
+        "tests_count",
+        "command",
+        "created_at",
+        "updated_at",
+    )
     ordering = ("-updated_at",)
     list_filter = ("name", "project__repository")
 
@@ -70,7 +78,25 @@ class SuiteAdmin(admin.ModelAdmin):
     def command(self, suite: Suite):
         return suite.local_command.split("\n")[0]
 
-    readonly_fields = ("created_at", "updated_at")
+    @admin.action(description="Reset test origins for selected suites")
+    def reset_test_origins(self, request, queryset):
+        count = 0
+        for suite in queryset:
+            suite.tests.update(original_branch="", original_commit="", metadata={})
+            count += 1
+        s = "" if count == 1 else "s"
+        self.message_user(
+            request,
+            f"Successfully reset test origins for {count} suite{s}.",
+        )
+
+    actions = [reset_test_origins]
+
+    readonly_fields = (
+        "tests_count",
+        "created_at",
+        "updated_at",
+    )
 
 
 @admin.register(Test)

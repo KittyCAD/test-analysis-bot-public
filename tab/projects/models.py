@@ -116,6 +116,8 @@ class Suite(models.Model):
         default=30, help_text="Lower threshold to consider acceptable"
     )
 
+    tests_count = models.IntegerField(default=-1, editable=False)
+
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
@@ -123,6 +125,11 @@ class Suite(models.Model):
         if self.name == DEFAULT_SUITE:
             return str(self.project)
         return f"{self.project} › {self.name}"
+
+    def save(self, *args, **kwargs):
+        if self.pk:
+            self.tests_count = self.tests.count()
+        super().save(*args, **kwargs)
 
 
 class Test(models.Model):
