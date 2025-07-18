@@ -301,7 +301,11 @@ class TestResultTable(tables.Table):
 
     def render_created_at(self, value, record: Result):
         icon = "" if record.final else '<i class="fa-solid fa-repeat me-2"></i>'
-        html = f'<span class="text-nowrap">{icon}{naturaltime(value)}</span>'
+        if url := record.run_url:
+            link = f'<a href="{url}" target="_blank"><i class="fa-solid fa-external-link ms-2"></i></a>'
+        else:
+            link = ""
+        html = f'<span class="text-nowrap">{icon}{naturaltime(value)}{link}</span>'
         if record.markers:
             html = render_to_string(
                 "projects/_markers.html",

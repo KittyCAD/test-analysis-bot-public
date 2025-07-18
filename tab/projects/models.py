@@ -493,6 +493,15 @@ class Result(models.Model):
         )
 
     @property
+    def run_url(self) -> str:
+        if run_id := self.metadata.get("GITHUB_RUN_ID"):
+            url = f"{self.test.project.repository}/actions/runs/{run_id}"
+            if number := self.metadata.get("CI_PR_NUMBER"):
+                url += f"?pr={number}"
+            return url
+        return ""
+
+    @property
     def block(self) -> bool:
         return self.status in {
             Status.FAILED,

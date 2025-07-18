@@ -248,6 +248,17 @@ def describe_result():
             result = Result(test=test, branch="main")
             expect(result.originated_from_branch) == False
 
+    def describe_run_url():
+        def it_includes_run_id_and_pr_number(expect):
+            result = Result(
+                test=Test(project=Project(repository="https://github.com/foo/bar")),
+                branch="main",
+                metadata={"GITHUB_RUN_ID": "123", "CI_PR_NUMBER": "456"},
+            )
+            expect(
+                result.run_url
+            ) == "https://github.com/foo/bar/actions/runs/123?pr=456"
+
     def describe_save():
         @pytest.mark.django_db
         def it_cleans_message(expect):
