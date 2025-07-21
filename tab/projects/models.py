@@ -212,10 +212,18 @@ class Test(models.Model):
 
     @property
     def regex(self) -> str:
-        label = self.name.split(" › ")[-1]
+        parts = self.name.split(" › ")
+
+        # Remove file path prefix
+        if parts and "." in parts[0]:
+            parts = parts[1:]
+
+        # Join nested description blocks
+        escaped_parts = [re.escape(part) for part in parts]
+        label = ".*".join(escaped_parts)
+
         return (
-            re.escape(label)
-            .replace(r"\ ", " ")  # remove excessive escaping of spaces
+            label.replace(r"\ ", " ")  # remove excessive escaping of spaces
             .replace("'", r"'\''")
             .replace(" > ", " ")  # fix for vitest pattern matching
             .strip()

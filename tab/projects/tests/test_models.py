@@ -56,14 +56,19 @@ def describe_test():
             ("name", "regex"),
             [
                 ("my-test", r"my\-test"),
-                ("my suite › my test", "my test"),
-                (
-                    "roundOffWithUnits > returns the original string",
-                    "roundOffWithUnits returns the original string",
-                ),
                 (
                     " name with extra spaces ",
                     "name with extra spaces",
+                ),
+                (
+                    # Playwright example
+                    "native-file-menu.spec.ts › Native file menu › Home page",
+                    "Native file menu.*Home page",
+                ),
+                (
+                    # Vitest example
+                    "roundOffWithUnits > returns the original string",
+                    "roundOffWithUnits returns the original string",
                 ),
             ],
         )
