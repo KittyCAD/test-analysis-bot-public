@@ -106,10 +106,18 @@
             </summary>
             {% if test.command %}
                 <div class="card shadow mt-4 border-dark">
-                    <div class="card-header py-3 bg-dark text-white">
+                    <div class="card-header py-3 bg-dark text-white d-flex justify-content-between align-items-center">
                         <h6 class="m-0 font-weight-bold">
                             <i class="fa-solid fa-play-circle me-2"></i>Rerun Locally
                         </h6>
+                        {% if user.is_staff and suite_admin_url %}
+                            <a href="{{ suite_admin_url }}"
+                               target="_blank"
+                               class="btn btn-sm btn-outline-danger"
+                               title="Edit in admin">
+                                <i class="fa-solid fa-table"></i>
+                            </a>
+                        {% endif %}
                     </div>
                     <div class="bg-light text-dark p-3 rounded-bottom command">
                         {% for line, copyable in test.command %}

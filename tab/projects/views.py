@@ -337,6 +337,10 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             context[f"{field.name}_help"] = field.help_text
         if self.request.user.is_staff:
             context["admin_url"] = reverse("admin:projects_test_change", args=[test.pk])
+            if test.suite:
+                context["suite_admin_url"] = reverse(
+                    "admin:projects_suite_change", args=[test.suite.pk]
+                )
 
         return context
 
