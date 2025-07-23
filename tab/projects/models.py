@@ -226,6 +226,7 @@ class Test(models.Model):
             label.replace(r"\ ", " ")  # remove excessive escaping of spaces
             .replace("'", r"'\''")
             .replace(" > ", " ")  # fix for vitest pattern matching
+            .replace('"', ".")  # replace quote marks for better shell support
             .strip()
         )
 

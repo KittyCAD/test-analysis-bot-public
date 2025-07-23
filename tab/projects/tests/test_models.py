@@ -61,6 +61,10 @@ def describe_test():
                     "name with extra spaces",
                 ),
                 (
+                    'name with "quoted" words',
+                    "name with .quoted. words",
+                ),
+                (
                     # Playwright example
                     "native-file-menu.spec.ts › Native file menu › Home page",
                     "Native file menu.*Home page",
