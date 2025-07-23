@@ -5,6 +5,7 @@ from django.core.cache import cache
 from django.db import connection
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
 
 import log
 
@@ -18,28 +19,45 @@ def login(request):
         domain = email.split("@")[1]
         if not Organization.objects.filter(email_domain__iexact=domain).exists():
             messages.error(request, "No organization found for that email domain.")
-            return render(request, "core/login.html")
+            return redirect("login")
 
-        if submitted_otp := request.POST.get("otp"):
-            log.info(f"Verifying OTP for {email}")
-            stored_otp = cache.get(f"otp:{email}")
+        log.info(f"Sending OTP to {email}")
+        otp = generate_otp()
+        cache.set(f"otp:{email}", otp, timeout=600)
+        send_otp_email(email, otp)
+        request.session["email"] = email
 
-            if stored_otp and submitted_otp == stored_otp:
-                user = get_or_create_user(email)
-                auth_login(request, user)
-                cache.delete(f"otp:{email}")
-                return redirect("/")
-            else:
-                messages.error(request, "Invalid OTP. Please try again.")
-                return render(request, "core/verify.html", {"email": email})
-        else:
-            log.info(f"Sending OTP to {email}")
-            otp = generate_otp()
-            cache.set(f"otp:{email}", otp, timeout=600)
-            send_otp_email(email, otp)
-            return render(request, "core/verify.html", {"email": email})
+        url = reverse("verify")
+        if next := request.GET.get("next"):
+            url += f"?next={next}"
+        return redirect(url)
 
     return render(request, "core/login.html")
+
+
+def verify(request):
+    email = request.session.get("email")
+    if not email:
+        messages.error(request, "Please enter your email address first.")
+        return redirect("login")
+
+    if request.method == "POST":
+        submitted_otp = request.POST.get("otp")
+        log.info(f"Verifying OTP for {email}")
+        stored_otp = cache.get(f"otp:{email}")
+
+        if stored_otp and submitted_otp == stored_otp:
+            user = get_or_create_user(email)
+            auth_login(request, user)
+            cache.delete(f"otp:{email}")
+            request.session.pop("email", None)
+            url = request.GET.get("next", "/")
+            return redirect(url)
+        else:
+            messages.error(request, "Invalid OTP. Please try again.")
+            return render(request, "core/verify.html", {"email": email})
+
+    return render(request, "core/verify.html", {"email": email})
 
 
 def logout(request):
