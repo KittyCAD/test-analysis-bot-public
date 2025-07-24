@@ -215,8 +215,12 @@ class Test(models.Model):
         parts = self.name.split(" › ")
 
         # Remove file path prefix
-        if parts and "." in parts[0]:
+        if "." in parts[0]:
             parts = parts[1:]
+
+        # Remove entire prefix for fully-namespaced tests
+        if "::" in parts[-1]:
+            parts = [parts[-1]]
 
         # Join nested description blocks
         escaped_parts = [re.escape(part) for part in parts]

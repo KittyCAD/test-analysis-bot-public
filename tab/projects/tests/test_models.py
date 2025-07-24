@@ -74,6 +74,11 @@ def describe_test():
                     "roundOffWithUnits > returns the original string",
                     "roundOffWithUnits returns the original string",
                 ),
+                (
+                    # Cargo nextest example
+                    "nextest-run › kcl-lib › docs::kcl_doc::test::kcl_test_examples_std_helix_0",
+                    "docs::kcl_doc::test::kcl_test_examples_std_helix_0",
+                ),
             ],
         )
         def it_escapes_special_characters(expect, name, regex):
