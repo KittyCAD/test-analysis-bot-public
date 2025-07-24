@@ -58,7 +58,7 @@
                        name="search"
                        value="{{ search }}"
                        class="form-control"
-                       placeholder="Filter tests by name, platform:LABEL, or tag:LABEL..."
+                       placeholder="Filter tests by name{% if not platform and not tag %}, platform:LABEL, or tag:LABEL{% endif %}..."
                        required>
                 {% if platform or tag %}
                     <a href="{{ request.path }}?branch={{ branch }}{% if show != 'all' %}&show={{ show }}{% endif %}"

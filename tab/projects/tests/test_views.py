@@ -36,7 +36,6 @@ def describe_projects():
 
 
 def describe_tests():
-
     url = "/projects/foo/bar/tests"
 
     def it_redirects_tag_search_to_query_param(expect, admin_client):

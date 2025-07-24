@@ -35,7 +35,7 @@
                        name="search"
                        value="{{ search }}"
                        class="form-control"
-                       placeholder="Filter tests by name or tag:LABEL..."
+                       placeholder="Filter tests by name{% if not tag %} or tag:LABEL{% endif %}..."
                        required>
                 {% if tag %}
                     <a href="{{ request.path }}{% if enabled != 'true' %}?enabled={{ enabled }}{% endif %}"
