@@ -58,25 +58,25 @@
                        name="search"
                        value="{{ search }}"
                        class="form-control"
-                       placeholder="Filter tests by name..."
-                       aria-label="Filter tests by name"
+                       placeholder="Filter tests by name, platform:LABEL, or tag:LABEL..."
                        required>
-                {% if search %}
-                    <a href="{% url 'projects:results' project.path %}?branch={{ branch }}{% if show != 'all' %}&show={{ show }}{% endif %}"
-                       class="btn btn-outline-danger"
-                       type="button"><i class="fa-solid fa-xmark"></i></a>
-                {% endif %}
-                {% if platform %}
-                    <a href="?{% if search %}search={{ search }}&{% endif %}branch={{ branch }}{% if show != 'all' %}&show={{ show }}{% endif %}"
+                {% if platform or tag %}
+                    <a href="{{ request.path }}?branch={{ branch }}{% if show != 'all' %}&show={{ show }}{% endif %}"
                        class="btn btn-outline-danger">
-                        platform:{{ platform }}
+                        {% if platform %}platform:{{ platform }}{% endif %}
+                        {% if tag %}tag:{{ tag }}{% endif %}
                         <i class="fa-solid fa-xmark ms-1"></i>
                     </a>
+                {% elif search %}
+                    <a href="{{ request.path }}?branch={{ branch }}{% if show != 'all' %}&show={{ show }}{% endif %}"
+                       class="btn btn-outline-danger"
+                       type="button"><i class="fa-solid fa-xmark"></i></a>
                 {% endif %}
                 <button class="btn btn-outline-primary" type="submit">Search</button>
             </div>
             <input type="hidden" name="branch" value="{{ branch }}">
             <input type="hidden" name="platform" value="{{ platform }}">
+            <input type="hidden" name="tag" value="{{ tag }}">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="form-check">
                     <input type="hidden" name="show" value="{{ show }}">
@@ -102,37 +102,3 @@
     }
     </style>
 {% endblock extra_css %}
-
-{% block extra_js %}
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
-    const searchInput = form.querySelector('input[name="search"]');
-    const platformInput = form.querySelector('input[name="platform"]');
-
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const searchValue = searchInput.value;
-        const platformMatch = searchValue.match(/platform:(\w+)/i);
-
-        if (platformMatch) {
-            // Extract platform value and remove it from search
-            const platform = platformMatch[1].toLowerCase();
-            const newSearch = searchValue.replace(/platform:\w+/i, '').trim();
-
-            // Update the hidden platform input
-            platformInput.value = platform;
-
-            // Update the search input
-            searchInput.value = newSearch;
-        } else {
-            // Clear platform if no platform: prefix found
-            platformInput.value = '';
-        }
-
-        form.submit();
-    });
-});
-    </script>
-{% endblock extra_js %}

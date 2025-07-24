@@ -36,6 +36,14 @@ def describe_projects():
 
 
 def describe_tests():
+
+    url = "/projects/foo/bar/tests"
+
+    def it_redirects_tag_search_to_query_param(expect, admin_client):
+        response = admin_client.get(f"{url}?search=foobar tag:@FIXME")
+        expect(response.status_code) == 302
+        expect(response.url) == f"{url}?search=foobar&tag=fixme"
+
     def describe_details():
         url = "/projects/foo/bar/tests/{pk}"
 
@@ -100,6 +108,16 @@ def describe_results():
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
         expect(html).contains("1 of 1 passing")
+
+    def it_redirects_platform_search_to_query_param(expect, admin_client):
+        response = admin_client.get(f"{url}?search=foo PLATFORM:Windows bar")
+        expect(response.status_code) == 302
+        expect(response.url) == f"{url}?search=foo+bar&platform=windows"
+
+    def it_redirects_tag_search_to_query_param(expect, admin_client):
+        response = admin_client.get(f"{url}?search=foobar tag:@FIXME")
+        expect(response.status_code) == 302
+        expect(response.url) == f"{url}?search=foobar&tag=fixme"
 
 
 def describe_metrics():

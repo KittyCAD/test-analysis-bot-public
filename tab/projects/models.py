@@ -384,7 +384,7 @@ class Test(models.Model):
 
 class Result(models.Model):
     suite = models.ForeignKey(
-        Suite, null=True, on_delete=models.SET_NULL, related_name="results"
+        Suite, null=True, blank=True, on_delete=models.SET_NULL, related_name="results"
     )
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="results")
 

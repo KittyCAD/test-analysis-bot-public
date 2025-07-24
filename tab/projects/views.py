@@ -1,3 +1,5 @@
+import re
+
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -47,9 +49,40 @@ class IndexView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class TestsView(LoginRequiredMixin, SingleTableMixin, ListView):
+class SearchLabelMixin:
+    search_labels: list[str] = []
+
+    def dispatch(self, request, *args, **kwargs):
+        if search := request.GET.get("search", "").strip():
+            params = request.GET.copy()
+            updated = False
+            # Convert certain search terms to dedicated query params
+            for label in self.search_labels:
+                if match := re.search(rf"{label}:(\S+)", search, re.IGNORECASE):
+                    value = match.group(1).lower().strip("@")
+                    log.info(f"Converting '{label}:{value}' search to query param")
+                    search = (
+                        re.sub(rf"{label}:\S+", "", search, flags=re.IGNORECASE)
+                        .replace("  ", " ")
+                        .strip()
+                    )
+                    params[label] = value
+                    updated = True
+            # Redirect to new URL with dedicated query params
+            if updated:
+                if search:
+                    params["search"] = search
+                else:
+                    params.pop("search", None)
+                log.info(f"Redirecting with '?{params.urlencode()}'")
+                return redirect(f"{request.path}?{params.urlencode()}")
+        return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
+
+
+class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView):
     table_class = TestTable
     template_name = "projects/tests.html"
+    search_labels = ["tag"]
 
     def get_queryset(self):
         project = get_object_or_404(
@@ -57,12 +90,18 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, ListView):
         )
 
         search = self.request.GET.get("search", "").strip()
+        tag = self.request.GET.get("tag")
         enabled = self.request.GET.get("enabled", "true")
 
         queryset = project.tests.select_related("suite", "last_result")
         if search:
             queryset = queryset.filter(
                 Q(suite__name__icontains=search) | Q(name__icontains=search)
+            )
+        if tag:
+            queryset = queryset.filter(
+                Q(last_result__metadata__tags__icontains=tag)
+                | Q(last_result__metadata__tags__icontains=f"@{tag}")
             )
         if enabled == "true":
             queryset = queryset.filter(enabled=True)
@@ -82,6 +121,7 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, ListView):
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
         context["search"] = self.request.GET.get("search", "").strip()
+        context["tag"] = self.request.GET.get("tag", "").strip()
         context["enabled"] = self.request.GET.get("enabled", "true")
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
@@ -203,9 +243,10 @@ class DisabledTestsRegexView(DisabledTestsView):
         return HttpResponse(f"'{regex}'", content_type="text/plain")
 
 
-class ResultsView(LoginRequiredMixin, SingleTableMixin, ListView):
+class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView):
     table_class = ResultTable
     template_name = "projects/results.html"
+    search_labels = ["platform", "tag"]
 
     def get_queryset(self):
         project = get_object_or_404(
@@ -215,6 +256,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, ListView):
         branch = self.request.GET.get("branch", project.default_branch)
         search = self.request.GET.get("search")
         platform = self.request.GET.get("platform")
+        tag = self.request.GET.get("tag")
         show = self.request.GET.get("show", "all")
 
         queryset = Result.objects.filter(
@@ -229,6 +271,11 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, ListView):
             )
         if platform:
             queryset = queryset.filter(platform=platform)
+        if tag:
+            queryset = queryset.filter(
+                Q(metadata__tags__icontains=tag)
+                | Q(metadata__tags__icontains=f"@{tag}")
+            )
         if show == "fails":
             queryset = queryset.exclude(status__in=Status.merge_allowed()).filter(
                 final=True
@@ -251,6 +298,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, ListView):
         context["branches"] = self._get_active_branches(project)
         context["search"] = self.request.GET.get("search", "").strip()
         context["platform"] = self.request.GET.get("platform", "").strip()
+        context["tag"] = self.request.GET.get("tag", "").strip()
         context["show"] = self.request.GET.get("show", "all")
         context["health"] = Result.objects.get_health(project, commit)
         if self.request.user.is_staff:

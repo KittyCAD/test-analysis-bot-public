@@ -35,11 +35,17 @@
                        name="search"
                        value="{{ search }}"
                        class="form-control"
-                       placeholder="Filter tests by name..."
-                       aria-label="Filter tests by name"
+                       placeholder="Filter tests by name or tag:LABEL..."
                        required>
-                {% if search %}
-                    <a href="{% url 'projects:tests' project.path %}{% if enabled != 'true' %}?enabled={{ enabled }}{% endif %}"
+                {% if tag %}
+                    <a href="{{ request.path }}{% if enabled != 'true' %}?enabled={{ enabled }}{% endif %}"
+                       class="btn btn-outline-danger"
+                       type="button">
+                        tag:{{ tag }}
+                        <i class="fa-solid fa-xmark ms-1"></i>
+                    </a>
+                {% elif search %}
+                    <a href="{{ request.path }}{% if enabled != 'true' %}?enabled={{ enabled }}{% endif %}"
                        class="btn btn-outline-danger"
                        type="button"><i class="fa-solid fa-xmark"></i></a>
                 {% endif %}
@@ -47,6 +53,7 @@
             </div>
             <div class="d-flex justify-content-between align-items-center">
                 <div class="form-check">
+                    <input type="hidden" name="tag" value="{{ tag }}">
                     <input type="hidden" name="enabled" value="{{ enabled }}">
                     <input class="form-check-input"
                            type="checkbox"
