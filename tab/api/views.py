@@ -176,7 +176,7 @@ def share(request, payload: ShareRequest):
     except (Organization.DoesNotExist, ValueError) as e:
         return 422, {"detail": str(e)}
 
-    health = Result.objects.get_health(project, payload.commit)
+    health = Result.objects.get_health(project, payload.commit, cached=False)
     update_status(organization, project, payload.commit, payload.branch, health)
 
     return 200, ShareResponse(

@@ -23,7 +23,7 @@ def login(request):
 
         log.info(f"Sending OTP to {email}")
         otp = generate_otp()
-        cache.set(f"otp:{email}", otp, timeout=600)
+        cache.set(f"otp:{email}", otp, timeout=60 * 10)
         send_otp_email(email, otp)
         request.session["email"] = email
 

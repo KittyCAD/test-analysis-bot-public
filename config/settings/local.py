@@ -50,6 +50,8 @@ if "DATABASE_URL" not in os.environ:
 ###############################################################################
 # Caches
 
+CACHES["default"]["TIMEOUT"] = 30
+
 if "REDIS_URL" in os.environ:
     CACHES["default"]["BACKEND"] = "django.core.cache.backends.redis.RedisCache"
     CACHES["default"]["LOCATION"] = os.environ["REDIS_URL"]
