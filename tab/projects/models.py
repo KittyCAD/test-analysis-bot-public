@@ -32,6 +32,11 @@ class Project(models.Model):
         blank=True,
         help_text="Message fragments that indicate there was a setup error rather than failure",
     )
+    skipped_indicators = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Message fragments that indicate a passed test was not actually able to run",
+    )
 
     branch_inactive_threshold = models.DurationField(
         default=timedelta(days=7),
@@ -95,6 +100,16 @@ class Suite(models.Model):
         default="",
         blank=True,
         help_text="Pattern to run individual tests locally",
+    )
+    error_indicators = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Message fragments that indicate there was a setup error rather than failure",
+    )
+    skipped_indicators = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Message fragments that indicate a passed test was not actually able to run",
     )
 
     failure_rate_upper_threshold = models.FloatField(
@@ -261,6 +276,18 @@ class Test(models.Model):
     @property
     def command(self) -> list[tuple[str, bool]]:
         return self.last_result.command if self.last_result else []
+
+    @property
+    def error_indicators(self) -> list[str]:
+        if self.suite and self.suite.error_indicators:
+            return self.suite.error_indicators
+        return self.project.error_indicators
+
+    @property
+    def skipped_indicators(self) -> list[str]:
+        if self.suite and self.suite.skipped_indicators:
+            return self.suite.skipped_indicators
+        return self.project.skipped_indicators
 
     @property
     def failure_rate_humanized(self) -> str:
@@ -542,9 +569,8 @@ class Result(models.Model):
             self.status,
             markers=self.markers,
             message=self.message,
-            error_indicators=self.test.project.error_indicators,
-            # TODO: Make this configurable via suite or project
-            skipped_indicators=["Skip"],
+            error_indicators=self.test.error_indicators,
+            skipped_indicators=self.test.skipped_indicators,
         )
 
         super().save(*args, **kwargs)
