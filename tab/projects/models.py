@@ -543,6 +543,8 @@ class Result(models.Model):
             markers=self.markers,
             message=self.message,
             error_indicators=self.test.project.error_indicators,
+            # TODO: Make this configurable via suite or project
+            skipped_indicators=["Skip"],
         )
 
         super().save(*args, **kwargs)

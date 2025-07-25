@@ -33,6 +33,8 @@ def parse_junit_xml(
             failure = testcase.find("failure")
             error = testcase.find("error")
             skipped = testcase.find("skipped")
+            system = testcase.find("system-err")
+
             if failure is not None:
                 status = Status.FAILED
                 message = failure.text
@@ -45,6 +47,9 @@ def parse_junit_xml(
             else:
                 status = Status.PASSED
                 message = None
+
+            if system is not None:
+                message = message or system.text
 
             # Build test name
             name_components = []

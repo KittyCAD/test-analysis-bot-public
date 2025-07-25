@@ -8,20 +8,33 @@ def describe_status():
         def it_detects_expected_failures(expect):
             expect(
                 Status.normalize(
-                    "failed", markers=["fail"], message="", error_indicators=[]
+                    "failed",
+                    markers=["fail"],
+                    message="",
+                    error_indicators=[],
+                    skipped_indicators=[],
                 )
             ) == "xfailed"
 
         def it_detects_unexpected_passes(expect):
             expect(
                 Status.normalize(
-                    "passed", markers=["fail"], message="", error_indicators=[]
+                    "passed",
+                    markers=["fail"],
+                    message="",
+                    error_indicators=[],
+                    skipped_indicators=[],
                 )
             ) == "xpassed"
 
         @pytest.mark.parametrize("marker", ["fixme", "disabled"])
         def it_detects_disabled_tests(expect, marker):
-            options: dict = dict(markers=[marker], message="", error_indicators=[])
+            options: dict = dict(
+                markers=[marker],
+                message="",
+                error_indicators=[],
+                skipped_indicators=[],
+            )
             expect(Status.normalize("failed", **options)) == "disabled"
             expect(Status.normalize("error", **options)) == "disabled"
             expect(Status.normalize("timedOut", **options)) == "disabled"
@@ -35,8 +48,20 @@ def describe_status():
                     markers=[],
                     message="Call log:\n  - waiting for getByTestId('overlay-menu')",
                     error_indicators=["waiting for getByTestId('overlay-menu')"],
+                    skipped_indicators=[],
                 )
             ) == "error"
+
+        def it_detects_skipped_tests(expect):
+            expect(
+                Status.normalize(
+                    "passed",
+                    markers=[],
+                    message="Skipping disabled sample: multi-axis-robot",
+                    error_indicators=[],
+                    skipped_indicators=["Skip"],
+                )
+            ) == "skipped"
 
 
 def describe_target():

@@ -23,6 +23,7 @@ class Status(models.TextChoices):
         markers: list[str],
         message: str | None,
         error_indicators: list[str],
+        skipped_indicators: list[str],
     ) -> str:
         expected_failure = "fail" in markers
         known_broken = "fixme" in markers or "disabled" in markers
@@ -45,6 +46,9 @@ class Status(models.TextChoices):
             for error_indicator in error_indicators:
                 if error_indicator in message:
                     return cls.ERROR.value
+            for skipped_indicator in skipped_indicators:
+                if skipped_indicator in message:
+                    return cls.SKIPPED.value
         return value
 
     @property
