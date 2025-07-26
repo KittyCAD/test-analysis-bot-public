@@ -379,10 +379,9 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         context["branch"] = self.request.GET.get("branch")
         context["platform"] = self.request.GET.get("platform", "").strip()
         context["show"] = self.request.GET.get("show", "all")
-        for name in ["failure_rate", "block_rate", "enabled"]:
-            field = test._meta.get_field(name)
-            assert isinstance(field, models.Field), f"Unknown field: {name}"
-            context[f"{field.name}_help"] = field.help_text
+        for field in test._meta.get_fields():
+            if hasattr(field, "help_text") and field.help_text:
+                context[f"{field.name}_help"] = field.help_text
         if self.request.user.is_staff:
             context["admin_url"] = reverse("admin:projects_test_change", args=[test.pk])
             if test.suite:

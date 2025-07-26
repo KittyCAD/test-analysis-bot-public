@@ -154,8 +154,16 @@ class Test(models.Model):
     )
 
     name = models.CharField(max_length=1000, db_index=True)
-    original_branch = models.CharField(max_length=500, default="")
-    original_commit = models.CharField(max_length=100, default="")
+    original_branch = models.CharField(
+        max_length=500,
+        default="",
+        help_text="Name of the branch that originally added this test",
+    )
+    original_commit = models.CharField(
+        max_length=100,
+        default="",
+        help_text="Hash of the commit that originally added this test",
+    )
     metadata = models.JSONField(default=dict, blank=True)
 
     disabled = models.BooleanField(
@@ -205,6 +213,7 @@ class Test(models.Model):
     average_duration = models.FloatField(
         default=-1,
         editable=False,
+        help_text="Seconds duration from recent runs on significant branches",
     )
     last_result = models.ForeignKey(
         "Result", on_delete=models.SET_NULL, null=True, related_name="+"

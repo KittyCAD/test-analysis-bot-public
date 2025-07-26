@@ -41,33 +41,35 @@
         <div class="card mb-4">
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col">
-                        <h5 class="card-title">Created</h5>
-                        <p class="card-text">{{ test.created_at|naturaltime }}</p>
+                    <div class="col d-flex flex-column">
+                        <h5 class="card-title">Date Created</h5>
+                        <small class="fst-italic text-muted d-block mb-2">When a test with this name first reported results</small>
+                        <p class="card-text mt-auto">{{ test.created_at|naturaltime }}</p>
                     </div>
-                    <div class="col">
+                    <div class="col d-flex flex-column">
                         <h5 class="card-title">Original Branch</h5>
-                        <p class="card-text">
+                        <small class="fst-italic text-muted d-block mb-2">{{ original_branch_help }}</small>
+                        <p class="card-text mt-auto">
                             <code>{{ test.original_branch }}</code>
                             <a href="{{ test.original_commit_url }}" target="_blank" class="ms-1">
                                 <i class="fa-solid fa-external-link-alt"></i>
                             </a>
                         </p>
                     </div>
-                    <div class="col">
+                    <div class="col d-flex flex-column">
                         <h5 class="card-title">Failure Rate</h5>
                         <small class="fst-italic text-muted d-block mb-2">{{ failure_rate_help }}</small>
-                        <p class="card-text">{{ test.failure_rate_humanized }}</p>
+                        <p class="card-text mt-auto">{{ test.failure_rate_humanized }}</p>
                     </div>
-                    <div class="col">
+                    <div class="col d-flex flex-column">
                         <h5 class="card-title">Block Rate</h5>
                         <small class="fst-italic text-muted d-block mb-2">{{ block_rate_help }}</small>
-                        <p class="card-text">{{ test.block_rate_humanized }}</p>
+                        <p class="card-text mt-auto">{{ test.block_rate_humanized }}</p>
                     </div>
-                    <div class="col">
-                        <h5 class="card-title">Enabled</h5>
+                    <div class="col d-flex flex-column">
+                        <h5 class="card-title">Test Enabled</h5>
                         <small class="fst-italic text-muted d-block mb-2">{{ enabled_help }}</small>
-                        <p class="card-text">
+                        <p class="card-text mt-auto">
                             {% if test.enabled %}
                                 <i class="fa-solid fa-check text-success me-1"></i>
                                 Yes
@@ -77,9 +79,10 @@
                             {% endif %}
                         </p>
                     </div>
-                    <div class="col">
+                    <div class="col d-flex flex-column">
                         <h5 class="card-title">Average Duration</h5>
-                        <p class="card-text">{{ test.average_duration_humanized }}</p>
+                        <small class="fst-italic text-muted d-block mb-2">{{ average_duration_help }}</small>
+                        <p class="card-text mt-auto">{{ test.average_duration_humanized }}</p>
                     </div>
                 </div>
             </div>
