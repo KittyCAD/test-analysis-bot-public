@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "tab.api",
     "tab.core",
     "tab.projects",
+    "tab.metrics",
 ]
 
 MIDDLEWARE = [

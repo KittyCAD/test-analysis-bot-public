@@ -379,13 +379,16 @@ class Test(models.Model):
         return True
 
     def update(self) -> bool:
-        return any(
+        updated = any(
             [
                 self.update_failure_rate(),
                 self.update_block_rate(),
                 self.update_average_duration(),
             ]
         )
+        if updated:
+            self.history.create_from_test(self)
+        return updated
 
     def save(self, *args, **kwargs):
         if self.pk:
