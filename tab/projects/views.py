@@ -3,7 +3,6 @@ import re
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import models
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -300,7 +299,6 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         context["platform"] = self.request.GET.get("platform", "").strip()
         context["tag"] = self.request.GET.get("tag", "").strip()
         context["show"] = self.request.GET.get("show", "all")
-        context["health"] = Result.objects.get_health(project, commit)
         if self.request.user.is_staff:
             context["admin_url"] = (
                 reverse(

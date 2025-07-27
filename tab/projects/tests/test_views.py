@@ -106,7 +106,7 @@ def describe_results():
         response = admin_client.get(url)
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
-        expect(html).contains("1 of 1 passing")
+        expect(html).contains("(1 result)")
 
     def it_redirects_platform_search_to_query_param(expect, admin_client):
         response = admin_client.get(f"{url}?search=foo PLATFORM:Windows bar")

@@ -62,7 +62,7 @@
                            onchange="document.querySelector('input[name=enabled]').value = this.checked ? 'true' : 'all'; this.form.submit()">
                     <label class="form-check-label" for="enabled_checkbox">Only show tests that are allowed to block merges</label>
                 </div>
-                <div class="text-muted">({{ table.rows|length }} tests)</div>
+                <div class="text-muted">({{ table.rows|length }} test{{ table.rows|length|pluralize }})</div>
             </div>
         </form>
         {% render_table table %}

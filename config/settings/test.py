@@ -24,8 +24,3 @@ DATABASES = {
 if "CI" in os.environ:
     DATABASES["default"]["USER"] = "postgres"
     DATABASES["default"]["PASSWORD"] = "postgres"
-
-###############################################################################
-# Caches
-
-CACHES["default"]["TIMEOUT"] = 0

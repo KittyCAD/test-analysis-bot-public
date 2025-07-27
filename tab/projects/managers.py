@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
-from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils import timezone
@@ -60,18 +59,10 @@ class ResultManager(models.Manager):
         )
         return queryset.values_list("commit", flat=True).first()
 
-    def get_health(
-        self, project: Project, commit: str | None, *, cached: bool = True
-    ) -> Health:
+    def get_health(self, project: Project, commit: str | None) -> Health:
         assert "github.com" in project.repository, "Only GitHub is supported for now"
         if not commit:
             return Health(total=0, state="pending", description="no results")
-
-        cache_key = f"health_{project.id}_{commit}"
-        health = cache.get(cache_key)
-        if health and cached:
-            log.info(f"Using cached health for {project.path} @ {commit[:7]}")
-            return health
 
         latest_commit = self.get_latest_commit(project, project.default_branch)
         latest_results = self.filter(
@@ -111,6 +102,4 @@ class ResultManager(models.Manager):
             s = "" if new_failed == 1 else "s"
             description += f", {new_failed} new failure{s}"
 
-        health = Health(total=total, state=state, description=description)
-        cache.set(cache_key, health)
-        return health
+        return Health(total=total, state=state, description=description)
