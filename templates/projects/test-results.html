@@ -4,6 +4,7 @@
 {% load static %}
 {% load humanize %}
 {% load crispy_forms_tags %}
+{% load color_tags %}
 
 {% block title %}
     {{ project.name }} › {{ test.name }}
@@ -59,12 +60,12 @@
                     <div class="col d-flex flex-column">
                         <h5 class="card-title">Failure Rate</h5>
                         <small class="fst-italic text-muted d-block mb-2">{{ failure_rate_help }}</small>
-                        <p class="card-text mt-auto">{{ test.failure_rate_humanized }}</p>
+                        <p class="card-text mt-auto">{% colorize test "failure_rate" %}</p>
                     </div>
                     <div class="col d-flex flex-column">
                         <h5 class="card-title">Block Rate</h5>
                         <small class="fst-italic text-muted d-block mb-2">{{ block_rate_help }}</small>
-                        <p class="card-text mt-auto">{{ test.block_rate_humanized }}</p>
+                        <p class="card-text mt-auto">{% colorize test "block_rate" %}</p>
                     </div>
                     <div class="col d-flex flex-column">
                         <h5 class="card-title">Test Enabled</h5>
@@ -82,7 +83,7 @@
                     <div class="col d-flex flex-column">
                         <h5 class="card-title">Average Duration</h5>
                         <small class="fst-italic text-muted d-block mb-2">{{ average_duration_help }}</small>
-                        <p class="card-text mt-auto">{{ test.average_duration_humanized }}</p>
+                        <p class="card-text mt-auto">{% colorize test "average_duration" %}</p>
                     </div>
                 </div>
             </div>
