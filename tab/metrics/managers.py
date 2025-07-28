@@ -12,7 +12,7 @@ class HistoryManager(models.Manager):
     def create_from_test(self, test: Test):
         limit = timezone.now() - timedelta(hours=0)
         if self.filter(test=test, timestamp__gte=limit).exists():
-            log.debug(f"Skipping metric creation")
+            log.debug(f"Skipping redundant metric creation")
             return
 
         history = self.create(

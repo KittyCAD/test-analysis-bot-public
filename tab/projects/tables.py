@@ -7,6 +7,7 @@ import django_tables2 as tables
 import log
 from django_tables2 import A
 
+from .constants import NEW_FAILURE_THRESHOLD
 from .models import Result, Status, Test
 
 
@@ -15,7 +16,12 @@ def wrap(name: str) -> str:
 
 
 def color(
-    text: str, value: float, lower_threshold: float, upper_threshold: float
+    text: str,
+    value: float,
+    lower_threshold: float,
+    upper_threshold: float,
+    icon: str = "",
+    tooltip: str = "",
 ) -> str:
     if value > upper_threshold:
         brightness = 1.0
@@ -23,9 +29,10 @@ def color(
         brightness = 0.0
     else:
         brightness = (value - lower_threshold) / (upper_threshold - lower_threshold)
-    return mark_safe(
-        f'<span class="text-danger" style="filter: brightness({brightness});">{text}</span>'
-    )
+    html = f'<span class="text-danger" style="filter: brightness({brightness});">{text}</span>'
+    if icon and tooltip:
+        html += f' <span title="{tooltip}"><i class="fa-solid fa-{icon}"></i></span>'
+    return mark_safe(html)
 
 
 class TestTable(tables.Table):
@@ -384,10 +391,16 @@ class ResultTable(TestResultTable):
         if record.originated_from_branch:
             return "—"
         if suite := record.test.suite:
+            tooltip = icon = ""
+            if record.block and record.test.block_rate < NEW_FAILURE_THRESHOLD:
+                tooltip = "Current branch likely broke this test"
+                icon = "warning"
             return color(
                 record.test.block_rate_humanized,
                 record.test.block_rate,
                 suite.block_rate_lower_threshold,
                 suite.block_rate_upper_threshold,
+                icon,
+                tooltip,
             )
         return record.test.block_rate_humanized
