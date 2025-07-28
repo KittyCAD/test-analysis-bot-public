@@ -4,6 +4,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils import timezone
 
 import log
 
@@ -315,6 +316,20 @@ class Test(models.Model):
         if self.average_duration < 0:
             return "—"
         return f"{self.average_duration:.1f}s"
+
+    @property
+    def failure_rate_delta(self) -> float:
+        previous = timezone.now() - timedelta(days=1)
+        if record := self.history.filter(timestamp__lte=previous).first():
+            return self.failure_rate - record.failure_rate
+        return 0
+
+    @property
+    def block_rate_delta(self) -> float:
+        previous = timezone.now() - timedelta(days=1)
+        if record := self.history.filter(timestamp__lte=previous).first():
+            return self.block_rate - record.block_rate
+        return 0
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
