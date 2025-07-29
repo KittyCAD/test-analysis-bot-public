@@ -7,7 +7,6 @@ import django_tables2 as tables
 import log
 from django_tables2 import A
 
-from .constants import NEW_FAILURE_THRESHOLD
 from .models import Result, Status, Test
 
 
@@ -392,7 +391,7 @@ class ResultTable(TestResultTable):
             return "—"
         if suite := record.test.suite:
             tooltip = icon = ""
-            if record.block and record.test.block_rate < NEW_FAILURE_THRESHOLD:
+            if record.new_failure:
                 tooltip = "Current branch likely broke this test"
                 icon = "warning"
             return color(

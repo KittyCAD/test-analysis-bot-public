@@ -12,6 +12,7 @@ from .constants import (
     ANSI_ESCAPE,
     CHECKOUT_COMMAND,
     DEFAULT_SUITE,
+    NEW_FAILURE_THRESHOLD,
     get_default_branches,
 )
 from .enums import Platform, Status, Target
@@ -575,6 +576,14 @@ class Result(models.Model):
             Status.ERROR,
             Status.TIMEDOUT,
         }
+
+    @property
+    def new_failure(self) -> bool:
+        return (
+            self.block
+            and self.test.block_rate < NEW_FAILURE_THRESHOLD
+            and self.branch not in self.test.project.default_branches
+        )
 
     @property
     def duration_humanized(self) -> str:
