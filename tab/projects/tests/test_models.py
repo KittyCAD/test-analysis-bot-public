@@ -85,6 +85,21 @@ def describe_test():
             test = Test(name=name)
             expect(test.regex) == regex
 
+    def describe_substring():
+        @pytest.mark.parametrize(
+            ("name", "substring"),
+            [
+                ("my_suite › my_test", "my_suite and my_test"),
+                (
+                    "pytest › app.tests.test_models.describe_test.describe_str › it_formats_name",
+                    "describe_str and it_formats_name",
+                ),
+            ],
+        )
+        def it_returns_words(expect, name, substring):
+            test = Test(name=name)
+            expect(test.substring) == substring
+
     def describe_disabled():
         @pytest.mark.django_db
         def it_is_set_if_disabled_for_any_platform(expect, project: Project):

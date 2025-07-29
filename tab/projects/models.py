@@ -261,6 +261,13 @@ class Test(models.Model):
         )
 
     @property
+    def substring(self) -> str:
+        parts = self.name.split(" › ")[-2:]
+        if "." in parts[0]:
+            parts[0] = parts[0].split(".")[-1]
+        return " and ".join(parts)
+
+    @property
     def significant_branches(self) -> list[str]:
         branches = list(self.project.default_branches)
         if self.original_branch and self.original_branch not in branches:
