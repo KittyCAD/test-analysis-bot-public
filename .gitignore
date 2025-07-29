@@ -11,3 +11,6 @@ staticfiles/
 
 # Documentation
 docs/*.png
+
+# Testing
+test-results/

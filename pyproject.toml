@@ -126,6 +126,8 @@ addopts = """
 
 --fail-on-template-vars
 
+ --junit-xml=test-results/junit.xml
+
 --cov=tab
 --cov-report=html
 --cov-report=term-missing:skip-covered
