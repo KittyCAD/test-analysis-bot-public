@@ -95,7 +95,7 @@ class Suite(models.Model):
     name = models.CharField(max_length=100, db_index=True)
 
     supports_override = models.BooleanField(
-        default=False,
+        default=True,
         help_text="Indicates the suite is configured to allow disabling tests",
     )
     local_command = models.TextField(

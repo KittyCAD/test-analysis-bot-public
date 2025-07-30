@@ -24,10 +24,11 @@ from .schemas import (
 )
 
 project = tomllib.load(open("pyproject.toml", "rb"))["project"]
+readme_url = "https://github.com/KittyCAD/test-analysis-bot/blob/main/README.md"
 api = NinjaAPI(
     title="Test Analysis Bot",
     version=project["version"],
-    description=project["description"],
+    description=f"{project['description']} See the [README]({readme_url}) for examples.",
 )
 api_key = ApiKey()
 

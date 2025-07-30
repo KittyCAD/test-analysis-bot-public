@@ -8,10 +8,6 @@ from tab.core.models import Organization
 from tab.projects.models import Result, Test
 
 
-def test_example_failure():
-    assert 2 + 2 == 5
-
-
 def post_json(client, url: str, data: dict):
     log.info(f"POST {url}: {data}")
     response = client.post(
