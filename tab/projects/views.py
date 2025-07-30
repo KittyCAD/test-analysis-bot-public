@@ -413,6 +413,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             project__repository__iendswith=self.kwargs["path"].strip("/"),
             id=self.kwargs["test_id"],
         )
+        previously_disabled = test.disabled
 
         test.disabled = form.cleaned_data["disabled"]
         test.disabled_reason = form.cleaned_data["disabled_reason"]
@@ -423,8 +424,10 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         test.save()
 
         log.info(f"{self.request.user} updated test {test.name}")
-        modified = "disabled from" if test.disabled else "allowed to"
-        messages.success(self.request, f"Test is now {modified} blocking merges.")
+        blocking = "disabled from blocking" if test.disabled else "allowed to block"
+        if test.disabled != previously_disabled:
+            blocking = "now " + blocking
+        messages.success(self.request, f"Test is {blocking} merges.")
 
         redirect_url = self.request.path
         if branch := self.request.GET.get("branch"):

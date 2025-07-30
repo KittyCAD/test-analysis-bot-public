@@ -88,6 +88,7 @@ class BulkResultResponse(Schema):
     branch: str
     commit: str
     tests: int
+    block: bool
 
 
 class ShareRequest(Schema):

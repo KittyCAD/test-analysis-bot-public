@@ -38,10 +38,9 @@ jobs:
   test:
     ...
     - name: Run tests
-      run: cargo nextest run --profile=ci
-    - name: Upload results
-      if: always()
-      run: .github/workflows/lib/upload-results.sh
+      run:  |
+        cargo nextest run --profile=ci || true  # let TAB determine failure
+        .github/workflows/lib/upload-results.sh
       env:
         TAB_API_URL: ${{ secrets.TAB_API_URL }}
         TAB_API_KEY: ${{ secrets.TAB_API_KEY }}

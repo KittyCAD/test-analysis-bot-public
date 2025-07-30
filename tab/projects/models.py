@@ -415,10 +415,10 @@ class Test(models.Model):
     def save(self, *args, **kwargs):
         if self.pk:
             self._update_last_result()
-        if self.disabled_platforms:
+        if self.disabled_platforms and not self.disabled:
             log.info(f"Disabling test based on platforms: {self}")
             self.disabled = True
-        if self.failure_rate == 0:
+        if self.failure_rate == 0 and self.disabled:
             log.info(f"Restoring test based on failure rate: {self}")
             self.disabled = False
             self.disabled_platforms = []

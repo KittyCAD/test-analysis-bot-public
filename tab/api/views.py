@@ -6,6 +6,7 @@ from django.shortcuts import redirect
 
 import log
 from ninja import Form, NinjaAPI
+from unidecode import unidecode
 
 from tab.core.models import Organization
 from tab.projects.models import Project, Result, Suite, Test
@@ -103,8 +104,8 @@ def results(request, payload: ResultRequest):
     log.info(f"Created result: {result}")
 
     return status, ResultResponse(
-        suite=str(suite),
-        test=str(test),
+        suite=unidecode(str(suite)),
+        test=unidecode(str(test)),
         status=result.status,
         block=result.block,
     )
@@ -142,14 +143,15 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
     if tests := request.FILES.get("tests"):
         content = tests.read().decode("utf-8")
         metadata = BulkResultRequest.get_metadata(request.POST.dict())
-        count = parse_junit_xml(
+        results = parse_junit_xml(
             content, project, suite, payload.branch, payload.commit, metadata
         )
         response = BulkResultResponse(
-            suite=str(suite),
+            suite=unidecode(str(suite)),
             branch=payload.branch,
             commit=payload.commit,
-            tests=count,
+            tests=len(results),
+            block=any(result.block for result in results),
         )
         return 200, response.dict()
 
@@ -180,7 +182,7 @@ def share(request, payload: ShareRequest):
     update_status(organization, project, payload.commit, payload.branch, health)
 
     return 200, ShareResponse(
-        project=str(project),
+        project=unidecode(str(project)),
         branch=payload.branch,
         commit=payload.commit,
         tests=health.total,

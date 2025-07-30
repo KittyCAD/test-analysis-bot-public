@@ -8,6 +8,10 @@ from tab.core.models import Organization
 from tab.projects.models import Result, Test
 
 
+def test_example_failure():
+    assert 2 + 2 == 5
+
+
 def post_json(client, url: str, data: dict):
     log.info(f"POST {url}: {data}")
     response = client.post(
@@ -58,8 +62,8 @@ def describe_results():
 
         expect(response.status_code) == 201
         expect(response.json()) == {
-            "suite": "my-user › my-project › e2e",
-            "test": "e2e › my feature › my test",
+            "suite": "my-user > my-project > e2e",
+            "test": "e2e > my feature > my test",
             "status": "passed",
             "block": False,
         }
@@ -91,8 +95,8 @@ def describe_results():
 
         expect(response.status_code) == 201
         expect(response.json()) == {
-            "suite": "my-user › my-project › e2e",
-            "test": "e2e › my feature › my test",
+            "suite": "my-user > my-project > e2e",
+            "test": "e2e > my feature > my test",
             "status": "passed",
             "block": False,
         }
@@ -126,10 +130,11 @@ def describe_bulk_results():
     def it_creates_tests_from_junit_xml(expect, client, payload):
         response = post_form(client, url, payload)
         expect(response.json()) == {
-            "suite": "my-user › my-project › unit",
+            "suite": "my-user > my-project > unit",
             "branch": "main",
             "commit": "abc123",
             "tests": 25,
+            "block": False,
         }
         test: Test = Test.objects.first()  # type: ignore[assignment]
         expect(test.original_branch) == "main"
@@ -180,7 +185,7 @@ def describe_share():
 
         expect(response.status_code) == 200
         expect(response.json()) == {
-            "project": "my-user › my-project",
+            "project": "my-user > my-project",
             "branch": "my-branch",
             "commit": "abc123",
             "tests": 0,

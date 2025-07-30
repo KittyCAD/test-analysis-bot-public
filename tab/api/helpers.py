@@ -18,8 +18,9 @@ def parse_junit_xml(
     branch: str,
     commit: str,
     metadata: dict,
-) -> int:
-    count = 0
+) -> list[Result]:
+    results = []
+
     xml = ET.fromstring(content)
     root_name = xml.get("name", "")
     for testsuite in xml.findall(".//testsuite"):
@@ -77,7 +78,7 @@ def parse_junit_xml(
                 test.save()
 
             # Create result
-            Result.objects.create(
+            result = Result.objects.create(
                 test=test,
                 suite=suite,
                 branch=branch,
@@ -87,9 +88,9 @@ def parse_junit_xml(
                 message=message,
                 metadata=metadata,
             )
-            count += 1
+            results.append(result)
 
-    return count
+    return results
 
 
 def update_status(
