@@ -421,6 +421,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         test.disabled_user = get_or_create_user(form.cleaned_data["disabled_user"])
         if test.disabled:
             test.disabled_platforms = []
+        test.failure_rate += 0.001  # prevent from being disabled again on save
         test.save()
 
         log.info(f"{self.request.user} updated test {test.name}")
