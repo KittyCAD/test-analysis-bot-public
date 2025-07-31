@@ -1,8 +1,10 @@
+import log
 import pytest
 
 from ..constants import DEFAULT_SUITE
 from ..enums import Platform, Status
 from ..models import Project, Result, Suite, Test
+from . import EXAMPLE_TESTS, ExampleTest
 
 
 def describe_project():
@@ -52,53 +54,26 @@ def describe_test():
             expect(str(test)) == "my-test"
 
     def describe_regex():
-        @pytest.mark.parametrize(
-            ("name", "regex"),
-            [
-                ("my-test", r"my\-test"),
-                (
-                    " name with extra spaces ",
-                    "name with extra spaces",
-                ),
-                (
-                    'name with "quoted" words',
-                    "name with .quoted. words",
-                ),
-                (
-                    # Playwright example
-                    "native-file-menu.spec.ts › Native file menu › Home page",
-                    "Native file menu.*Home page",
-                ),
-                (
-                    # Vitest example
-                    "roundOffWithUnits > returns the original string",
-                    "roundOffWithUnits returns the original string",
-                ),
-                (
-                    # Cargo nextest example
-                    "nextest-run › kcl-lib › docs::kcl_doc::test::kcl_test_examples_std_helix_0",
-                    "docs::kcl_doc::test::kcl_test_examples_std_helix_0",
-                ),
-            ],
-        )
-        def it_escapes_special_characters(expect, name, regex):
-            test = Test(name=name)
-            expect(test.regex) == regex
+        @pytest.mark.parametrize(("example_test"), EXAMPLE_TESTS)
+        def it_escapes_special_characters(expect, example_test: ExampleTest):
+            log.debug(f"{example_test.case} case: {example_test.name!r}")
+            log.debug(f"Expected regex: {example_test.regex!r}")
+            if not example_test.regex:
+                pytest.skip("No example regex provided for this case")
+            test = Test(name=example_test.name)
+            log.debug(f"Actual regex: {test.regex!r}")
+            expect(test.regex) == example_test.regex
 
     def describe_substring():
-        @pytest.mark.parametrize(
-            ("name", "substring"),
-            [
-                ("my_suite › my_test", "my_suite and my_test"),
-                (
-                    "pytest › app.tests.test_models.describe_test.describe_str › it_formats_name",
-                    "describe_str and it_formats_name",
-                ),
-            ],
-        )
-        def it_returns_words(expect, name, substring):
-            test = Test(name=name)
-            expect(test.substring) == substring
+        @pytest.mark.parametrize(("example_test"), EXAMPLE_TESTS)
+        def it_returns_plain_words(expect, example_test: ExampleTest):
+            log.debug(f"{example_test.case} case: {example_test.name!r}")
+            log.debug(f"Expected substring: {example_test.substring!r}")
+            if not example_test.substring:
+                pytest.skip("No example substring provided for this case")
+            test = Test(name=example_test.name)
+            log.debug(f"Actual substring: {test.substring!r}")
+            expect(test.substring) == example_test.substring
 
     def describe_disabled():
         @pytest.mark.django_db

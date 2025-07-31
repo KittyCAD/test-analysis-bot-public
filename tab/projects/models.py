@@ -243,10 +243,14 @@ class Test(models.Model):
         # Remove file path prefix
         if "." in parts[0]:
             parts = parts[1:]
+        if len(parts) > 1 and "." in parts[1]:
+            parts = parts[2:]
 
-        # Remove entire prefix for fully-namespaced tests
+        # Remove prefix for fully-namespaced tests
         if "::" in parts[-1]:
-            parts = [parts[-1]]
+            return parts[-1]
+        if len(parts) > 1 and "::" in parts[-2]:
+            return parts[-1]
 
         # Join nested description blocks
         escaped_parts = [re.escape(part) for part in parts]
@@ -265,7 +269,7 @@ class Test(models.Model):
         parts = self.name.split(" › ")[-2:]
         if "." in parts[0]:
             parts[0] = parts[0].split(".")[-1]
-        return " and ".join(parts)
+        return " and ".join(parts).strip()
 
     @property
     def significant_branches(self) -> list[str]:
