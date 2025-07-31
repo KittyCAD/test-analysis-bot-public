@@ -247,7 +247,7 @@ class Test(models.Model):
             parts = parts[2:]
 
         # Remove prefix for fully-namespaced tests
-        if "::" in parts[-1]:
+        if len(parts) > 0 and "::" in parts[-1]:
             return parts[-1]
         if len(parts) > 1 and "::" in parts[-2]:
             return parts[-1]
