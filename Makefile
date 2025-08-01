@@ -149,6 +149,12 @@ test-frontend: test-frontend-unit
 test-frontend-unit: install
 	# TODO: Run frontend tests if applicable
 
+.PHONY: test-e2e
+test-e2e: install
+	mkdir -p test-results
+	cp tests/files/junit.xml test-results/junit.xml
+	time ./docs/examples/junit/upload-results.sh
+
 # SERVER TARGETS ##############################################################
 
 .PHONY: run

@@ -147,14 +147,13 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
         results = parse_junit_xml(
             content, project, suite, payload.branch, payload.commit, metadata
         )
-        response = BulkResultResponse(
+        return 200, BulkResultResponse(
             suite=unidecode(str(suite)),
             branch=payload.branch,
             commit=payload.commit,
             tests=len(results),
             block=any(result.block for result in results),
         )
-        return 200, response.dict()
 
     return 422, {"detail": "Include 'tests' as a JUnit XML file upload."}
 
