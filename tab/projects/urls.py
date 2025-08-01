@@ -31,6 +31,11 @@ urlpatterns = [
         name="results",
     ),
     path(
+        "<path:path>/results/regex",
+        views.ResultsRegexView.as_view(),
+        name="results-regex",
+    ),
+    path(
         "<path:path>/metrics",
         views.MetricsView.as_view(),
         name="metrics",

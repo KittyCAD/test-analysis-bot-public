@@ -6,7 +6,8 @@ from .models import Test
 class BaseUpdateTestForm(forms.Form):
     disabled = forms.BooleanField(
         required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input border-dark"}),
+        label="Disable test to prevent from blocking merges",
         initial=True,
     )
     disabled_reason = forms.CharField(
@@ -29,21 +30,15 @@ class BaseUpdateTestForm(forms.Form):
     )
 
 
+class UpdateTestForm(BaseUpdateTestForm):
+    test_id = forms.CharField(widget=forms.HiddenInput(), required=True)
+
+
 class BulkUpdateTestForm(BaseUpdateTestForm):
     test_ids = forms.CharField(widget=forms.HiddenInput(), required=True)
     disabled = forms.BooleanField(
         required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input border-dark"}),
         label="Keep selected tests disabled to prevent from blocking merges",
-        initial=True,
-    )
-
-
-class UpdateTestForm(BaseUpdateTestForm):
-    test_id = forms.CharField(widget=forms.HiddenInput(), required=True)
-    disabled = forms.BooleanField(
-        required=False,
-        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
-        label="Disable test to prevent from blocking merges",
         initial=True,
     )

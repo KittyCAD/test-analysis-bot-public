@@ -118,6 +118,37 @@ def describe_results():
         expect(response.status_code) == 302
         expect(response.url) == f"{url}?search=foobar&tag=fixme"
 
+    def describe_regex():
+        url = "/projects/foo/bar/results/regex"
+
+        @pytest.mark.django_db
+        def it_joins_the_regex_for_each_results_test(
+            expect, admin_client, project: Project
+        ):
+            test1 = Test.objects.create(project=project, name="failing test")
+            test1.results.create(
+                branch="main",
+                commit="abc123",
+                status=Status.FAILED,
+            )
+            test2 = Test.objects.create(project=project, name="errored test")
+            test2.results.create(
+                branch="main",
+                commit="abc123",
+                status=Status.ERROR,
+            )
+            test3 = Test.objects.create(project=project, name="passing test")
+            test3.results.create(
+                branch="main",
+                commit="abc123",
+                status=Status.PASSED,
+            )
+
+            response = admin_client.get(url + "?show=fails")
+            expect(response.status_code) == 200
+            html = response.content.decode("utf-8")
+            expect(html) == r"'errored test|failing test'"
+
 
 def describe_metrics():
     url = "/projects/foo/bar/metrics"

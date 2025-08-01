@@ -87,7 +87,15 @@
                            onchange="document.querySelector('input[name=show]').value = this.checked ? 'fails' : 'all'; this.form.submit()">
                     <label class="form-check-label" for="show_checkbox">Hide retries and tests that passed or were skipped</label>
                 </div>
-                <div class="text-muted">({{ table.rows|length }} result{{ table.rows|length|pluralize }})</div>
+                <div class="text-muted">
+                    ({{ table.rows|length }} result{{ table.rows|length|pluralize }})
+                    <button type="button"
+                            class="btn btn-sm btn-link text-muted p-0 ms-1 copy-btn"
+                            data-clipboard-text="{{ base_url }}{% url 'projects:results-regex' project.path %}?show={{ show }}&branch={{ branch }}"
+                            title="Copy Regular Expression URL">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                </div>
             </div>
         </form>
     </div>
@@ -102,3 +110,23 @@
     }
     </style>
 {% endblock extra_css %}
+
+{% block extra_js %}
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const copyRegexButtons = document.querySelectorAll('.copy-btn');
+    copyRegexButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const url = this.getAttribute('data-clipboard-text');
+            navigator.clipboard.writeText(url).then(() => {
+                const originalIcon = this.innerHTML;
+                this.innerHTML = '<i class="fa-solid fa-check"></i>';
+                setTimeout(() => {
+                    this.innerHTML = originalIcon;
+                }, 2000);
+            });
+        });
+    });
+});
+    </script>
+{% endblock extra_js %}

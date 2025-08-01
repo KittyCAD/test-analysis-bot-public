@@ -289,7 +289,6 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
         branch = self.request.GET.get("branch", project.default_branch)
-        commit = Result.objects.get_latest_commit(project, branch)
 
         context["project"] = project
         context["branch"] = branch
@@ -299,6 +298,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         context["platform"] = self.request.GET.get("platform", "").strip()
         context["tag"] = self.request.GET.get("tag", "").strip()
         context["show"] = self.request.GET.get("show", "all")
+        context["base_url"] = settings.BASE_URL
         if self.request.user.is_staff:
             context["admin_url"] = (
                 reverse(
@@ -333,6 +333,16 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
                 created_at__gte=timezone.now() - project.branch_inactive_threshold
             )
         return list(results_by_branch.values_list("branch", flat=True))
+
+
+class ResultsRegexView(ResultsView):
+    def dispatch(self, request, *args, **kwargs):
+        """Disable authentication for this view to work with local test runners."""
+        return super(ListView, self).dispatch(request, *args, **kwargs)
+
+    def render_to_response(self, context, **response_kwargs):
+        regex = "|".join(row.record.test.regex for row in context["table"].rows)
+        return HttpResponse(f"'{regex}'", content_type="text/plain")
 
 
 class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
