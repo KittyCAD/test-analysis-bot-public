@@ -159,6 +159,7 @@ test-e2e: install
 	TAB_API_KEY=$${TAB_API_KEY:-localhost} \
 	GITHUB_SERVER_URL=https://github.com \
 	GITHUB_REPOSITORY=KittyCAD/modeling-app \
+	GITHUB_RUN_ID=999999 \
 	GITHUB_HEAD_REF=tab-test \
 	CI_COMMIT_SHA=$$(date +%m-%d) \
 	CI_PR_NUMBER=9999 \
@@ -169,9 +170,9 @@ test-e2e: install
 	TAB_API_KEY=$${TAB_API_KEY:-localhost} \
 	GITHUB_SERVER_URL=https://github.com \
 	GITHUB_REPOSITORY=KittyCAD/modeling-app \
+	GITHUB_RUN_ID=999999 \
 	GITHUB_HEAD_REF=main \
 	CI_COMMIT_SHA=$$(date +%m-%d) \
-	CI_PR_NUMBER=9999 \
 	time ./docs/examples/junit/upload-results.sh || true
 	@ echo
 

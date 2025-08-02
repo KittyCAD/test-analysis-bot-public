@@ -20,7 +20,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
-        self._update_tests()
+        start = timezone.now()
+        self.stdout.write(
+            self.style.MIGRATE_HEADING(
+                f"Started job at {start.strftime('%Y-%m-%d %H:%M:%S')}"
+            )
+        )
         for project in Project.objects.all():
             count = 0
             if project.test_stale_threshold:
@@ -30,16 +35,13 @@ class Command(BaseCommand):
             if count:
                 project.cleaned_at = timezone.now()
                 project.save()
-
-    def _update_tests(self):
-        if test_ids := cache.get(TESTS_TO_UPDATE_CACHE_KEY):
-            self.stdout.write(self.style.MIGRATE_LABEL(f"Updating tests"))
-            tests = Test.objects.filter(id__in=test_ids)
-            for test in tests:
-                if test.update():
-                    self.stdout.write(self.style.SUCCESS(f"Updated test: {test}"))
-                test.save()
-            cache.delete(TESTS_TO_UPDATE_CACHE_KEY)
+        self._update_tests()
+        delta = timezone.now() - start
+        self.stdout.write(
+            self.style.MIGRATE_HEADING(
+                f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}"
+            )
+        )
 
     def _delete_stale_tests(self, project: Project, dry_run: bool) -> int:
         self.stdout.write(
@@ -92,3 +94,15 @@ class Command(BaseCommand):
                 self.style.SUCCESS(f"Deleted {deleted}/{count} results: {project}")
             )
         return deleted
+
+    def _update_tests(self):
+        if test_ids := cache.get(TESTS_TO_UPDATE_CACHE_KEY):
+            self.stdout.write(self.style.MIGRATE_LABEL(f"Updating tests"))
+            tests = Test.objects.filter(id__in=test_ids)
+            for test in tests:
+                if test.update():
+                    self.stdout.write(self.style.SUCCESS(f"Updated test: {test}"))
+                test.save()
+                if test.last_result:
+                    test.last_result.finalize()
+            cache.delete(TESTS_TO_UPDATE_CACHE_KEY)

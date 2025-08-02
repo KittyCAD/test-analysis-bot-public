@@ -619,12 +619,7 @@ class Result(models.Model):
             skipped_indicators=self.test.skipped_indicators,
         )
 
-    def save(self, *args, **kwargs):
-        self.normalize()
-
-        super().save(*args, **kwargs)
-
-        # TODO: Figure out a way to call this for bulk results in the cron job
+    def finalize(self):
         if self.final:
             if results := Result.objects.filter(
                 test=self.test,
@@ -638,5 +633,9 @@ class Result(models.Model):
                 for result in results:
                     log.info(f"Demoted result: {result}")
 
+    def save(self, *args, **kwargs):
+        self.normalize()
+        super().save(*args, **kwargs)
+        self.finalize()
         self.test.update()
         self.test.save()
