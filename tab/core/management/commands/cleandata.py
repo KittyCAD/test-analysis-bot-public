@@ -97,12 +97,14 @@ class Command(BaseCommand):
 
     def _update_tests(self):
         if test_ids := cache.get(TESTS_TO_UPDATE_CACHE_KEY):
-            self.stdout.write(self.style.MIGRATE_LABEL(f"Updating tests"))
+            cache.delete(TESTS_TO_UPDATE_CACHE_KEY)
             tests = Test.objects.filter(id__in=test_ids)
+            self.stdout.write(
+                self.style.MIGRATE_LABEL(f"Processing {tests.count()} tests")
+            )
             for test in tests:
                 if test.update():
                     self.stdout.write(self.style.SUCCESS(f"Updated test: {test}"))
                 test.save()
                 if test.last_result:
                     test.last_result.finalize()
-            cache.delete(TESTS_TO_UPDATE_CACHE_KEY)
