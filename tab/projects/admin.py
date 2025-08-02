@@ -81,6 +81,9 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Suite)
 class SuiteAdmin(admin.ModelAdmin):
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("project")
+
     form = SuiteAdminForm
     search_fields = ("project__repository", "name", "local_command")
     list_display = (
@@ -226,6 +229,7 @@ class TestAdmin(admin.ModelAdmin):
 
     actions = [disable, disable_macos, disable_windows, enable, update]
 
+    raw_id_fields = ("project", "suite", "disabled_user")
     readonly_fields = (
         "enabled",
         "significant_branches",
@@ -295,4 +299,5 @@ class ResultAdmin(admin.ModelAdmin):
     def _commit(self, result: Result):
         return result.commit_humanized
 
+    raw_id_fields = ("test", "suite")
     readonly_fields = ("markers", "created_at")

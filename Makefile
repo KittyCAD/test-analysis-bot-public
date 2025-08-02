@@ -153,7 +153,29 @@ test-frontend-unit: install
 test-e2e: install
 	mkdir -p test-results
 	cp tests/files/junit.xml test-results/junit.xml
-	time ./docs/examples/junit/upload-results.sh
+	@ echo
+
+	TAB_API_URL=$${TAB_API_URL:-http://localhost:8000} \
+	TAB_API_KEY=$${TAB_API_KEY:-localhost} \
+	GITHUB_SERVER_URL=https://github.com \
+	GITHUB_REPOSITORY=KittyCAD/modeling-app \
+	GITHUB_HEAD_REF=tab-test \
+	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_PR_NUMBER=9999 \
+	time ./docs/examples/junit/upload-results.sh || true
+	@ echo
+
+	TAB_API_URL=$${TAB_API_URL:-http://localhost:8000} \
+	TAB_API_KEY=$${TAB_API_KEY:-localhost} \
+	GITHUB_SERVER_URL=https://github.com \
+	GITHUB_REPOSITORY=KittyCAD/modeling-app \
+	GITHUB_HEAD_REF=main \
+	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_PR_NUMBER=9999 \
+	time ./docs/examples/junit/upload-results.sh || true
+	@ echo
+
+	./manage.py cleandata
 
 # SERVER TARGETS ##############################################################
 

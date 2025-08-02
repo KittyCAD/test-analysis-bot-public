@@ -460,10 +460,10 @@ class Result(models.Model):
     branch = models.CharField(max_length=500, default="", db_index=True)
     commit = models.CharField(max_length=100, default="", db_index=True)
     target = models.CharField(
-        max_length=100, null=True, choices=Target.choices, db_index=True
+        max_length=100, null=True, blank=True, choices=Target.choices, db_index=True
     )
     platform = models.CharField(
-        max_length=100, null=True, choices=Platform.choices, db_index=True
+        max_length=100, null=True, blank=True, choices=Platform.choices, db_index=True
     )
     final = models.BooleanField(
         default=True, help_text="Indicates this was the final retry", db_index=True
@@ -624,6 +624,7 @@ class Result(models.Model):
 
         super().save(*args, **kwargs)
 
+        # TODO: Figure out a way to call this for bulk results in the cron job
         if self.final:
             if results := Result.objects.filter(
                 test=self.test,

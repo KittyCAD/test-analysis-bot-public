@@ -5,6 +5,9 @@ from .models import History
 
 @admin.register(History)
 class HistoryAdmin(admin.ModelAdmin):
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("test__project")
+
     list_display = (
         "id",
         "test__project",
