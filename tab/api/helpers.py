@@ -123,18 +123,18 @@ def parse_junit_xml(
     results_to_create: list[Result] = []
     for result_data_item in results_data_to_create:
         test = existing_tests[result_data_item["test_name"]]
-        results_to_create.append(
-            Result(
-                test=test,
-                suite=result_data_item["suite"],
-                branch=result_data_item["branch"],
-                commit=result_data_item["commit"],
-                status=result_data_item["status"],
-                duration=result_data_item["duration"],
-                message=result_data_item["message"],
-                metadata=result_data_item["metadata"],
-            )
+        result = Result(
+            test=test,
+            suite=result_data_item["suite"],
+            branch=result_data_item["branch"],
+            commit=result_data_item["commit"],
+            status=result_data_item["status"],
+            duration=result_data_item["duration"],
+            message=result_data_item["message"],
+            metadata=result_data_item["metadata"],
         )
+        result.normalize()
+        results_to_create.append(result)
 
     log.info(f"Bulk results to create: {len(results_to_create)}")
     if results_to_create:

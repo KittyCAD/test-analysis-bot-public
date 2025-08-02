@@ -602,7 +602,7 @@ class Result(models.Model):
             return "—"
         return f"{self.duration:.1f}s"
 
-    def save(self, *args, **kwargs):
+    def normalize(self):
         if self.duration:
             self.duration = round(self.duration, 3)
         if self.message:
@@ -618,6 +618,9 @@ class Result(models.Model):
             error_indicators=self.test.error_indicators,
             skipped_indicators=self.test.skipped_indicators,
         )
+
+    def save(self, *args, **kwargs):
+        self.normalize()
 
         super().save(*args, **kwargs)
 

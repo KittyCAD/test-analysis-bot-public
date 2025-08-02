@@ -193,7 +193,17 @@ class TestAdmin(admin.ModelAdmin):
             request, f"Successfully enabled {count} test{s} to block merges."
         )
 
-    actions = [disable, disable_macos, disable_windows, enable]
+    @admin.action(description="Update selected tests")
+    def update(self, request, queryset):
+        count = 0
+        for test in queryset:
+            if test.update():
+                test.save()
+                count += 1
+        s = "" if count == 1 else "s"
+        self.message_user(request, f"Successfully updated {count} test{s}.")
+
+    actions = [disable, disable_macos, disable_windows, enable, update]
 
     readonly_fields = (
         "enabled",
