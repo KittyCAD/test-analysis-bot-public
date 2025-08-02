@@ -1,6 +1,8 @@
+from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+from tab.api.constants import TESTS_TO_UPDATE_CACHE_KEY
 from tab.projects.models import Project, Result, Test
 
 CHUNK_SIZE = 1000
@@ -18,6 +20,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
+        self._update_tests()
         for project in Project.objects.all():
             count = 0
             if project.test_stale_threshold:
@@ -27,6 +30,16 @@ class Command(BaseCommand):
             if count:
                 project.cleaned_at = timezone.now()
                 project.save()
+
+    def _update_tests(self):
+        self.stdout.write(self.style.MIGRATE_LABEL("Updating tests"))
+        if test_ids := cache.get(TESTS_TO_UPDATE_CACHE_KEY):
+            tests = Test.objects.filter(id__in=test_ids)
+            for test in tests:
+                if test.update():
+                    test.save()
+                    self.stdout.write(self.style.SUCCESS(f"Updated test: {test}"))
+            cache.delete(TESTS_TO_UPDATE_CACHE_KEY)
 
     def _delete_stale_tests(self, project: Project, dry_run: bool) -> int:
         self.stdout.write(
