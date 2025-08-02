@@ -106,5 +106,6 @@ class Command(BaseCommand):
                 if test.update():
                     self.stdout.write(self.style.SUCCESS(f"Updated test: {test}"))
                 test.save()
+                # TODO: Consider finalizing results from all recent branches
                 if test.last_result:
                     test.last_result.finalize()

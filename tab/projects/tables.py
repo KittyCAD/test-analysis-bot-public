@@ -142,10 +142,10 @@ class DisabledTestTable(tables.Table):
         accessor="id",
         attrs={
             "th__input": {
-                "class": "form-check-input",
+                "class": "form-check-input border-dark",
                 "onclick": "this.form.querySelectorAll('tbody input[type=checkbox]').forEach(cb => cb.checked = this.checked)",
             },
-            "td__input": {"class": "form-check-input"},
+            "td__input": {"class": "form-check-input border-dark"},
         },
         orderable=False,
     )

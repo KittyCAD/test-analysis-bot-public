@@ -434,18 +434,15 @@ class Test(models.Model):
         super().save(*args, **kwargs)
 
     def _update_last_result(self):
-        self.last_result = (
-            self.results.filter(branch=self.project.default_branch)
-            .order_by("-created_at")
-            .first()
-        )
+        self.last_result = self.results.filter(
+            branch=self.project.default_branch
+        ).first()
         if self.last_result and self.last_result.status == Status.SKIPPED:
             if result := (
                 self.results.filter(
                     branch=self.last_result.branch, commit=self.last_result.commit
                 )
                 .exclude(status=Status.SKIPPED)
-                .order_by("-created_at")
                 .first()
             ):
                 self.last_result = result
