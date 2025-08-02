@@ -1,9 +1,29 @@
+from django import forms
 from django.contrib import admin
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.timesince import timesince
 
 from .models import Platform, Project, Result, Suite, Test
+
+
+class SuiteAdminForm(forms.ModelForm):
+    local_command = forms.CharField(
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": (
+                    'pytest -k "{test.substring}"'
+                    "\n\n"
+                    "# or"
+                    "\n\n"
+                    'playwright test --grep="{test.regex}"'
+                ),
+                "cols": 80,
+            }
+        ),
+        required=False,
+        help_text=Suite._meta.get_field("local_command").help_text,
+    )
 
 
 class SuiteInline(admin.TabularInline):
@@ -61,6 +81,7 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(Suite)
 class SuiteAdmin(admin.ModelAdmin):
+    form = SuiteAdminForm
     search_fields = ("project__repository", "name", "local_command")
     list_display = (
         "id",
