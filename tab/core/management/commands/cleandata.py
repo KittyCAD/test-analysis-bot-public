@@ -32,14 +32,14 @@ class Command(BaseCommand):
                 project.save()
 
     def _update_tests(self):
-        self.stdout.write(self.style.MIGRATE_LABEL("Updating tests"))
         if test_ids := cache.get(TESTS_TO_UPDATE_CACHE_KEY):
             tests = Test.objects.filter(id__in=test_ids)
             for test in tests:
+                self.stdout.write(self.style.MIGRATE_LABEL(f"Updating test: {test}"))
                 if test.update():
                     test.save()
-                    self.stdout.write(self.style.SUCCESS(f"Updated test: {test}"))
             cache.delete(TESTS_TO_UPDATE_CACHE_KEY)
+            self.stdout.write(self.style.SUCCESS(f"Updated {tests.count()} tests"))
 
     def _delete_stale_tests(self, project: Project, dry_run: bool) -> int:
         self.stdout.write(
