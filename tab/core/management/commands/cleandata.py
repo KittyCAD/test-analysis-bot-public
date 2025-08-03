@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -106,6 +108,11 @@ class Command(BaseCommand):
                 if test.update():
                     self.stdout.write(self.style.SUCCESS(f"Updated test: {test}"))
                 test.save()
-                # TODO: Consider finalizing results from all recent branches
-                if test.last_result:
-                    test.last_result.finalize()
+                for result in (
+                    test.results.filter(
+                        created_at__gte=timezone.now() - timedelta(hours=1)
+                    )
+                    .order_by("branch", "-created_at")
+                    .distinct("branch")
+                ):
+                    result.finalize()
