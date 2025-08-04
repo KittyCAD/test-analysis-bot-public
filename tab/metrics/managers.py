@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import TYPE_CHECKING
 
 from django.db import models
 from django.utils import timezone
@@ -6,6 +7,9 @@ from django.utils import timezone
 import log
 
 from tab.projects.models import Test
+
+if TYPE_CHECKING:
+    from .models import History
 
 
 class HistoryManager(models.Manager):
@@ -27,3 +31,19 @@ class HistoryManager(models.Manager):
             log.debug(f"Deleted {count} old metrics")
 
         return history
+
+    def get_data(self, days: int = 7) -> list[dict]:
+        chart_data = []
+        cutoff_date = timezone.now() - timedelta(days=days)
+        histories = self.filter(timestamp__gte=cutoff_date).order_by("timestamp")
+        history: "History"
+        for history in histories:  # type: ignore[assignment]
+            chart_data.append(
+                {
+                    "date": history.timestamp.strftime("%Y-%m-%d %H:%M"),
+                    "failure_rate": round(history.failure_rate * 100, 1),
+                    "block_rate": round(history.block_rate * 100, 1),
+                    "average_duration": round(history.average_duration, 1),
+                }
+            )
+        return chart_data

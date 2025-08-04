@@ -17,7 +17,10 @@ class HistoryAdmin(admin.ModelAdmin):
         "average_duration",
         "timestamp",
     )
-    search_fields = ("test__name",)
+    search_fields = (
+        "test__project__repository",
+        "test__name",
+    )
 
     readonly_fields = (
         "test",

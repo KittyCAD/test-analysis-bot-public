@@ -31,13 +31,13 @@ class Command(BaseCommand):
         for project in Project.objects.all():
             count = 0
             if project.test_stale_threshold:
-                count += self._delete_stale_tests(project, dry_run)
+                count += self.delete_stale_tests(project, dry_run)
             if project.result_stale_threshold:
-                count += self._delete_stale_results(project, dry_run)
+                count += self.delete_stale_results(project, dry_run)
             if count:
                 project.cleaned_at = timezone.now()
                 project.save()
-        self._update_tests()
+        self.update_bulk_tests()
         delta = timezone.now() - start
         self.stdout.write(
             self.style.MIGRATE_HEADING(
@@ -45,7 +45,7 @@ class Command(BaseCommand):
             )
         )
 
-    def _delete_stale_tests(self, project: Project, dry_run: bool) -> int:
+    def delete_stale_tests(self, project: Project, dry_run: bool) -> int:
         self.stdout.write(
             self.style.MIGRATE_LABEL(f"Cleaning up stale tests: {project}")
         )
@@ -67,7 +67,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"Deleted {count} tests: {project}"))
         return count
 
-    def _delete_stale_results(self, project: Project, dry_run: bool) -> int:
+    def delete_stale_results(self, project: Project, dry_run: bool) -> int:
         self.stdout.write(
             self.style.MIGRATE_LABEL(f"Cleaning up stale results: {project}")
         )
@@ -97,7 +97,7 @@ class Command(BaseCommand):
             )
         return deleted
 
-    def _update_tests(self):
+    def update_bulk_tests(self):
         if test_ids := cache.get(TESTS_TO_UPDATE_CACHE_KEY):
             cache.delete(TESTS_TO_UPDATE_CACHE_KEY)
             tests = Test.objects.filter(id__in=test_ids)

@@ -108,38 +108,41 @@
                     {% endif %}
                 </div>
             </summary>
-            <div class="card shadow mt-4 border-dark">
-                <div class="card-header py-3 bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold">
-                        <i class="fa-solid fa-play-circle me-2"></i>
-                        Rerun Locally
-                    </h6>
-                    {% if suite_admin_url %}
-                        <a href="{{ suite_admin_url }}"
-                           target="_blank"
-                           class="text-danger"
-                           title="Edit in admin">
-                            <i class="fa-solid fa-table"></i>
-                        </a>
-                    {% endif %}
+            {% include "projects/_history.html" %}
+            {% if test.command or suite_admin_url %}
+                <div class="card shadow mt-4 border-dark">
+                    <div class="card-header py-3 bg-dark text-white d-flex justify-content-between align-items-center">
+                        <h6 class="m-0 font-weight-bold">
+                            <i class="fa-solid fa-play-circle me-2"></i>
+                            Rerun Locally
+                        </h6>
+                        {% if suite_admin_url %}
+                            <a href="{{ suite_admin_url }}"
+                               target="_blank"
+                               class="text-danger"
+                               title="Edit in admin">
+                                <i class="fa-solid fa-table"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                    <div class="bg-light text-dark p-3 rounded-bottom command">
+                        {% for line, copyable in test.command %}
+                            <div class="d-flex align-items-center mb-1">
+                                <pre class="mb-0 flex-grow-1 font-monospace"><code>{% if copyable %}<span class="text-success prompt">$ </span>{% endif %}{% if not copyable %}<span class="text-muted">{% endif %}{{ line }}{% if not copyable %}</span>{% endif %}</code></pre>
+                                {% if copyable %}
+                                    <button class="btn btn-sm btn-outline-secondary ms-2 copy-btn"
+                                            data-clipboard-text="{{ line }}"
+                                            title="Copy to clipboard">
+                                        <i class="fa-regular fa-copy"></i>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="text-muted mb-0">No local commands are defined for this test suite.</p>
+                        {% endfor %}
+                    </div>
                 </div>
-                <div class="bg-light text-dark p-3 rounded-bottom command">
-                    {% for line, copyable in test.command %}
-                        <div class="d-flex align-items-center mb-1">
-                            <pre class="mb-0 flex-grow-1 font-monospace"><code>{% if copyable %}<span class="text-success prompt">$ </span>{% endif %}{% if not copyable %}<span class="text-muted">{% endif %}{{ line }}{% if not copyable %}</span>{% endif %}</code></pre>
-                            {% if copyable %}
-                                <button class="btn btn-sm btn-outline-secondary ms-2 copy-btn"
-                                        data-clipboard-text="{{ line }}"
-                                        title="Copy to clipboard">
-                                    <i class="fa-regular fa-copy"></i>
-                                </button>
-                            {% endif %}
-                        </div>
-                    {% empty %}
-                        <p class="text-muted mb-0">No local commands are defined for this test suite.</p>
-                    {% endfor %}
-                </div>
-            </div>
+            {% endif %}
             {% if test.suite and test.suite.supports_override %}
                 <div class="card shadow mt-4 border-danger">
                     <div class="card-header py-3 bg-danger text-white">
