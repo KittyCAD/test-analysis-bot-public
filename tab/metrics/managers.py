@@ -10,7 +10,7 @@ from tab.projects.models import Test
 
 class HistoryManager(models.Manager):
     def create_from_test(self, test: Test):
-        limit = timezone.now() - timedelta(hours=0)
+        limit = timezone.now() - timedelta(hours=1)
         if self.filter(test=test, timestamp__gte=limit).exists():
             log.debug(f"Skipping redundant metric creation")
             return
