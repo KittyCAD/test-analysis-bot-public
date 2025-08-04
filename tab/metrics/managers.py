@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from django.db import models
 from django.utils import timezone
@@ -32,13 +32,12 @@ class HistoryManager(models.Manager):
 
         return history
 
-    def get_data(self, days: int = 7) -> list[dict]:
-        chart_data = []
-        cutoff_date = timezone.now() - timedelta(days=days)
+    def get_data(self, test: Test) -> list[dict]:
+        data = []
+        cutoff_date = timezone.now() - timedelta(days=7)
         histories = self.filter(timestamp__gte=cutoff_date).order_by("timestamp")
-        history: "History"
-        for history in histories:  # type: ignore[assignment]
-            chart_data.append(
+        for history in cast(list["History"], histories):
+            data.append(
                 {
                     "date": history.timestamp.strftime("%Y-%m-%d %H:%M"),
                     "failure_rate": round(history.failure_rate * 100, 1),
@@ -46,4 +45,23 @@ class HistoryManager(models.Manager):
                     "average_duration": round(history.average_duration, 1),
                 }
             )
-        return chart_data
+        if not data:
+            data.append(
+                {
+                    "date": timezone.now().strftime("%Y-%m-%d %H:%M"),
+                    "failure_rate": round(test.failure_rate * 100, 1),
+                    "block_rate": round(test.block_rate * 100, 1),
+                    "average_duration": round(test.average_duration, 1),
+                }
+            )
+        if len(data) < 10:
+            data.insert(
+                0,
+                {
+                    "date": cutoff_date.strftime("%Y-%m-%d %H:%M"),
+                    "failure_rate": data[0]["failure_rate"],
+                    "block_rate": data[0]["block_rate"],
+                    "average_duration": data[0]["average_duration"],
+                },
+            )
+        return data

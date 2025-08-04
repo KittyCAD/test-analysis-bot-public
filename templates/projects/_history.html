@@ -6,28 +6,20 @@
         </h6>
     </div>
     <div class="card-body">
-        {% if history_data %}
-            <div style="height: 300px;">
-                <canvas id="failureRateChart"></canvas>
-            </div>
-        {% else %}
-            <p class="text-muted mb-0">No test results available for the past week.</p>
-        {% endif %}
+        <div style="height: 300px;">
+            <canvas id="failureRateChart"></canvas>
+        </div>
     </div>
 </div>
-{% if history_data %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
-    <script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script>
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('failureRateChart');
         if (ctx) {
             const chartData = {
-                labels: [{% for day_data in history_data %}'{{ day_data.date }}'{% if not forloop.last %}, {% endif %}{% endfor %}].map(dateStr => {
-                    const date = new Date(dateStr);
-                    return `${date.getMonth() + 1}/${date.getDate()}`;
-                }),
                 datasets: [{
-                    data: [{% for day_data in history_data %}{{ day_data.failure_rate }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    data: [{% for point in history_data %}{x: '{{ point.date }}', y: {{ point.failure_rate }}}{% if not forloop.last %}, {% endif %}{% endfor %}],
                     borderColor: '#0dcaf0',
                     borderWidth: 2,
                     fill: false,
@@ -81,22 +73,22 @@
                             }
                         },
                         x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                displayFormats: {
+                                    day: 'M/dd'
+                                },
+                            },
                             grid: {
                                 display: false
                             },
-                            ticks: {
-                                maxTicksLimit: 8, // show up to 8 day labels
-                                callback: function(value, index) {
-                                    return this.getLabelForValue(value);
-                                }
-                            }
+
                         }
                     }
                 }
             };
-
             new Chart(ctx, config);
         }
     });
-    </script>
-{% endif %}
+</script>

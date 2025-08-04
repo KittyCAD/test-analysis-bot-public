@@ -387,7 +387,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         context["branch"] = self.request.GET.get("branch")
         context["platform"] = self.request.GET.get("platform", "").strip()
         context["show"] = self.request.GET.get("show", "all")
-        context["history_data"] = test.history.get_data()
+        context["history_data"] = test.history.get_data(test)
         for field in test._meta.get_fields():
             if hasattr(field, "help_text") and field.help_text:
                 context[f"{field.name}_help"] = field.help_text
