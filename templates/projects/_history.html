@@ -27,19 +27,12 @@
                     return `${date.getMonth() + 1}/${date.getDate()}`;
                 }),
                 datasets: [{
-                    label: 'Failure Rate (%)',
                     data: [{% for day_data in history_data %}{{ day_data.failure_rate }}{% if not forloop.last %}, {% endif %}{% endfor %}],
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                    borderColor: '#0dcaf0',
                     borderWidth: 2,
                     fill: false,
-                    tension: 0,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    pointBackgroundColor: 'rgb(75, 192, 192)',
-                    pointBorderColor: 'white',
-                    pointBorderWidth: 2,
-                    spanGaps: false
+                    pointRadius: 2,
+                    pointHoverRadius: 4,
                 }]
             };
 
