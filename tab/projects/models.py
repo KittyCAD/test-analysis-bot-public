@@ -625,6 +625,7 @@ class Result(models.Model):
                 platform=self.platform,
                 final=True,
                 created_at__lt=self.created_at,
+                created_at__gte=self.created_at - timedelta(minutes=45),
             ).exclude(id=self.id):
                 results.update(final=False)
                 for result in results:

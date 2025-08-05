@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import log
 import pytest
 
@@ -146,6 +148,7 @@ def describe_test():
             project.save()
             test = project.tests.create(name="my-test")
             expect(test.update_failure_rate()) == False
+            expect(test.update_block_rate()) == False
 
         @pytest.mark.django_db
         def it_computes_failure_rate(expect, project: Project):
@@ -262,6 +265,29 @@ def describe_result():
             expect(
                 result.run_url
             ) == "https://github.com/foo/bar/actions/runs/123?pr=456"
+
+    def describe_finalize():
+        @pytest.mark.django_db
+        def it_demotes_recent_results_for_same_commit(expect):
+            project = Project.objects.create(repository="https://github.com/foo/bar")
+            test = project.tests.create(name="my-test")
+
+            # Create a result from an hour ago
+            result = test.results.create(
+                test=test, status=Status.PASSED, branch="main", commit="a1"
+            )
+            result.created_at = result.created_at - timedelta(hours=1)
+            result.save()
+            # Create a result from now with a rerun
+            test.results.create(
+                test=test, status=Status.FAILED, branch="main", commit="a1"
+            )
+            test.results.create(
+                test=test, status=Status.PASSED, branch="main", commit="a1"
+            )
+
+            # Expect one final result from each hourly run
+            expect(test.results.filter(final=True).count()) == 2
 
     def describe_save():
         @pytest.mark.django_db
