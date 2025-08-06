@@ -5,7 +5,7 @@ from django.utils import timezone
 import pytest
 
 from ..constants import PENDING_THRESHOLD
-from ..models import Project, Result, Status, Test
+from ..models import Project, Result, Status, Suite, Test
 
 
 @pytest.fixture
@@ -17,8 +17,10 @@ def describe_result_manager():
     def describe_get_health():
         @pytest.mark.django_db
         def it_returns_health_metrics(expect, project: Project):
+            suite = Suite.objects.create(project=project, name="suite")
             test1 = Test.objects.create(project=project, name="test1")
             Result.objects.create(
+                suite=suite,
                 test=test1,
                 branch="main",
                 commit="abc123",
@@ -27,6 +29,7 @@ def describe_result_manager():
             )
             test2 = Test.objects.create(project=project, name="test2")
             Result.objects.create(
+                suite=suite,
                 test=test2,
                 branch="main",
                 commit="abc123",
@@ -35,6 +38,7 @@ def describe_result_manager():
             )
             test3 = Test.objects.create(project=project, name="test2")
             Result.objects.create(
+                suite=suite,
                 test=test3,
                 branch="main",
                 commit="abc123",
@@ -91,9 +95,11 @@ def describe_result_manager():
                 )
 
             # Create results for the commit we're checking, including a new failure
+            suite = Suite.objects.create(project=project, name="suite")
             for i, test in enumerate(Test.objects.all()):
                 status = Status.FAILED if i == 0 else Status.PASSED
                 result = Result.objects.create(
+                    suite=suite,
                     test=test,
                     branch="my-branch",
                     commit="def456",

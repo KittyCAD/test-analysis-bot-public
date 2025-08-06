@@ -10,7 +10,6 @@ CHECKOUT_COMMAND = (
 )
 
 PENDING_THRESHOLD = timedelta(minutes=10)  # duration to stop waiting for new results
-NEW_FAILURE_THRESHOLD = 0.01  # minimum block rate to consider failures expected
 
 
 def get_default_branches():

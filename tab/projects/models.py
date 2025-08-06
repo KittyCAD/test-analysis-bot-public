@@ -12,7 +12,6 @@ from .constants import (
     ANSI_ESCAPE,
     CHECKOUT_COMMAND,
     DEFAULT_SUITE,
-    NEW_FAILURE_THRESHOLD,
     get_default_branches,
 )
 from .enums import Platform, Status, Target
@@ -121,10 +120,10 @@ class Suite(models.Model):
         default=0.1, help_text="Lower threshold to consider acceptable"
     )
     block_rate_upper_threshold = models.FloatField(
-        default=0.25, help_text="Upper threshold to consider unacceptable"
+        default=0.05, help_text="Upper threshold to consider unacceptable"
     )
     block_rate_lower_threshold = models.FloatField(
-        default=0.05, help_text="Lower threshold to consider acceptable"
+        default=0.01, help_text="Lower threshold to consider acceptable"
     )
     average_duration_upper_threshold = models.FloatField(
         default=60, help_text="Upper threshold to consider unacceptable"
@@ -587,9 +586,11 @@ class Result(models.Model):
 
     @property
     def new_failure(self) -> bool:
+        if not self.suite:
+            return False
         return (
             self.block
-            and self.test.block_rate < NEW_FAILURE_THRESHOLD
+            and self.test.block_rate < self.suite.block_rate_lower_threshold
             and self.branch not in self.test.project.default_branches
         )
 
