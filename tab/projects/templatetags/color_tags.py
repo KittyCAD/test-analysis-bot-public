@@ -1,5 +1,7 @@
 from django import template
 
+from tab.metrics.constants import DELTA_THRESHOLD
+
 from ..models import Test
 from ..tables import color
 
@@ -19,13 +21,13 @@ def colorize(test: Test, field_name: str) -> str:
 
     if delta := getattr(test, f"{field_name}_delta", None):
 
-        if delta >= 0.1:
+        if delta >= DELTA_THRESHOLD:
             icon = "angles-up"
-        elif delta >= 0.05:
+        elif delta >= DELTA_THRESHOLD / 2:
             icon = "angle-up"
-        elif delta <= -0.1:
+        elif delta <= -DELTA_THRESHOLD:
             icon = "angles-down"
-        elif delta <= -0.05:
+        elif delta <= -DELTA_THRESHOLD / 2:
             icon = "angle-down"
 
         if delta > 0:
