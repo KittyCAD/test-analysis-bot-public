@@ -394,6 +394,9 @@ class ResultTable(TestResultTable):
             if record.new_failure:
                 tooltip = "Current branch likely broke this test"
                 icon = "warning"
+            elif record.new_fix:
+                tooltip = "Current branch may have fixed this test"
+                icon = "star"
             return color(
                 record.test.block_rate_humanized,
                 record.test.block_rate,

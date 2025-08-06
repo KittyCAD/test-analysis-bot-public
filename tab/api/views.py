@@ -9,6 +9,7 @@ from ninja import Form, NinjaAPI
 from unidecode import unidecode
 
 from tab.core.models import Organization
+from tab.projects.enums import Status
 from tab.projects.models import Project, Result, Suite, Test
 
 from .helpers import parse_junit_xml, update_status
@@ -108,7 +109,7 @@ def results(request, payload: ResultRequest):
         suite=unidecode(str(suite)),
         test=unidecode(str(test)),
         status=result.status,
-        block=result.block,
+        block=result.status in Status.merge_blocked(),
     )
 
 
@@ -152,7 +153,7 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
             branch=payload.branch,
             commit=payload.commit,
             tests=len(results),
-            block=any(result.block for result in results),
+            block=any(result.status in Status.merge_blocked() for result in results),
         )
 
     return 422, {"detail": "Include 'tests' as a JUnit XML file upload."}

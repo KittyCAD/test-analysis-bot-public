@@ -17,10 +17,8 @@ def describe_result_manager():
     def describe_get_health():
         @pytest.mark.django_db
         def it_returns_health_metrics(expect, project: Project):
-            suite = Suite.objects.create(project=project, name="suite")
             test1 = Test.objects.create(project=project, name="test1")
             Result.objects.create(
-                suite=suite,
                 test=test1,
                 branch="main",
                 commit="abc123",
@@ -29,30 +27,18 @@ def describe_result_manager():
             )
             test2 = Test.objects.create(project=project, name="test2")
             Result.objects.create(
-                suite=suite,
                 test=test2,
                 branch="main",
                 commit="abc123",
                 status=Status.FAILED,
                 final=True,
             )
-            test3 = Test.objects.create(project=project, name="test2")
-            Result.objects.create(
-                suite=suite,
-                test=test3,
-                branch="main",
-                commit="abc123",
-                status=Status.FAILED,
-                final=True,
-            )
-            test3.block_rate = 0.009
-            test3.save()
 
             health = Result.objects.get_health(project, "abc123")
 
-            expect(health.total) == 3
+            expect(health.total) == 2
             expect(health.state) == "failure"
-            expect(health.description) == "1 of 3 passing, 1 new failure"
+            expect(health.description) == "1 of 2 passing"
 
         @pytest.mark.django_db
         def it_only_counts_final_results(expect, project: Project):
@@ -95,11 +81,9 @@ def describe_result_manager():
                 )
 
             # Create results for the commit we're checking, including a new failure
-            suite = Suite.objects.create(project=project, name="suite")
             for i, test in enumerate(Test.objects.all()):
                 status = Status.FAILED if i == 0 else Status.PASSED
                 result = Result.objects.create(
-                    suite=suite,
                     test=test,
                     branch="my-branch",
                     commit="def456",

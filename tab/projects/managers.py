@@ -96,9 +96,7 @@ class ResultManager(models.Manager):
             state = "success"
 
         description = f"{passed} of {total} passing"
-        if new_failed := failed_results.filter(
-            test__block_rate__lt=models.F("suite__block_rate_lower_threshold")
-        ).count():
+        if new_failed := sum(1 for r in failed_results if r.new_failure):  # type: ignore
             s = "" if new_failed == 1 else "s"
             description += f", {new_failed} new failure{s}"
 

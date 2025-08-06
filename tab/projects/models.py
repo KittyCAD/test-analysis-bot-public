@@ -114,10 +114,10 @@ class Suite(models.Model):
     )
 
     failure_rate_upper_threshold = models.FloatField(
-        default=0.5, help_text="Upper threshold to consider unacceptable"
+        default=0.50, help_text="Upper threshold to consider unacceptable"
     )
     failure_rate_lower_threshold = models.FloatField(
-        default=0.1, help_text="Lower threshold to consider acceptable"
+        default=0.10, help_text="Lower threshold to consider acceptable"
     )
     block_rate_upper_threshold = models.FloatField(
         default=0.05, help_text="Upper threshold to consider unacceptable"
@@ -576,21 +576,20 @@ class Result(models.Model):
         return ""
 
     @property
-    def block(self) -> bool:
-        return self.status in {
-            Status.FAILED,
-            Status.XPASSED,
-            Status.ERROR,
-            Status.TIMEDOUT,
-        }
+    def new_failure(self) -> bool:
+        threshold = self.suite.block_rate_lower_threshold if self.suite else 0.01
+        return (
+            self.status in Status.merge_blocked()
+            and self.test.block_rate < threshold
+            and self.branch not in self.test.project.default_branches
+        )
 
     @property
-    def new_failure(self) -> bool:
-        if not self.suite:
-            return False
+    def new_fix(self) -> bool:
+        threshold = self.suite.failure_rate_upper_threshold if self.suite else 0.50
         return (
-            self.block
-            and self.test.block_rate < self.suite.block_rate_lower_threshold
+            self.status in Status.merge_allowed()
+            and self.test.failure_rate > threshold
             and self.branch not in self.test.project.default_branches
         )
 
