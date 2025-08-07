@@ -618,18 +618,21 @@ class Result(models.Model):
 
     def finalize(self):
         if self.final:
-            if results := Result.objects.filter(
+            results = Result.objects.filter(
                 test=self.test,
                 commit=self.commit,
                 target=self.target,
                 platform=self.platform,
                 final=True,
                 created_at__lt=self.created_at,
-                created_at__gte=self.created_at - timedelta(minutes=45),
-            ).exclude(id=self.id):
-                results.update(final=False)
-                for result in results:
-                    log.info(f"Demoted result: {result}")
+            ).exclude(id=self.id)
+            if self.branch in self.test.project.default_branches:
+                # Treat hourly reruns as unique results in the history
+                results = results.filter(
+                    created_at__gte=self.created_at - timedelta(minutes=45)
+                )
+            if count := results.update(final=False):
+                log.debug(f"Demoted {count} results for {self.test}")
 
     def save(self, *args, **kwargs):
         self.normalize()
