@@ -16,6 +16,7 @@ from django_tables2 import SingleTableMixin
 from tab.core.helpers import get_or_create_user
 from tab.core.models import Organization
 
+from .constants import FAILURE_RATE_EPSILON
 from .forms import BulkUpdateTestForm, UpdateTestForm
 from .helpers import get_disabled_test_metrics
 from .models import Project, Result, Status, Test
@@ -432,7 +433,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         test.disabled_user = get_or_create_user(form.cleaned_data["disabled_user"])
         if test.disabled:
             test.disabled_platforms = []
-        test.failure_rate += 0.001  # prevent from being disabled again on save
+        test.failure_rate += FAILURE_RATE_EPSILON  # prevent from being restored on save
         test.save()
 
         log.info(f"{self.request.user} updated test {test.name}")

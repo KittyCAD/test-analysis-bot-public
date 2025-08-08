@@ -3,7 +3,7 @@ from datetime import timedelta
 import log
 import pytest
 
-from ..constants import DEFAULT_SUITE
+from ..constants import DEFAULT_SUITE, FAILURE_RATE_EPSILON
 from ..enums import Platform, Status
 from ..models import Project, Result, Suite, Test
 from . import EXAMPLE_TESTS, ExampleTest
@@ -176,6 +176,14 @@ def describe_test():
             test.block_rate = -1
             expect(test.update_block_rate()) == True
             expect(test.block_rate) == 0.5
+
+        @pytest.mark.django_db
+        def it_stays_above_zero_if_recent_branch_failures(expect, project: Project):
+            project.save()
+            test: Test = project.tests.create(name="my-test")
+            test.results.create(test=test, status=Status.PASSED, branch="main")
+            test.results.create(test=test, status=Status.FAILED, branch="other")
+            expect(test.failure_rate) == FAILURE_RATE_EPSILON
 
     def describe_update_average_duration():
         @pytest.mark.django_db

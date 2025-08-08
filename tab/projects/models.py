@@ -12,6 +12,7 @@ from .constants import (
     ANSI_ESCAPE,
     CHECKOUT_COMMAND,
     DEFAULT_SUITE,
+    FAILURE_RATE_EPSILON,
     get_default_branches,
 )
 from .enums import Platform, Status, Target
@@ -354,6 +355,19 @@ class Test(models.Model):
         failed = sum(result.status in Status.test_failed() for result in results)
         new = round(failed / len(results), 6)
 
+        if (
+            new < FAILURE_RATE_EPSILON
+            and self.results.exclude(branch__in=self.significant_branches)
+            .filter(
+                status__in=Status.test_failed(),
+                created_at__gte=timezone.now() - timedelta(days=1),
+            )
+            .exists()
+        ):
+            log.info(f"Passing test still has recent branch failures: {self.name}")
+            # Prevent disabled test being restored with recent branch failures
+            new = FAILURE_RATE_EPSILON
+
         if old == new:
             return False
 
@@ -421,7 +435,7 @@ class Test(models.Model):
         if self.disabled_platforms and not self.disabled:
             log.info(f"Disabling test based on platforms: {self}")
             self.disabled = True
-        if self.failure_rate == 0 and self.disabled:
+        if 0 <= self.failure_rate < FAILURE_RATE_EPSILON and self.disabled:
             log.info(f"Restoring test based on failure rate: {self}")
             self.disabled = False
             self.disabled_platforms = []
