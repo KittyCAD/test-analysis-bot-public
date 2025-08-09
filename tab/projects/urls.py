@@ -11,6 +11,11 @@ urlpatterns = [
         name="index",
     ),
     path(
+        "<path:path>/suite/<int:suite_id>",
+        views.TestsView.as_view(),
+        name="suite-tests",
+    ),
+    path(
         "<path:path>/tests/disabled/regex",
         views.DisabledTestsRegexView.as_view(),
         name="disabled-tests-regex",

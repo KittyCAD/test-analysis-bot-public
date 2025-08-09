@@ -138,6 +138,9 @@ class Suite(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
+    class Meta:
+        ordering = ["name"]
+
     def __str__(self):
         if self.name == DEFAULT_SUITE:
             return str(self.project)

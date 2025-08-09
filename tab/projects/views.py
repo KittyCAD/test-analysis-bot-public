@@ -89,11 +89,14 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
 
+        suite_id = self.kwargs.get("suite_id")
         search = self.request.GET.get("search", "").strip()
         tag = self.request.GET.get("tag")
         enabled = self.request.GET.get("enabled", "true")
 
         queryset = project.tests.select_related("suite", "last_result")
+        if suite_id:
+            queryset = queryset.filter(suite_id=suite_id)
         if search:
             queryset = queryset.filter(
                 Q(suite__name__icontains=search) | Q(name__icontains=search)
@@ -120,6 +123,8 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView
         context["project"] = project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
+        context["suites"] = project.suites.all()
+        context["suite_id"] = self.kwargs.get("suite_id")
         context["search"] = self.request.GET.get("search", "").strip()
         context["tag"] = self.request.GET.get("tag", "").strip()
         context["enabled"] = self.request.GET.get("enabled", "true")
