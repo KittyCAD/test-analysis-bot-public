@@ -3,7 +3,7 @@ import re
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -33,9 +33,16 @@ class IndexView(LoginRequiredMixin, TemplateView):
         email_domain = self.request.user.email.split("@")[1]
         try:
             organization = Organization.objects.get(email_domain=email_domain)
-            projects = Project.objects.filter(
-                repository__startswith=organization.repository_index
-            ).order_by("repository")
+            projects = (
+                Project.objects.filter(
+                    repository__startswith=organization.repository_index
+                )
+                .annotate(
+                    suites_count=Count("suites", distinct=True),
+                    tests_count=Count("tests"),
+                )
+                .order_by("repository")
+            )
         except Organization.DoesNotExist:
             organization = None
             projects = Project.objects.none()

@@ -15,7 +15,10 @@
                     <div class="card-body">
                         <div class="d-flex w-100 justify-content-between">
                             <h5 class="card-title mb-1">{{ project.name }}</h5>
-                            <small class="text-end">{{ project.tests.count }} test{{ project.tests.count|pluralize }}</small>
+                            <small class="text-end">
+                                {% if project.suites_count %}{{ project.suites_count }} suite{{ project.suites_count|pluralize }},{% endif %}
+                                {{ project.tests_count }} test{{ project.tests_count|pluralize }}
+                            </small>
                         </div>
                         <p class="card-text mb-1">
                             <small class="text-muted">{{ project.repository }}</small>
