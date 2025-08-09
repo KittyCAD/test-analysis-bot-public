@@ -11,11 +11,6 @@ urlpatterns = [
         name="index",
     ),
     path(
-        "<path:path>/suite/<int:suite_id>",
-        views.TestsView.as_view(),
-        name="suite-tests",
-    ),
-    path(
         "<path:path>/tests/disabled/regex",
         views.DisabledTestsRegexView.as_view(),
         name="disabled-tests-regex",
@@ -36,6 +31,11 @@ urlpatterns = [
         name="results",
     ),
     path(
+        "<path:path>/results/suite/<int:suite_id>",
+        views.ResultsView.as_view(),
+        name="suite-results",
+    ),
+    path(
         "<path:path>/results/regex",
         views.ResultsRegexView.as_view(),
         name="results-regex",
@@ -44,6 +44,11 @@ urlpatterns = [
         "<path:path>/metrics",
         views.MetricsView.as_view(),
         name="metrics",
+    ),
+    path(
+        "<path:path>/suite/<int:suite_id>",
+        views.TestsView.as_view(),
+        name="suite-tests",
     ),
     path(
         "<path:path>",

@@ -259,6 +259,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         )
 
         branch = self.request.GET.get("branch", project.default_branch)
+        suite_id = self.kwargs.get("suite_id")
         search = self.request.GET.get("search")
         platform = self.request.GET.get("platform")
         tag = self.request.GET.get("tag")
@@ -270,6 +271,8 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         latest_commit = queryset.values_list("commit", flat=True).first()
         queryset = queryset.filter(commit=latest_commit)
 
+        if suite_id:
+            queryset = queryset.filter(suite_id=suite_id)
         if search:
             queryset = queryset.filter(
                 Q(suite__name__icontains=search) | Q(test__name__icontains=search)
@@ -300,6 +303,8 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         context["branch"] = branch
         context["merge_url"] = self._get_merge_url(project, branch)
         context["branches"] = self._get_active_branches(project)
+        context["suites"] = project.suites.all()
+        context["suite_id"] = self.kwargs.get("suite_id")
         context["search"] = self.request.GET.get("search", "").strip()
         context["platform"] = self.request.GET.get("platform", "").strip()
         context["tag"] = self.request.GET.get("tag", "").strip()
@@ -321,6 +326,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
                 test__project=project,
                 branch=branch,
             )
+            .select_related("test__project")
             .order_by("-created_at")
             .first()
         )
