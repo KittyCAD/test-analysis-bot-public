@@ -363,7 +363,7 @@ class Test(models.Model):
             and self.results.exclude(branch__in=self.significant_branches)
             .filter(
                 status__in=Status.test_failed(),
-                created_at__gte=timezone.now() - timedelta(days=1),
+                created_at__gte=timezone.now() - timedelta(days=3),
             )
             .exists()
         ):
