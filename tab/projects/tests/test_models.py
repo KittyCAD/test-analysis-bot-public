@@ -274,6 +274,23 @@ def describe_result():
                 result.run_url
             ) == "https://github.com/foo/bar/actions/runs/123?pr=456"
 
+    def describe_new_failure():
+        def is_true_for_failure_on_rarely_blocking_test(expect):
+            test = Test(project=Project(), name="test", block_rate=0.005)
+            result = Result(test=test, status=Status.FAILED)
+            expect(result.new_failure) == True
+
+    def describe_new_fix():
+        def is_true_for_pass_on_often_blocking_test(expect):
+            test = Test(project=Project(), name="test", failure_rate=0.51)
+            result = Result(test=test, status=Status.PASSED)
+            expect(result.new_fix) == True
+
+        def is_always_false_for_ignored_failures(expect):
+            test = Test(project=Project(), name="test", failure_rate=0.51)
+            result = Result(test=test, status=Status.DISABLED)
+            expect(result.new_fix) == False
+
     def describe_finalize():
         @pytest.mark.django_db
         def it_demotes_recent_results_for_same_commit_on_main(expect):
