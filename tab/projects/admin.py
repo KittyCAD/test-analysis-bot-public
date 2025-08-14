@@ -90,6 +90,7 @@ class SuiteAdmin(admin.ModelAdmin):
         "id",
         "project",
         "name",
+        "parent",
         "tests_count",
         "command",
         "created_at",
@@ -116,6 +117,10 @@ class SuiteAdmin(admin.ModelAdmin):
 
     actions = [reset_test_origins]
 
+    raw_id_fields = (
+        "project",
+        "parent",
+    )
     readonly_fields = (
         "tests_count",
         "created_at",

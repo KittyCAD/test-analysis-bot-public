@@ -93,6 +93,13 @@ class Suite(models.Model):
         Project, on_delete=models.CASCADE, related_name="suites"
     )
     name = models.CharField(max_length=100, db_index=True)
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="children",
+    )
 
     supports_override = models.BooleanField(
         default=True,
