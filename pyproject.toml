@@ -1,10 +1,10 @@
 [project]
 
 name = "test-analysis-bot"
-version = "0.0"
+version = "0.1"
 description = "Keep tabs on unreliable tests."
-authors = [{ name = "Jace Browning", email = "jace@zoo.dev" }]
 readme = "README.md"
+license = "MIT"
 
 requires-python = "^3.13"
 
