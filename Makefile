@@ -35,14 +35,12 @@ doctor: ## Check for required system dependencies
 # PROJECT DEPENDENCIES ########################################################
 
 VIRTUAL_ENV ?= .venv
-
-BACKEND_DEPENDENCIES = $(VIRTUAL_ENV)/.poetry-$(shell bin/checksum pyproject.toml poetry.lock)
-FRONTEND_DEPENDENCIES =
+DEPENDENCIES = $(VIRTUAL_ENV)/.poetry-$(shell bin/checksum pyproject.toml poetry.lock)
 
 .PHONY: install
-install: $(BACKEND_DEPENDENCIES) $(FRONTEND_DEPENDENCIES) ## Install project dependencies
+install: $(DEPENDENCIES) ## Install project dependencies
 
-$(BACKEND_DEPENDENCIES): poetry.lock
+$(DEPENDENCIES): poetry.lock
 	@ mkdir -p staticfiles
 	@ poetry config virtualenvs.in-project true
 	poetry install --without=docs
@@ -54,15 +52,10 @@ poetry.lock: pyproject.toml
 	@ touch $@
 endif
 
-$(FRONTEND_DEPENDENCIES):
-	# TODO: Install frontend dependencies if applicable
-	@ touch $@
-
 .PHONY: clean
 clean: ## Delete all generated and temporary files
 	rm -rf .cache .coverage htmlcov staticfiles test-results
 	rm -rf $(VIRTUAL_ENV)
-	# TODO: Delete compiled frontend dependencies if applicable
 
 # RUNTIME DEPENDENCIES ########################################################
 
@@ -87,26 +80,17 @@ reset: install ## Database | Create a new database, migrate, and seed it
 
 # VALIDATION TARGETS ##########################################################
 
-PYTHON_PACKAGES := config $(PROJECT)
+PACKAGES := config $(PROJECT)
 FAILURES := .cache/pytest/v/cache/lastfailed
 
 .PHONY: check
-check: check-backend ## Run static analysis
+check: install format ## Run static analysis
+	poetry run mypy $(PACKAGES) tests
 
 .PHONY: format
-format: format-backend
-
-.PHONY: check-backend
-check-backend: install format-backend
-	poetry run mypy $(PYTHON_PACKAGES) tests
-
-.PHONY: check-frontend
-check-frontend: install
-	# TODO: Run frontend linters if applicable
-
-format-backend: install
-	poetry run isort $(PYTHON_PACKAGES) tests
-	poetry run black $(PYTHON_PACKAGES) tests
+format: install
+	poetry run isort $(PACKAGES) tests
+	poetry run black $(PACKAGES) tests
 	poetry run djlint --reformat templates
 
 ifdef DISABLE_COVERAGE
@@ -114,40 +98,30 @@ PYTEST_OPTIONS := --no-cov --disable-warnings
 endif
 
 .PHONY: test
-test: test-backend test-frontend ## Run all tests
+test: test-all ## Run all tests
 
-.PHONY: test-backend
-test-backend: test-backend-all
-
-.PHONY: test-backend-unit
-test-backend-unit: install
+.PHONY: test-unit
+test-unit: install
 	@ ( mv $(FAILURES) $(FAILURES).bak || true ) > /dev/null 2>&1
-	poetry run pytest $(PYTHON_PACKAGES) --markers="not django_db" $(PYTEST_OPTIONS)
+	poetry run pytest $(PACKAGES) --markers="not django_db" $(PYTEST_OPTIONS)
 	@ ( mv $(FAILURES).bak $(FAILURES) || true ) > /dev/null 2>&1
 ifndef DISABLE_COVERAGE
 	poetry run coveragespace update unit
 endif
 
-.PHONY: test-backend-integration
-test-backend-integration: install
+.PHONY: test-integration
+test-integration: install
 	@ if test -e $(FAILURES); then poetry run pytest tests --last-failed; fi
 	@ rm -rf $(FAILURES)
 	poetry run pytest tests $(PYTEST_OPTIONS)
 	poetry run coveragespace update integration
 
-.PHONY: test-backend-all
-test-backend-all: install
-	@ if test -e $(FAILURES); then poetry run pytest $(PYTHON_PACKAGES) tests --last-failed; fi
+.PHONY: test-all
+test-all: install
+	@ if test -e $(FAILURES); then poetry run pytest $(PACKAGES) tests --last-failed; fi
 	@ rm -rf $(FAILURES)
-	poetry run pytest $(PYTHON_PACKAGES) tests $(PYTEST_OPTIONS)
+	poetry run pytest $(PACKAGES) tests $(PYTEST_OPTIONS)
 	poetry run coveragespace update overall
-
-.PHONY: test-frontend
-test-frontend: test-frontend-unit
-
-.PHONY: test-frontend-unit
-test-frontend-unit: install
-	# TODO: Run frontend tests if applicable
 
 .PHONY: test-e2e
 test-e2e: install
