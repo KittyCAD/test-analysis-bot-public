@@ -1,1 +1,4 @@
-TESTS_TO_UPDATE_CACHE_KEY = "tests_to_update"
+from datetime import timedelta
+
+TESTS_CACHE_KEY = "api:tests"
+TESTS_CACHE_TIMEOUT = timedelta(hours=24).total_seconds()

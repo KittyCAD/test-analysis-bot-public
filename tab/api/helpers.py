@@ -11,7 +11,7 @@ from tab.projects.enums import Status
 from tab.projects.models import Project, Result, Suite, Test
 from tab.projects.types import Health
 
-from .constants import TESTS_TO_UPDATE_CACHE_KEY
+from .constants import TESTS_CACHE_KEY, TESTS_CACHE_TIMEOUT
 
 
 def parse_junit_xml(
@@ -146,9 +146,9 @@ def parse_junit_xml(
 
     # Store IDs to call save() logic via cron since bulk_create() skips this
     test_ids = set(result.test.id for result in results)
-    if existing_test_ids := cache.get(TESTS_TO_UPDATE_CACHE_KEY):
+    if existing_test_ids := cache.get(TESTS_CACHE_KEY):
         test_ids |= set(existing_test_ids)
-    cache.set(TESTS_TO_UPDATE_CACHE_KEY, test_ids, timeout=60 * 60 * 24)  # 24 hours
+    cache.set(TESTS_CACHE_KEY, test_ids, timeout=TESTS_CACHE_TIMEOUT)
 
     return results
 

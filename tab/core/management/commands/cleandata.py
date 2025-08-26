@@ -4,7 +4,7 @@ from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from tab.api.constants import TESTS_TO_UPDATE_CACHE_KEY
+from tab.api.constants import TESTS_CACHE_KEY
 from tab.projects.models import Project, Result, Test
 
 CHUNK_SIZE = 1000
@@ -98,8 +98,8 @@ class Command(BaseCommand):
         return deleted
 
     def update_bulk_tests(self):
-        if test_ids := cache.get(TESTS_TO_UPDATE_CACHE_KEY):
-            cache.delete(TESTS_TO_UPDATE_CACHE_KEY)
+        if test_ids := cache.get(TESTS_CACHE_KEY):
+            cache.delete(TESTS_CACHE_KEY)
             tests = Test.objects.filter(id__in=test_ids)
             self.stdout.write(
                 self.style.MIGRATE_LABEL(f"Processing {tests.count()} tests")
