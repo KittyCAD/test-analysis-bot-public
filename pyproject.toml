@@ -25,7 +25,7 @@ django-extensions = "*"
 django-tables2 = "^2.7.5"
 
 # API
-django-ninja = "^1.4.0"
+django-ninja = "^1.4.3"
 
 # Storage
 dj-database-url = "*"
