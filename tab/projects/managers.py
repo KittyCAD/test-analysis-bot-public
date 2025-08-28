@@ -78,7 +78,7 @@ class ResultManager(models.Manager):
         total = results.count()
         passed = passed_results.count()
         failed = failed_results.count()
-        pending = expected_passed - passed
+        pending = max(0, expected_passed - passed)
 
         if first_result := results.order_by("created_at").first():
             age = timezone.now() - first_result.created_at  # type: ignore[attr-defined]
