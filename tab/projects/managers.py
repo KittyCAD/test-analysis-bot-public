@@ -78,6 +78,7 @@ class ResultManager(models.Manager):
         total = results.count()
         passed = passed_results.count()
         failed = failed_results.count()
+        pending = expected_passed - passed
 
         if first_result := results.order_by("created_at").first():
             age = timezone.now() - first_result.created_at  # type: ignore[attr-defined]
@@ -88,7 +89,7 @@ class ResultManager(models.Manager):
             f"{passed} of {expected_passed} passing, "
             f"started {round(age.total_seconds(), 2)} seconds ago"
         )
-        if passed < expected_passed and age < PENDING_THRESHOLD:
+        if pending and age < PENDING_THRESHOLD:
             state = "pending"
         elif failed:
             state = "failure"
@@ -99,5 +100,8 @@ class ResultManager(models.Manager):
         if new_failed := sum(1 for r in failed_results if r.new_failure):  # type: ignore
             s = "" if new_failed == 1 else "s"
             description += f", {new_failed} new failure{s}"
+        if state == "pending":
+            s = "" if pending == 1 else "s"
+            description += f", {pending} more result{s} expected"
 
         return Health(total=total, state=state, description=description)
