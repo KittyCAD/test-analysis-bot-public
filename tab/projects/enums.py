@@ -68,7 +68,7 @@ class Status(models.TextChoices):
     @classmethod
     def test_failed(cls):
         """Statuses that indicate a test has failed."""
-        return {cls.FAILED, cls.XPASSED, cls.ERROR, cls.TIMEDOUT, cls.DISABLED}
+        return {cls.FAILED, cls.XPASSED, cls.ERROR, cls.DISABLED}
 
     @classmethod
     def test_disabled(cls):
