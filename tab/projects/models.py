@@ -655,8 +655,7 @@ class Result(models.Model):
                 results = results.filter(
                     created_at__gte=self.created_at - timedelta(minutes=45)
                 )
-            if count := results.update(final=False):
-                log.debug(f"Demoted {count} results for {self.test}")
+            results.update(final=False)
 
     def save(self, *args, **kwargs):
         self.normalize()

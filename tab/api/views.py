@@ -145,8 +145,15 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
     if tests := request.FILES.get("tests"):
         content = tests.read().decode("utf-8")
         metadata = BulkResultRequest.get_metadata(request.POST.dict())
+        deferred = content.count("</testcase>") > 500
         results = parse_junit_xml(
-            content, project, suite, payload.branch, payload.commit, metadata
+            content,
+            project,
+            suite,
+            payload.branch,
+            payload.commit,
+            metadata,
+            deferred=deferred,
         )
         return 200, BulkResultResponse(
             suite=unidecode(str(suite)),

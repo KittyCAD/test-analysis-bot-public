@@ -21,13 +21,16 @@ def parse_junit_xml(
     branch: str,
     commit: str,
     metadata: dict,
+    deferred: bool = False,
 ) -> list[Result]:
     results = []
 
-    tests_data_to_create: list[dict] = []
-    results_data_to_create: list[dict] = []
     xml = ET.fromstring(content)
     root_name = xml.get("name", "")
+
+    tests_data_to_create: list[dict] = []
+    results_data_to_create: list[dict] = []
+
     for testsuite in xml.findall(".//testsuite"):
         suite_name = testsuite.get("name", "")
         for testcase in testsuite.findall("testcase"):
@@ -64,91 +67,133 @@ def parse_junit_xml(
                     name_components.append(value)
             name = " › ".join(name_components)
 
-            # Prepare bulk data
-            test_data = {
-                "project": project,
-                "name": name,
-                "suite": suite,
-                "original_branch": branch,
-                "original_commit": commit,
-                "metadata": metadata,
-            }
-            result_data = {
-                "test_name": name,
-                "suite": suite,
-                "branch": branch,
-                "commit": commit,
-                "status": status,
-                "duration": duration,
-                "message": message,
-                "metadata": metadata,
-            }
-            tests_data_to_create.append(test_data)
-            results_data_to_create.append(result_data)
+            if deferred:
+                # Prepare bulk data
+                test_data = {
+                    "project": project,
+                    "name": name,
+                    "suite": suite,
+                    "original_branch": branch,
+                    "original_commit": commit,
+                    "metadata": metadata,
+                }
+                result_data = {
+                    "test_name": name,
+                    "suite": suite,
+                    "branch": branch,
+                    "commit": commit,
+                    "status": status,
+                    "duration": duration,
+                    "message": message,
+                    "metadata": metadata,
+                }
+                tests_data_to_create.append(test_data)
+                results_data_to_create.append(result_data)
+            else:
+                # Create or update test
+                test, created = Test.objects.get_or_create(
+                    project=project,
+                    name=name,
+                    defaults=dict(
+                        suite=suite,
+                        original_branch=branch,
+                        original_commit=commit,
+                        metadata=metadata,
+                    ),
+                )
+                if not all([test.suite, test.original_branch, test.original_commit]):
+                    test.suite = test.suite or suite
+                    test.original_branch = test.original_branch or branch
+                    test.original_commit = test.original_commit or commit
+                    test.metadata = test.metadata or metadata
+                    test.save()
+                    log.info(f"Updated test: {test}")
+                elif created:
+                    log.info(f"Created test: {test}")
+                else:
+                    log.info(f"Found test: {test}")
 
-    existing_tests: dict[str, Test] = {}
-    for test in Test.objects.filter(
-        project=project, name__in=[t["name"] for t in tests_data_to_create]
-    ):
-        existing_tests[test.name] = test
-    log.info(f"Bulk tests found: {len(existing_tests)}")
+                # Create result
+                result = Result.objects.create(
+                    test=test,
+                    suite=suite,
+                    branch=branch,
+                    commit=commit,
+                    status=status,
+                    duration=duration,
+                    message=message,
+                    metadata=metadata,
+                )
+                log.info(f"Created result: {result}")
+                results.append(result)
 
-    # Bulk update tests
-    tests_to_update: list[Test] = []
-    for test in existing_tests.values():
-        if not all([test.suite, test.original_branch, test.original_commit]):
-            test.suite = test.suite or suite
-            test.original_branch = test.original_branch or branch
-            test.original_commit = test.original_commit or commit
-            test.metadata = test.metadata or metadata
-            tests_to_update.append(test)
-    log.info(f"Bulk tests to update: {len(tests_to_update)}")
-    if tests_to_update:
-        Test.objects.bulk_update(
-            tests_to_update, ["suite", "original_branch", "original_commit", "metadata"]
-        )
-
-    # Bulk create tests
-    tests_to_create: list[Test] = []
-    for test_data in tests_data_to_create:
-        if test_data["name"] not in existing_tests:
-            tests_to_create.append(Test(**test_data))
-        else:
-            test = existing_tests[test_data["name"]]  # type: ignore[index]
-            tests_to_update.append(test)
-    log.info(f"Bulk tests to create: {len(tests_to_create)}")
-    if tests_to_create:
-        Test.objects.bulk_create(tests_to_create)
-        for test in tests_to_create:
+    if deferred:
+        # Bulk operations
+        existing_tests: dict[str, Test] = {}
+        for test in Test.objects.filter(
+            project=project, name__in=[t["name"] for t in tests_data_to_create]
+        ):
             existing_tests[test.name] = test
+        log.info(f"Found tests: {len(existing_tests)}")
 
-    # Bulk create results
-    results_to_create: list[Result] = []
-    for result_data_item in results_data_to_create:
-        test = existing_tests[result_data_item["test_name"]]
-        result = Result(
-            test=test,
-            suite=result_data_item["suite"],
-            branch=result_data_item["branch"],
-            commit=result_data_item["commit"],
-            status=result_data_item["status"],
-            duration=result_data_item["duration"],
-            message=result_data_item["message"],
-            metadata=result_data_item["metadata"],
-        )
-        result.normalize()
-        results_to_create.append(result)
+        # Bulk update tests
+        tests_to_update: list[Test] = []
+        for test in existing_tests.values():
+            if not all([test.suite, test.original_branch, test.original_commit]):
+                test.suite = test.suite or suite
+                test.original_branch = test.original_branch or branch
+                test.original_commit = test.original_commit or commit
+                test.metadata = test.metadata or metadata
+                tests_to_update.append(test)
 
-    log.info(f"Bulk results to create: {len(results_to_create)}")
-    if results_to_create:
-        Result.objects.bulk_create(results_to_create)
-        results.extend(results_to_create)
+        if tests_to_update:
+            Test.objects.bulk_update(
+                tests_to_update,
+                ["suite", "original_branch", "original_commit", "metadata"],
+            )
+            log.info(f"Updated tests: {len(tests_to_update)}")
 
-    # Store IDs to call save() logic via cron since bulk_create() skips this
-    test_ids = set(result.test.id for result in results)
-    if existing_test_ids := cache.get(TESTS_CACHE_KEY):
-        test_ids |= set(existing_test_ids)
-    cache.set(TESTS_CACHE_KEY, test_ids, timeout=TESTS_CACHE_TIMEOUT)
+        # Bulk create tests
+        tests_to_create: list[Test] = []
+        for test_data in tests_data_to_create:
+            if test_data["name"] not in existing_tests:
+                tests_to_create.append(Test(**test_data))
+            else:
+                test = existing_tests[test_data["name"]]  # type: ignore[index]
+                tests_to_update.append(test)
+        if tests_to_create:
+            Test.objects.bulk_create(tests_to_create)
+            for test in tests_to_create:
+                existing_tests[test.name] = test
+            log.info(f"Created tests: {len(tests_to_create)}")
+
+        # Bulk create results
+        results_to_create: list[Result] = []
+        for result_data_item in results_data_to_create:
+            test = existing_tests[result_data_item["test_name"]]
+            result = Result(
+                test=test,
+                suite=result_data_item["suite"],
+                branch=result_data_item["branch"],
+                commit=result_data_item["commit"],
+                status=result_data_item["status"],
+                duration=result_data_item["duration"],
+                message=result_data_item["message"],
+                metadata=result_data_item["metadata"],
+            )
+            result.normalize()
+            results_to_create.append(result)
+
+        if results_to_create:
+            Result.objects.bulk_create(results_to_create)
+            results.extend(results_to_create)
+            log.info(f"Created results: {len(results_to_create)}")
+
+        # Store IDs to call save() logic via cron since bulk_create() skips this
+        test_ids = set(result.test.id for result in results)
+        if existing_test_ids := cache.get(TESTS_CACHE_KEY):
+            test_ids |= set(existing_test_ids)
+        cache.set(TESTS_CACHE_KEY, test_ids, timeout=TESTS_CACHE_TIMEOUT)
 
     return results
 

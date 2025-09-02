@@ -126,6 +126,30 @@ test-all: install
 .PHONY: test-e2e
 test-e2e: install
 	mkdir -p test-results
+	cp tab/api/tests/files/junit.xml test-results/junit.xml
+	@ echo
+
+	TAB_API_URL=$${TAB_API_URL:-http://localhost:8000} \
+	TAB_API_KEY=$${TAB_API_KEY:-localhost} \
+	GITHUB_SERVER_URL=https://github.com \
+	GITHUB_REPOSITORY=KittyCAD/modeling-app \
+	GITHUB_RUN_ID=999999 \
+	GITHUB_HEAD_REF=tab-test \
+	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_PR_NUMBER=9999 \
+	time ./docs/examples/junit/upload-results.sh || true
+	@ echo
+
+	TAB_API_URL=$${TAB_API_URL:-http://localhost:8000} \
+	TAB_API_KEY=$${TAB_API_KEY:-localhost} \
+	GITHUB_SERVER_URL=https://github.com \
+	GITHUB_REPOSITORY=KittyCAD/modeling-app \
+	GITHUB_RUN_ID=999999 \
+	GITHUB_HEAD_REF=main \
+	CI_COMMIT_SHA=$$(date +%m-%d) \
+	time ./docs/examples/junit/upload-results.sh || true
+	@ echo
+
 	cp tests/files/junit.xml test-results/junit.xml
 	@ echo
 
