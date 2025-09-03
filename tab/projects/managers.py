@@ -102,9 +102,9 @@ class ResultManager(models.Manager):
             description += f", {new_failed} new failure{s}"
         if state == "pending":
             if pending >= 1000:
-                description += f", {pending/1000:.1f}k more results expected"
+                description += f", {pending/1000:.1f}k results pending"
             else:
                 s = "" if pending == 1 else "s"
-                description += f", {pending} more result{s} expected"
+                description += f", {pending} result{s} pending"
 
         return Health(total=total, state=state, description=description)

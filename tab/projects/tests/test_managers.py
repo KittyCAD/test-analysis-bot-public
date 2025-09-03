@@ -97,7 +97,7 @@ def describe_result_manager():
             expect(health.state) == "pending"
             expect(
                 health.description
-            ) == "2 of 3 passing, 1 new failure, 1 more result expected"
+            ) == "2 of 3 passing, 1 new failure, 1 result pending"
 
             # Simulate results being old enough to no longer be pending
             result = Result.objects.filter(branch="my-branch").first()
