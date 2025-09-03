@@ -97,14 +97,14 @@ class ResultManager(models.Manager):
             state = "success"
 
         description = f"{passed} of {total} passing"
-        if new_failed := sum(1 for r in failed_results if r.new_failure):  # type: ignore
-            s = "" if new_failed == 1 else "s"
-            description += f", {new_failed} new failure{s}"
         if state == "pending":
             if pending >= 1000:
-                description += f", {pending/1000:.1f}k results pending"
+                description += f", {pending/1000:.1f}k more results expected"
             else:
                 s = "" if pending == 1 else "s"
-                description += f", {pending} result{s} pending"
+                description += f", {pending} more result{s} expected"
+        elif new_failed := sum(1 for r in failed_results if r.new_failure):  # type: ignore
+            s = "" if new_failed == 1 else "s"
+            description += f", {new_failed} new failure{s}"
 
         return Health(total=total, state=state, description=description)
