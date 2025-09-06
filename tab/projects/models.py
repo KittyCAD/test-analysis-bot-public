@@ -642,20 +642,14 @@ class Result(models.Model):
 
     def finalize(self):
         if self.final:
-            results = Result.objects.filter(
+            Result.objects.filter(
                 test=self.test,
                 commit=self.commit,
                 target=self.target,
                 platform=self.platform,
                 final=True,
                 created_at__lt=self.created_at,
-            ).exclude(id=self.id)
-            if self.branch in self.test.project.default_branches:
-                # Treat hourly reruns as unique results in the history
-                results = results.filter(
-                    created_at__gte=self.created_at - timedelta(minutes=45)
-                )
-            results.update(final=False)
+            ).exclude(id=self.id).update(final=False)
 
     def save(self, *args, **kwargs):
         self.normalize()

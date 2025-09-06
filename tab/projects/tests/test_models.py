@@ -293,39 +293,11 @@ def describe_result():
 
     def describe_finalize():
         @pytest.mark.django_db
-        def it_demotes_recent_results_for_same_commit_on_main(expect):
+        def it_demotes_results_for_same_commit(expect):
             project = Project.objects.create(repository="https://github.com/foo/bar")
             test = project.tests.create(name="my-test")
 
-            # Create a result from an hour ago
-            result = test.results.create(
-                test=test, status=Status.PASSED, branch="main", commit="a1"
-            )
-            result.created_at = result.created_at - timedelta(hours=1)
-            result.save()
-            # Create a result from now with a rerun
-            test.results.create(
-                test=test, status=Status.FAILED, branch="main", commit="a1"
-            )
-            test.results.create(
-                test=test, status=Status.PASSED, branch="main", commit="a1"
-            )
-
-            # Expect one final result from each hourly run
-            expect(test.results.filter(final=True).count()) == 2
-
-        @pytest.mark.django_db
-        def it_demotes_all_results_for_same_commit_on_branches(expect):
-            project = Project.objects.create(repository="https://github.com/foo/bar")
-            test = project.tests.create(name="my-test")
-
-            # Create a result from an hour ago
-            result = test.results.create(
-                test=test, status=Status.PASSED, branch="my-branch", commit="a1"
-            )
-            result.created_at = result.created_at - timedelta(hours=1)
-            result.save()
-            # Create a result from now with a rerun
+            # Simulate a test that was rerun
             test.results.create(
                 test=test, status=Status.FAILED, branch="my-branch", commit="a1"
             )
