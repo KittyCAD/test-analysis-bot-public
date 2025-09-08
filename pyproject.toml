@@ -32,9 +32,12 @@ dj-database-url = "*"
 psycopg2-binary = "^2.9.1"
 redis = "^6.4.0"
 
+# Integrations
+pygithub = "^2.8.1"
+slack-sdk = "^3.36.0"
+
 # Utilities
 minilog = "*"
-pygithub = "^2.8.1"
 unidecode = "^1.4.0"
 
 # Deployment

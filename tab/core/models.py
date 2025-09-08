@@ -18,6 +18,9 @@ class Organization(models.Model):
     github_app_private_key = models.TextField(
         null=True, blank=True, verbose_name="GitHub App private key"
     )
+    slack_bot_token = models.CharField(
+        max_length=100, blank=True, verbose_name="Slack bot token"
+    )
 
     key = models.CharField(
         max_length=32, unique=True, default=generate_key, verbose_name="API key"

@@ -8,6 +8,8 @@ from tab.projects.models import Test
 from .constants import ALERT_CACHE_KEY, ALERT_CACHE_TIMEOUT, DELTA_THRESHOLD
 from .managers import HistoryManager
 
+from .helpers import send_slack_message
+
 
 class History(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="history")
@@ -47,8 +49,8 @@ class History(models.Model):
             return False
 
         # TODO: Send alerts to subscribed channels
-        log.warning(
-            f"Test failure rate increased by {self.test.failure_rate_delta:.1%} today: {self.test}"
-        )
+        message = f"Test failure rate increased by {self.test.failure_rate_delta:.1%} today: {self.test}"
+        log.warning(message)
+        send_slack_message("#test-analysis-bot", "[WIP] " + message)
         cache.set(key, True, timeout=ALERT_CACHE_TIMEOUT)
         return True
