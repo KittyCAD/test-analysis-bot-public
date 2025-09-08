@@ -34,7 +34,7 @@ redis = "^6.4.0"
 
 # Utilities
 minilog = "*"
-pygithub = "^2.6.1"
+pygithub = "^2.8.1"
 unidecode = "^1.4.0"
 
 # Deployment
