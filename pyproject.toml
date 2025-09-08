@@ -30,7 +30,7 @@ django-ninja = "^1.4.3"
 # Storage
 dj-database-url = "*"
 psycopg2-binary = "^2.9.1"
-redis = "^4.0.2"
+redis = "^6.4.0"
 
 # Utilities
 minilog = "*"
