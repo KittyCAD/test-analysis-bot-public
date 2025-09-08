@@ -12,9 +12,7 @@ def send_slack_message(channel: str, text: str):
     client = WebClient(token=organization.slack_bot_token)
     channel_id = _get_channel_id_by_name(client, channel)
     try:
-        client.chat_postMessage(
-            channel=channel_id, text=text, icon_emoji=":test-analysis-bot:"
-        )
+        client.chat_postMessage(channel=channel_id, text=text)
         log.info(f"Slack message sent to {channel}: {text}")
     except SlackApiError as e:
         log.error(f"Slack error: {e.response['error']}")
