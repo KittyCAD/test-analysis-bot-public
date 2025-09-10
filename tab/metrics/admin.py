@@ -1,6 +1,7 @@
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 
-from .models import History
+from .models import Alert, History, Team
 
 
 @admin.register(History)
@@ -29,3 +30,55 @@ class HistoryAdmin(admin.ModelAdmin):
         "block_rate",
         "average_duration",
     )
+
+
+@admin.register(Team)
+class TeamAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "organization",
+        "slack_channel_name",
+    )
+    search_fields = (
+        "organization__name",
+        "slack_channel_name",
+    )
+
+
+@admin.register(Alert)
+class AlertAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "history",
+        "_teams",
+        "_message",
+        "created_at",
+    )
+    search_fields = (
+        "history__test__project__repository",
+        "history__test__name",
+    )
+
+    @admin.display(description="Teams")
+    def _teams(self, alert: Alert):
+        return ", ".join([team.slack_channel_name for team in alert.teams.all()])
+
+    @admin.display(description="Message")
+    def _message(self, alert: Alert):
+        return mark_safe(alert.message.html)
+
+    @admin.action(description="Send selected alerts (test)")
+    def send(self, request, queryset):
+        count = 0
+        alert: Alert
+        for alert in queryset:
+            count += alert.send(test=True)
+        s = "" if count == 1 else "s"
+        self.message_user(
+            request,
+            f"Successfully sent {count} test alert{s}.",
+        )
+
+    actions = [send]
+
+    raw_id_fields = ("history",)
