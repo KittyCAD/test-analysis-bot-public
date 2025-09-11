@@ -6,7 +6,7 @@ from django.urls import reverse
 import log
 
 from tab.core.models import Organization
-from tab.projects.models import Test
+from tab.projects.models import Project, Suite, Test
 
 from .constants import ALERT_CACHE_KEY, ALERT_CACHE_TIMEOUT, DELTA_THRESHOLD
 from .helpers import send_slack_message
@@ -23,7 +23,7 @@ class History(models.Model):
 
     timestamp = models.DateTimeField(auto_now_add=True)
 
-    objects = HistoryManager()
+    objects: HistoryManager = HistoryManager()
 
     class Meta:
         ordering = ["-timestamp"]
@@ -37,9 +37,9 @@ class History(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.alert()
+        self.create_alert()
 
-    def alert(self) -> bool:
+    def create_alert(self) -> bool:
         if not self.test.enabled:
             return False
 
@@ -51,11 +51,7 @@ class History(models.Model):
             log.debug(f"Skipped redundant alert: {self.test}")
             return False
 
-        # TODO: Match alert to subscribed teams
         alert = Alert.objects.create(history=self)
-        alert.teams.set(Team.objects.filter(slack_channel_name__contains="test"))
-        alert.save()
-
         log.warning(alert.message)
         alert.send()
         cache.set(key, True, timeout=ALERT_CACHE_TIMEOUT)
@@ -80,11 +76,35 @@ class Team(models.Model):
         super().save(*args, **kwargs)
 
 
-class Alert(models.Model):
-    history = models.ForeignKey(
-        History, on_delete=models.CASCADE, related_name="alerts"
+class Subscription(models.Model):
+    team = models.ForeignKey(
+        Team, on_delete=models.CASCADE, related_name="subscriptions"
     )
-    teams = models.ManyToManyField(Team, related_name="alerts")
+    primary = models.BooleanField(default=True)
+
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="subscriptions",
+        null=True,
+        blank=True,
+    )
+    suite = models.ForeignKey(
+        Suite,
+        on_delete=models.CASCADE,
+        related_name="subscriptions",
+        null=True,
+        blank=True,
+    )
+    test = models.CharField(max_length=500, null=True, blank=True)
+
+
+class Alert(models.Model):
+    history = models.OneToOneField(
+        History, on_delete=models.CASCADE, related_name="alert"
+    )
+
+    url = models.URLField(null=True, blank=True, verbose_name="URL")
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -106,11 +126,25 @@ class Alert(models.Model):
             ),
         )
 
+    @property
+    def teams(self) -> list[Team]:
+        # TODO: Match by specificity first
+        # TODO: Report message URL to secondary teams
+        subscriptions = Subscription.objects.filter(
+            primary=True, project=self.history.test.project
+        )
+        return [subscription.team for subscription in subscriptions]
+
     def send(self, *, test: bool = False) -> int:
         count = 0
         message = self.message
         message.text = f"[TEST] {message.text}" if test else message.text
-        for team in self.teams.all():
-            if send_slack_message(team.organization, team.slack_channel_name, message):
+        for team in self.teams:
+            if url := send_slack_message(
+                team.organization, team.slack_channel_name, message
+            ):
                 count += 1
+                if not self.url:
+                    self.url = url
+                    self.save()
         return count

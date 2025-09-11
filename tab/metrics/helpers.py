@@ -9,30 +9,32 @@ from .types import Message
 
 def send_slack_message(
     organization: Organization, channel: str, message: Message
-) -> bool:
+) -> str | None:
     if not organization.slack_bot_token:
         log.warning(f"{organization} has no Slack bot token")
-        return False
+        return None
 
     client = WebClient(token=organization.slack_bot_token)
     channel_id = _get_channel_id(client, channel)
     if not channel_id:
         log.warning(f"{organization} Slack channel not found: {channel}")
-        return False
+        return None
 
     try:
-        client.chat_postMessage(channel=channel_id, text=message.mrkdwn)
+        response = client.chat_postMessage(channel=channel_id, text=message.mrkdwn)
+        log.debug(f"{organization} Slack message sent to {channel}: {message}")
+        response = client.chat_getPermalink(
+            channel=channel_id, message_ts=response["ts"]
+        )
+        return response["permalink"]
     except SlackApiError as e:
         log.error(f"{organization} Slack message not sent: {e.response['error']}")
-        return False
-
-    log.debug(f"{organization} Slack message sent to {channel}: {message}")
-    return True
+        return None
 
 
-def _get_channel_id(client: WebClient, name: str) -> str:
+def _get_channel_id(client: WebClient, name: str) -> str | None:
     result = client.conversations_list()
     for channel in result["channels"]:
         if channel["name"] == name.lstrip("#"):
             return channel["id"]
-    return ""
+    return None
