@@ -66,6 +66,7 @@ class Team(models.Model):
 
     class Meta:
         ordering = ["organization", "slack_channel_name"]
+        unique_together = ["organization", "slack_channel_name"]
 
     def __str__(self):
         return f"{self.organization} › {self.slack_channel_name}"
@@ -80,7 +81,6 @@ class Subscription(models.Model):
     team = models.ForeignKey(
         Team, on_delete=models.CASCADE, related_name="subscriptions"
     )
-    primary = models.BooleanField(default=True)
 
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="subscriptions"
@@ -93,6 +93,14 @@ class Subscription(models.Model):
         blank=True,
     )
     test = models.CharField(max_length=500, null=True, blank=True)
+
+    primary = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ["team", "project", "suite", "test"]
+
+    def __str__(self):
+        return f"{self.team} › {self.project}"
 
 
 class Alert(models.Model):
