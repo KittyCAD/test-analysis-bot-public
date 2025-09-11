@@ -83,11 +83,7 @@ class Subscription(models.Model):
     primary = models.BooleanField(default=True)
 
     project = models.ForeignKey(
-        Project,
-        on_delete=models.CASCADE,
-        related_name="subscriptions",
-        null=True,
-        blank=True,
+        Project, on_delete=models.CASCADE, related_name="subscriptions"
     )
     suite = models.ForeignKey(
         Suite,
