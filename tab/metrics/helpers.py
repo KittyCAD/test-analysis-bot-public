@@ -22,7 +22,7 @@ def send_slack_message(
 
     try:
         response = client.chat_postMessage(channel=channel_id, text=message.mrkdwn)
-        log.debug(f"{organization} Slack message sent to {channel}: {message}")
+        log.info(f"{organization} Slack message sent to {channel}")
         response = client.chat_getPermalink(
             channel=channel_id, message_ts=response["ts"]
         )
