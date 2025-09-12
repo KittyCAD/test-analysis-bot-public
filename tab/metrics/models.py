@@ -121,7 +121,7 @@ class Alert(models.Model):
     @property
     def message(self):
         return Message(
-            text=f"Test failure rate increased by {self.history.test.failure_rate_delta:.1%} today",
+            text=f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today",
             label=self.history.test.project.name + " › " + self.history.test.name,
             url=settings.BASE_URL
             + reverse(
@@ -133,6 +133,7 @@ class Alert(models.Model):
     @property
     def teams(self) -> list[Team]:
         # TODO: Match by specificity first
+        # TODO: Implement test name substring matching
         # TODO: Report message URL to secondary teams
         subscriptions = Subscription.objects.filter(
             primary=True, project=self.history.test.project
