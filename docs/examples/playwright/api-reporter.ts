@@ -69,7 +69,7 @@ class APIReporter implements Reporter {
             // Optional information
             duration: result.duration / 1000,
             message: result.error?.stack,
-            target: process.env.TARGET || null,
+            target: process.env.CI_TARGET || process.env.TARGET || 'web',
             platform: process.env.RUNNER_OS || process.platform,
             // Extra test and result data
             annotations: test.annotations.map((a) => a.type), // e.g. 'fail' or 'fixme'
