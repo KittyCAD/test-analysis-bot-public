@@ -6,8 +6,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from tab.core.models import Organization
-from tab.metrics.models import History
-from tab.projects.enums import Platform, Status, Target
+from tab.metrics.models import History, Subscription, Team
 from tab.projects.models import Project, Test
 
 
@@ -17,6 +16,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         self.create_default_user()
         self.create_default_organization()
+        self.create_default_team()
         self.generate_sample_metrics()
 
     def create_default_user(self):
@@ -41,11 +41,18 @@ class Command(BaseCommand):
                 self.style.SUCCESS("Default organization created: %s" % organization)
             )
         else:
-            self.stdout.write(
-                self.style.WARNING(
-                    "Default organization already exists: %s" % organization
-                )
-            )
+            self.stdout.write(self.style.WARNING("Default organization already exists"))
+
+    def create_default_team(self):
+        organization = Organization.objects.get(name="Zoo")
+        team, created = Team.objects.get_or_create(
+            organization=organization,
+            slack_channel_name="#test-analysis-bot",
+        )
+        if created:
+            self.stdout.write(self.style.SUCCESS("Default team created: %s" % team))
+        else:
+            self.stdout.write(self.style.WARNING("Default team already exists"))
 
     def generate_sample_metrics(self):
         project, created = Project.objects.get_or_create(

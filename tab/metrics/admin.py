@@ -137,4 +137,5 @@ class AlertAdmin(admin.ModelAdmin):
         "url",
         "_teams",
         "created_at",
+        "sent_at",
     )
