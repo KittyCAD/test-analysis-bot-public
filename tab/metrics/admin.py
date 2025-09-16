@@ -89,7 +89,8 @@ class AlertAdmin(admin.ModelAdmin):
 
     @admin.display(description="Message")
     def _message(self, alert: Alert):
-        return mark_safe(alert.message.html)
+        message = alert.build(test=True)
+        return mark_safe(message.html)
 
     @admin.display(description="URL")
     def _url(self, alert: Alert):

@@ -123,15 +123,7 @@ class Alert(models.Model):
 
     @property
     def message(self):
-        return Message(
-            text=f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today",
-            label=self.history.test.project.name + " › " + self.history.test.name,
-            url=settings.BASE_URL
-            + reverse(
-                "projects:test-results",
-                args=[self.history.test.project.path, self.history.test.id],
-            ),
-        )
+        return self.build()
 
     @property
     def teams(self) -> list[Team]:
@@ -143,10 +135,21 @@ class Alert(models.Model):
         )
         return [subscription.team for subscription in subscriptions]
 
+    def build(self, *, test: bool = False) -> Message:
+        return Message(
+            f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today",
+            test=test,
+            label=self.history.test.project.name + " › " + self.history.test.name,
+            url=settings.BASE_URL
+            + reverse(
+                "projects:test-results",
+                args=[self.history.test.project.path, self.history.test.id],
+            ),
+        )
+
     def send(self, *, test: bool = False) -> int:
         count = 0
-        message = self.message
-        message.text = f"[TEST] {message.text}" if test else message.text
+        message = self.build(test=test)
         for team in self.teams:
             if url := send_slack_message(
                 team.organization, team.slack_channel_name, message
