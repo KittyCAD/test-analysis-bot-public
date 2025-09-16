@@ -46,7 +46,7 @@ EXAMPLE_TESTS = [
     ExampleTest(
         case="Vitest",
         name="vitest tests › src/lang/modifyAst/faces.test.ts › Testing addShell > should add a shell call on variable-less extrude",
-        regex="Testing addShell should add a shell call on variable\-less extrude",
+        regex=r"Testing addShell should add a shell call on variable\-less extrude",
     ),
     ExampleTest(
         case="Cargo Nextest",

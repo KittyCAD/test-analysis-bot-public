@@ -99,6 +99,7 @@ def describe_result_manager():
 
             # Simulate results being old enough to no longer be pending
             result = Result.objects.filter(branch="my-branch").first()
+            assert result
             result.created_at = (
                 timezone.now() - PENDING_THRESHOLD - timedelta(minutes=1)
             )
