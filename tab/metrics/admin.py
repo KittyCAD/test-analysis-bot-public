@@ -3,6 +3,8 @@ from urllib.parse import urlparse
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
+from markdown import markdown
+
 from .models import Alert, History, Subscription, Team
 
 
@@ -89,8 +91,19 @@ class AlertAdmin(admin.ModelAdmin):
 
     @admin.display(description="Message")
     def _message(self, alert: Alert):
+        message = alert.build()
+        return mark_safe(message.html)
+
+    @admin.display(description="Message | HTML")
+    def _message_html(self, alert: Alert):
         message = alert.build(test=True)
         return mark_safe(message.html)
+
+    @admin.display(description="Message | Markdown")
+    def _message_markdown(self, alert: Alert):
+        message = alert.build(test=True)
+        html = markdown(message.markdown)
+        return mark_safe(html)
 
     @admin.display(description="URL")
     def _url(self, alert: Alert):
@@ -119,7 +132,8 @@ class AlertAdmin(admin.ModelAdmin):
 
     raw_id_fields = ("history",)
     readonly_fields = (
-        "_message",
+        "_message_html",
+        "_message_markdown",
         "url",
         "_teams",
         "created_at",

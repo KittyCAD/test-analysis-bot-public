@@ -37,6 +37,7 @@ pygithub = "^2.8.1"
 slack-sdk = "^3.36.0"
 
 # Utilities
+markdown = "^3.9"
 minilog = "*"
 unidecode = "^1.4.0"
 
@@ -54,6 +55,7 @@ djlint = "^1.36.4"
 # Linting
 mypy = "^1.18.1"
 django-stubs = { version = "^5.2.5", extras = ["compatible-mypy"] }
+types-markdown = "*"
 
 # Testing
 pytest = "^8.4.1"
