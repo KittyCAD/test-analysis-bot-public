@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 
 import log
 
@@ -63,6 +64,8 @@ class Team(models.Model):
         Organization, on_delete=models.CASCADE, related_name="teams"
     )
     slack_channel_name = models.CharField(max_length=100)
+
+    alerted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["organization", "slack_channel_name"]
@@ -134,7 +137,7 @@ class Alert(models.Model):
     def teams(self) -> list[Team]:
         # TODO: Match by specificity first
         # TODO: Implement test name substring matching
-        # TODO: Report message URL to secondary teams
+        # TODO: Cross-post message URL to secondary teams
         subscriptions = Subscription.objects.filter(
             primary=True, project=self.history.test.project
         )
@@ -149,6 +152,8 @@ class Alert(models.Model):
                 team.organization, team.slack_channel_name, message
             ):
                 count += 1
+                team.alerted_at = timezone.now()
+                team.save()
                 if not self.url:
                     self.url = url
                     self.save()
