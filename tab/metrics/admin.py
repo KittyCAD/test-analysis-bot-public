@@ -78,10 +78,9 @@ class SubscriptionAdmin(admin.ModelAdmin):
 @admin.register(Alert)
 class AlertAdmin(admin.ModelAdmin):
     list_display = (
-        "id",
-        "_message",
-        "_url",
+        "_message_text",
         "_teams",
+        "_url",
         "created_at",
     )
     search_fields = (
@@ -90,31 +89,30 @@ class AlertAdmin(admin.ModelAdmin):
     )
 
     @admin.display(description="Message")
-    def _message(self, alert: Alert):
-        message = alert.build()
-        return mark_safe(message.html)
+    def _message_text(self, alert: Alert):
+        return alert.build()
 
-    @admin.display(description="Message | HTML")
+    @admin.display(description="Message (HTML)")
     def _message_html(self, alert: Alert):
         message = alert.build(test=True)
         return mark_safe(message.html)
 
-    @admin.display(description="Message | Markdown")
+    @admin.display(description="Message (Markdown)")
     def _message_markdown(self, alert: Alert):
         message = alert.build(test=True)
         html = markdown(message.markdown)
         return mark_safe(html)
 
-    @admin.display(description="URL")
+    @admin.display(description="Teams")
+    def _teams(self, alert: Alert):
+        return ", ".join([team.slack_channel_name for team in alert.teams])
+
+    @admin.display(description="Primary URL")
     def _url(self, alert: Alert):
         if not alert.url:
             return None
         domain = urlparse(alert.url).netloc
         return mark_safe(f'<a href="{alert.url}" target="_blank">{domain}</a>')
-
-    @admin.display(description="Teams")
-    def _teams(self, alert: Alert):
-        return ", ".join([team.slack_channel_name for team in alert.teams])
 
     @admin.action(description="Send selected alerts (test)")
     def send(self, request, queryset):
@@ -134,8 +132,8 @@ class AlertAdmin(admin.ModelAdmin):
     readonly_fields = (
         "_message_html",
         "_message_markdown",
-        "url",
         "_teams",
         "created_at",
         "sent_at",
+        "url",
     )
