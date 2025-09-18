@@ -9,7 +9,7 @@ from django.utils import timezone
 import log
 
 from tab.core.models import Organization
-from tab.projects.models import Project, Suite, Test
+from tab.projects.models import Project, Result, Suite, Test
 
 from .constants import ALERT_CACHE_KEY, ALERT_CACHE_TIMEOUT, DELTA_THRESHOLD
 from .helpers import send_slack_message
@@ -19,11 +19,13 @@ from .types import Message
 
 class History(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="history")
+    result = models.ForeignKey(
+        Result, null=True, blank=True, on_delete=models.SET_NULL, related_name="history"
+    )
 
     failure_rate = models.FloatField()
     block_rate = models.FloatField()
     average_duration = models.FloatField()
-
     timestamp = models.DateTimeField(auto_now_add=True)
 
     objects: HistoryManager = HistoryManager()
@@ -37,6 +39,10 @@ class History(models.Model):
 
     def __str__(self):
         return f"{self.test.project.name} @ {self.timestamp.date()}"
+
+    @property
+    def label(self) -> str:
+        return self.test.project.name + " › " + self.test.name
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -147,16 +153,13 @@ class Alert(models.Model):
         return [subscription.team for subscription in subscriptions]
 
     def build(self, *, test: bool = False) -> Message:
-        return Message(
-            f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today",
-            test=test,
-            label=self.history.test.project.name + " › " + self.history.test.name,
-            url=settings.BASE_URL
-            + reverse(
-                "projects:test-results",
-                args=[self.history.test.project.path, self.history.test.id],
-            ),
+        text = f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today"
+        url = settings.BASE_URL + reverse(
+            "projects:test-results",
+            args=[self.history.test.project.path, self.history.test.id],
         )
+        extra = self.history.result.message if self.history.result else None
+        return Message(text, self.history.label, url, extra=extra or "", test=test)
 
     def send(self, *, test: bool = False, force: bool = False) -> int:
         count = 0

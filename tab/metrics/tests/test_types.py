@@ -38,3 +38,51 @@ def describe_message():
         expect(message.mrkdwn) == (
             "`SAMPLE ALERT` Failures increased by 10% today: <https://example.com|my project › my test>"
         )
+
+    def it_truncates_extra(expect, message: Message):
+        message.extra = "\n".join(
+            [
+                "1 " + "x" * 80,
+                "2 xxxxxxxxxxx",
+                "3 xxxxxxxxxxx",
+                "4 xxxxxxxxxxx",
+                "5 xxxxxxxxxxx",
+                "6 xxxxxxxxxxx",
+            ]
+        )
+        expect(message.markdown).contains(
+            "\n".join(
+                [
+                    "1 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+                    "2 xxxxxxxxxxx",
+                    "3 xxxxxxxxxxx",
+                    "4 xxxxxxxxxxx",
+                    "5 xxxxxxxxxxx",
+                    "(1 more line omitted)",
+                ]
+            )
+        )
+
+    def it_truncates_extra_with_short_last_line(expect, message: Message):
+        message.extra = "\n".join(
+            [
+                "1 xxxxxxxxx",
+                "2 xxxxxxxxx",
+                "3 xxxxxxxxx",
+                "4 xxxxxxxxx",
+                "Log:",
+                "6",
+                "7",
+            ]
+        )
+        expect(message.markdown).contains(
+            "\n".join(
+                [
+                    "1 xxxxxxxxx",
+                    "2 xxxxxxxxx",
+                    "3 xxxxxxxxx",
+                    "4 xxxxxxxxx",
+                    "(3 more lines omitted)",
+                ]
+            )
+        )

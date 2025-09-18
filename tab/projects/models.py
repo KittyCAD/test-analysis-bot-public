@@ -428,9 +428,9 @@ class Test(models.Model):
         self.average_duration = new
         return True
 
-    def update(self) -> bool:
+    def update(self, result=None) -> bool:
         if failure_rated_updated := self.update_failure_rate():
-            self.history.create_from_test(self)
+            self.history.create_from_test(self, result)
         return any(
             [
                 failure_rated_updated,
@@ -655,5 +655,5 @@ class Result(models.Model):
         self.normalize()
         super().save(*args, **kwargs)
         self.finalize()
-        self.test.update()
+        self.test.update(self)
         self.test.save()

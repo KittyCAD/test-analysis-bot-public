@@ -6,14 +6,14 @@ from django.utils import timezone
 
 import log
 
-from tab.projects.models import Test
+from tab.projects.models import Result, Test
 
 if TYPE_CHECKING:
     from .models import History
 
 
 class HistoryManager(models.Manager):
-    def create_from_test(self, test: Test):
+    def create_from_test(self, test: Test, result: Result | None = None):
         limit = timezone.now() - timedelta(hours=1)
         if self.filter(test=test, timestamp__gte=limit).exists():
             log.debug(f"Skipped redundant metric creation: {test}")
@@ -21,6 +21,7 @@ class HistoryManager(models.Manager):
 
         history = self.create(
             test=test,
+            result=result,
             failure_rate=test.failure_rate,
             block_rate=test.block_rate,
             average_duration=test.average_duration,

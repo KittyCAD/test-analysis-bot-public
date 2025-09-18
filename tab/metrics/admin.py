@@ -15,8 +15,8 @@ class HistoryAdmin(admin.ModelAdmin):
 
     list_display = (
         "id",
-        "test__project",
-        "test__name",
+        "label",
+        "result",
         "failure_rate",
         "block_rate",
         "average_duration",
@@ -27,12 +27,12 @@ class HistoryAdmin(admin.ModelAdmin):
         "test__name",
     )
 
+    raw_id_fields = ("test", "result")
     readonly_fields = (
-        "test",
-        "timestamp",
         "failure_rate",
         "block_rate",
         "average_duration",
+        "timestamp",
     )
 
 
@@ -100,7 +100,7 @@ class AlertAdmin(admin.ModelAdmin):
     @admin.display(description="Message (Markdown)")
     def _message_markdown(self, alert: Alert):
         message = alert.build(test=True)
-        html = markdown(message.markdown)
+        html = markdown(message.markdown, extensions=["fenced_code"])
         return mark_safe(html)
 
     @admin.display(description="Teams")
