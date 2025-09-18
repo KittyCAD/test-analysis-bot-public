@@ -42,7 +42,7 @@ def describe_message():
     def it_truncates_extra(expect, message: Message):
         message.extra = "\n".join(
             [
-                "1 " + "x" * 80,
+                "1 " + "x" * 99,
                 "2 xxxxxxxxxxx",
                 "3 xxxxxxxxxxx",
                 "4 xxxxxxxxxxx",
@@ -53,7 +53,7 @@ def describe_message():
         expect(message.markdown).contains(
             "\n".join(
                 [
-                    "1 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…",
+                    "1 " + "x" * 97 + "…",
                     "2 xxxxxxxxxxx",
                     "3 xxxxxxxxxxx",
                     "4 xxxxxxxxxxx",
