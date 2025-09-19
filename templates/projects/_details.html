@@ -17,6 +17,18 @@
             </div>
             <div class="modal-body">
                 <pre class="mb-0">{{ result.message }}</pre>
+                {% if result.logs %}
+                    <div class="bg-dark text-light rounded mt-4 p-3 command">
+                        <div class="d-flex align-items-center mb-1">
+                            <pre class="mb-0 flex-grow-1 font-monospace"><code><span class="text-success prompt fw-bold">Logs: </span>{{ result.logs }}</code></pre>
+                            <button class="btn btn-sm btn-outline-secondary ms-2 copy-btn"
+                                    data-clipboard-text="{{ result.logs }}"
+                                    title="Copy logs to clipboard">
+                                <i class="fa-regular fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% endif %}
                 {% if result.run_url %}
                     <div class="mt-3">
                         <a class="text-decoration-none"

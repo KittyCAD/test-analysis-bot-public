@@ -623,6 +623,12 @@ class Result(models.Model):
             return "—"
         return f"{self.duration:.1f}s"
 
+    @property
+    def logs(self):
+        if logs := self.metadata.get("logs"):
+            return logs
+        return None
+
     def normalize(self):
         if self.duration:
             self.duration = round(self.duration, 3)

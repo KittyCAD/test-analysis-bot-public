@@ -305,4 +305,4 @@ class ResultAdmin(admin.ModelAdmin):
         return result.commit_humanized
 
     raw_id_fields = ("test", "suite")
-    readonly_fields = ("markers", "created_at")
+    readonly_fields = ("markers", "created_at", "logs")
