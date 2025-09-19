@@ -62,11 +62,8 @@ class History(models.Model):
 
         alert = Alert.objects.create(history=self)
         log.warning(str(alert))
-        if not alert.send():
-            log.warning(f"Unable to send alert for test: {self.test}")
-            return False
-
         cache.set(key, True, timeout=ALERT_CACHE_TIMEOUT)
+        alert.send()
         return True
 
 
@@ -177,4 +174,6 @@ class Alert(models.Model):
                 self.sent_at = team.alerted_at
                 self.save()
                 count += 1
+        if not count:
+            log.warning(f"No teams alertable for test: {self.history.test}")
         return count
