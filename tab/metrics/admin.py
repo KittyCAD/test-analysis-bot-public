@@ -1,5 +1,3 @@
-from urllib.parse import urlparse
-
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
@@ -79,10 +77,11 @@ class SubscriptionAdmin(admin.ModelAdmin):
 class AlertAdmin(admin.ModelAdmin):
     list_display = (
         "_message_text",
-        "_teams",
-        "_url",
         "created_at",
+        "_teams",
+        "sent_at",
     )
+    list_filter = ("created_at", "sent_at")
     search_fields = (
         "history__test__project__repository",
         "history__test__name",
@@ -92,12 +91,12 @@ class AlertAdmin(admin.ModelAdmin):
     def _message_text(self, alert: Alert):
         return alert.build()
 
-    @admin.display(description="Message (HTML)")
+    @admin.display(description="Message | HTML")
     def _message_html(self, alert: Alert):
         message = alert.build(test=True)
         return mark_safe(message.html)
 
-    @admin.display(description="Message (Markdown)")
+    @admin.display(description="Message | Markdown")
     def _message_markdown(self, alert: Alert):
         message = alert.build(test=True)
         html = markdown(message.markdown, extensions=["fenced_code"])
@@ -105,14 +104,11 @@ class AlertAdmin(admin.ModelAdmin):
 
     @admin.display(description="Teams")
     def _teams(self, alert: Alert):
-        return ", ".join([team.slack_channel_name for team in alert.teams])
-
-    @admin.display(description="Primary URL")
-    def _url(self, alert: Alert):
-        if not alert.url:
-            return None
-        domain = urlparse(alert.url).netloc
-        return mark_safe(f'<a href="{alert.url}" target="_blank">{domain}</a>')
+        return mark_safe(
+            '<div style="white-space: nowrap;">'
+            + "<br>".join([team.slack_channel_name for team in alert.teams])
+            + "</div>"
+        )
 
     @admin.action(description="Send selected alerts (test)")
     def send(self, request, queryset):
@@ -132,8 +128,8 @@ class AlertAdmin(admin.ModelAdmin):
     readonly_fields = (
         "_message_html",
         "_message_markdown",
-        "_teams",
         "created_at",
+        "_teams",
         "sent_at",
         "url",
     )
