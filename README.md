@@ -38,7 +38,7 @@ jobs:
   test:
     ...
     - name: Run tests
-      run:  |
+      run: |
         cargo nextest run --profile=ci || true  # let TAB determine failure
         .github/workflows/lib/upload-results.sh
       env:
