@@ -101,7 +101,9 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView
         tag = self.request.GET.get("tag")
         enabled = self.request.GET.get("enabled", "true")
 
-        queryset = project.tests.select_related("suite", "last_result")
+        queryset = project.tests.select_related(
+            "suite", "last_result"
+        ).prefetch_related("project__suites")
         if suite_id:
             queryset = queryset.filter(suite_id=suite_id)
         if search:
@@ -272,9 +274,11 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         tag = self.request.GET.get("tag")
         show = self.request.GET.get("show", "all")
 
-        queryset = Result.objects.filter(
-            test__project=project, branch=branch
-        ).select_related("suite", "test", "test__project", "test__suite")
+        queryset = (
+            Result.objects.filter(test__project=project, branch=branch)
+            .select_related("suite", "test", "test__project", "test__suite")
+            .prefetch_related("test__project__suites")
+        )
         latest_commit = queryset.values_list("commit", flat=True).first()
         queryset = queryset.filter(commit=latest_commit)
 

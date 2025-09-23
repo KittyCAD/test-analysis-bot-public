@@ -95,7 +95,7 @@ class TestTable(tables.Table):
     def render_name(self, record: Test):
         return render_to_string(
             "projects/_markers.html",
-            {"label": wrap(str(record)), "markers": record.markers},
+            {"label": wrap(record.label), "markers": record.markers},
         )
 
     def render_enabled(self, value):
@@ -381,7 +381,7 @@ class ResultTable(TestResultTable):
         )
         if record.branch != record.test.project.default_branch:
             url += f"?branch={record.branch}"
-        label = wrap(record.test_name)
+        label = wrap(record.test_label)
         return mark_safe(
             f'<a href="{url}" class="text-body text-decoration-none fw-bold">{label}</a>'
         )

@@ -55,6 +55,23 @@ def describe_test():
             test = Test(project=project, suite=suite, name="my-test")
             expect(str(test)) == "my-test"
 
+    def describe_label():
+
+        @pytest.mark.django_db
+        def it_handles_solo_suite(expect, project, suite):
+            project.save()
+            suite.save()
+            test = Test.objects.create(project=project, suite=suite, name="my-test")
+            expect(test.label) == "my-test"
+
+        @pytest.mark.django_db
+        def it_handles_multiple_suites(expect, project, suite):
+            project.save()
+            suite.save()
+            Suite.objects.create(project=project, name="my-suite2")
+            test = Test.objects.create(project=project, suite=suite, name="my-test")
+            expect(test.label) == "my-suite › my-test"
+
     def describe_regex():
         @pytest.mark.parametrize(("example_test"), EXAMPLE_TESTS)
         def it_escapes_special_characters(expect, example_test: ExampleTest):

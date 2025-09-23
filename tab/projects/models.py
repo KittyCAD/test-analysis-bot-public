@@ -242,9 +242,17 @@ class Test(models.Model):
         ]
 
     def __str__(self):
-        if self.suite and self.suite.name != DEFAULT_SUITE:
-            return f"{self.suite.name} › {self.name}"
-        return self.name
+        if not self.suite:
+            return self.name
+        if self.suite.name == DEFAULT_SUITE:
+            return self.name
+        return f"{self.suite.name} › {self.name}"
+
+    @property
+    def label(self) -> str:
+        if self.pk and self.project.suites.count() <= 1:
+            return self.name
+        return str(self)
 
     @property
     def regex(self) -> str:
@@ -514,10 +522,15 @@ class Result(models.Model):
         return f"{status} after {duration} on {branch!r} at {commit}"
 
     @property
-    def test_name(self) -> str:
-        if self.suite and self.suite.name != DEFAULT_SUITE:
-            return f"{self.suite.name} › {self.test.name}"
-        return self.test.name
+    def test_label(self) -> str:
+        suite = self.suite or self.test.suite
+        if not suite:
+            return self.test.name
+        if suite.name == DEFAULT_SUITE:
+            return self.test.name
+        if self.pk and self.test.project.suites.count() <= 1:
+            return self.test.name
+        return f"{suite.name} › {self.test.name}"
 
     @property
     def markers(self) -> list[str]:
