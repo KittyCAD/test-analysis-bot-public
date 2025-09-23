@@ -236,12 +236,8 @@ def describe_result():
     def describe_markers():
 
         def it_adds_disabled_marker_if_test_is_disabled(expect):
-            test = Test(name="test", disabled_at=timezone.now())
-            result = Result(
-                test=test,
-                status=Status.FAILED,
-                created_at=timezone.now() - timedelta(days=1),
-            )
+            test = Test(name="test", disabled_at=timezone.now() - timedelta(days=1))
+            result = Result(test=test, status=Status.FAILED, created_at=timezone.now())
             expect(result.markers) == ["disabled"]
 
         def it_adds_disabled_marker_if_test_is_disabled_on_platform(expect):
