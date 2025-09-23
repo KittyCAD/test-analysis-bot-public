@@ -465,6 +465,9 @@ class Test(models.Model):
             self.disabled = False
             self.disabled_at = None
             self.disabled_platforms = []
+        # TODO: Remove this after 9/24 when all tests have timestamps
+        if self.disabled and not self.disabled_at:
+            self.disabled_at = timezone.now()
         self.enabled = bool(
             not self.disabled
             and self.last_result
