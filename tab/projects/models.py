@@ -551,6 +551,8 @@ class Result(models.Model):
         if self.test.disabled_platforms:
             if self.platform in self.test.disabled_platforms:
                 values.append("disabled")
+        if self.created_at is None and self.test.disabled:
+            values.append("disabled")
         elif (
             self.created_at
             and self.test.disabled_at
