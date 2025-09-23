@@ -43,7 +43,7 @@ unidecode = "^1.4.0"
 
 # Deployment
 gunicorn = "^23.0.0"
-whitenoise = "^6.9.0"
+whitenoise = "^6.11.0"
 
 [tool.poetry.group.dev.dependencies]
 
