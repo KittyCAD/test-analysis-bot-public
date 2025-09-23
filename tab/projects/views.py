@@ -225,6 +225,7 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
         tests = self.get_queryset().filter(id__in=test_ids)
         for test in tests:
             test.disabled = disabled
+            test.disabled_at = timezone.now() if disabled else None
             test.disabled_reason = disabled_reason
             test.disabled_tracker = disabled_tracker
             test.disabled_user = disabled_user
@@ -450,6 +451,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         previously_disabled = test.disabled
 
         test.disabled = form.cleaned_data["disabled"]
+        test.disabled_at = timezone.now() if test.disabled else None
         test.disabled_reason = form.cleaned_data["disabled_reason"]
         test.disabled_tracker = form.cleaned_data["disabled_tracker"]
         test.disabled_user = get_or_create_user(form.cleaned_data["disabled_user"])

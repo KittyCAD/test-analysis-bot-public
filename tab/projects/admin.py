@@ -171,6 +171,7 @@ class TestAdmin(admin.ModelAdmin):
         count = 0
         for test in queryset.filter(Q(disabled=False) | ~Q(disabled_platforms=[])):
             test.disabled = True
+            test.disabled_at = timezone.now()
             test.disabled_platforms = []
             test.disabled_user = test.disabled_user or request.user
             test.save()
@@ -213,6 +214,7 @@ class TestAdmin(admin.ModelAdmin):
         count = 0
         for test in queryset.filter(disabled=True):
             test.disabled = False
+            test.disabled_at = None
             test.disabled_platforms = []
             test.disabled_user = test.disabled_user or request.user
             test.save()

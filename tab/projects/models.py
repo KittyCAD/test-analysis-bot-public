@@ -181,6 +181,12 @@ class Test(models.Model):
     disabled = models.BooleanField(
         default=False, help_text="Forces the test to be disabled", db_index=True
     )
+    disabled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Timestamp when the test was disabled",
+    )
     disabled_platforms = models.JSONField(
         default=list,
         blank=True,
@@ -453,9 +459,11 @@ class Test(models.Model):
         if self.disabled_platforms and not self.disabled:
             log.info(f"Disabling test based on platforms: {self}")
             self.disabled = True
+            self.disabled_at = timezone.now()
         if 0 <= self.failure_rate < FAILURE_RATE_EPSILON and self.disabled:
             log.info(f"Restoring test based on failure rate: {self}")
             self.disabled = False
+            self.disabled_at = None
             self.disabled_platforms = []
         self.enabled = bool(
             not self.disabled
@@ -540,7 +548,7 @@ class Result(models.Model):
         if self.test.disabled_platforms:
             if self.platform in self.test.disabled_platforms:
                 values.append("disabled")
-        elif self.test.disabled:
+        elif self.test.disabled_at and self.test.disabled_at > self.created_at:
             values.append("disabled")
         return values
 
