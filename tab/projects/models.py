@@ -551,7 +551,11 @@ class Result(models.Model):
         if self.test.disabled_platforms:
             if self.platform in self.test.disabled_platforms:
                 values.append("disabled")
-        elif self.test.disabled_at and self.test.disabled_at < self.created_at:
+        elif (
+            self.created_at
+            and self.test.disabled_at
+            and self.created_at > self.test.disabled_at
+        ):
             values.append("disabled")
         return values
 
