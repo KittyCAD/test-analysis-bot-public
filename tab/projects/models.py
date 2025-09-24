@@ -178,14 +178,11 @@ class Test(models.Model):
     )
     metadata = models.JSONField(default=dict, blank=True)
 
-    disabled = models.BooleanField(
-        default=False, help_text="Forces the test to be disabled", db_index=True
-    )
     disabled_at = models.DateTimeField(
         null=True,
         blank=True,
         db_index=True,
-        help_text="Timestamp when the test was disabled",
+        help_text="Timestamp of when the test was disabled",
     )
     disabled_platforms = models.JSONField(
         default=list,
@@ -243,7 +240,6 @@ class Test(models.Model):
     class Meta:
         indexes = [
             models.Index(fields=["project", "name"]),
-            models.Index(fields=["project", "disabled"]),
             models.Index(fields=["project", "enabled"]),
         ]
 
@@ -315,7 +311,7 @@ class Test(models.Model):
         metadata = self.last_result.metadata if self.last_result else {}
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
         values = metadata.get("annotations", []) + metadata.get("tags", [])
-        if self.disabled:
+        if self.disabled_at:
             values.append("disabled")
         return values
 
@@ -456,20 +452,15 @@ class Test(models.Model):
     def save(self, *args, **kwargs):
         if self.pk:
             self._update_last_result()
-        if self.disabled_platforms and not self.disabled:
+        if self.disabled_platforms and not self.disabled_at:
             log.info(f"Disabling test based on platforms: {self}")
-            self.disabled = True
             self.disabled_at = timezone.now()
-        if 0 <= self.failure_rate < FAILURE_RATE_EPSILON and self.disabled:
+        if 0 <= self.failure_rate < FAILURE_RATE_EPSILON and self.disabled_at:
             log.info(f"Restoring test based on failure rate: {self}")
-            self.disabled = False
             self.disabled_at = None
             self.disabled_platforms = []
-        # TODO: Remove this after 9/24 when all tests have timestamps
-        if self.disabled and not self.disabled_at:
-            self.disabled_at = timezone.now()
         self.enabled = bool(
-            not self.disabled
+            not self.disabled_at
             and self.last_result
             and self.last_result.status not in Status.test_disabled()
         )
@@ -551,7 +542,7 @@ class Result(models.Model):
         if self.test.disabled_platforms:
             if self.platform in self.test.disabled_platforms:
                 values.append("disabled")
-        if self.created_at is None and self.test.disabled:
+        if self.created_at is None and self.test.disabled_at:
             values.append("disabled")
         elif (
             self.created_at

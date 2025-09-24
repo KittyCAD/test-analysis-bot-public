@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 import pytest
 
 from ..models import Project, Result, Status, Test
@@ -17,7 +19,7 @@ def disabled_test(project: Project):
         status=Status.PASSED,
         duration=1.0,
     )
-    test.disabled = True
+    test.disabled_at = timezone.now()
     test.failure_rate = 0.25
     test.save()
     return test
@@ -80,7 +82,7 @@ def describe_tests():
                         status=Status.PASSED,
                         duration=1.0,
                     )
-                    test.disabled = True
+                    test.disabled_at = timezone.now()
                     test.failure_rate = 0.25
                     test.save()
 

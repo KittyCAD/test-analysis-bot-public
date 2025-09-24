@@ -23,7 +23,7 @@ def get_disabled_test_metrics(project: Project) -> dict[User, dict[str, int]]:
             }
 
         data[user]["total"] += 1
-        if test.disabled:
+        if test.disabled_at:
             data[user]["disabled"] += 1
         else:
             data[user]["enabled"] += 1

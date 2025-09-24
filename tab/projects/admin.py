@@ -169,8 +169,9 @@ class TestAdmin(admin.ModelAdmin):
     @admin.action(description="Disable selected tests")
     def disable(self, request, queryset):
         count = 0
-        for test in queryset.filter(Q(disabled=False) | ~Q(disabled_platforms=[])):
-            test.disabled = True
+        for test in queryset.filter(
+            Q(disabled_at__isnull=True) | ~Q(disabled_platforms=[])
+        ):
             test.disabled_at = timezone.now()
             test.disabled_platforms = []
             test.disabled_user = test.disabled_user or request.user
@@ -212,8 +213,7 @@ class TestAdmin(admin.ModelAdmin):
     @admin.action(description="Enable selected tests")
     def enable(self, request, queryset):
         count = 0
-        for test in queryset.filter(disabled=True):
-            test.disabled = False
+        for test in queryset.filter(disabled_at__isnull=False):
             test.disabled_at = None
             test.disabled_platforms = []
             test.disabled_user = test.disabled_user or request.user
@@ -255,7 +255,7 @@ class TestAdmin(admin.ModelAdmin):
         if change and any(
             field in form.changed_data
             for field in [
-                "disabled",
+                "disabled_at",
                 "disabled_platform",
                 "disabled_reason",
                 "disabled_tracker",

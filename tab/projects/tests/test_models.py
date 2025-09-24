@@ -103,7 +103,7 @@ def describe_test():
             test = Test.objects.create(
                 project=project, name="my-test", disabled_platforms=[Platform.WINDOWS]
             )
-            expect(test.disabled) == True
+            expect(bool(test.disabled_at)) == True
 
         @pytest.mark.django_db
         def it_is_cleared_after_zero_failures(expect, admin_user, project: Project):
@@ -111,15 +111,15 @@ def describe_test():
             test = Test.objects.create(
                 project=project,
                 name="my-test",
-                disabled=True,
+                disabled_at=timezone.now(),
                 disabled_user=admin_user,
                 failure_rate=0.25,
             )
-            expect(test.disabled) == True
+            expect(bool(test.disabled_at)) == True
 
             test.failure_rate = 0
             test.save()
-            expect(test.disabled) == False
+            expect(bool(test.disabled_at)) == False
             expect(test.disabled_platforms) == []
             expect(test.disabled_user) == admin_user
 
@@ -236,11 +236,6 @@ def describe_result():
     def describe_markers():
 
         def it_adds_disabled_marker_if_test_is_disabled(expect):
-            test = Test(name="test", disabled=True)
-            result = Result(test=test, status=Status.FAILED)
-            expect(result.markers) == ["disabled"]
-
-        def it_adds_disabled_marker_if_test_has_disabled_timestamp(expect):
             test = Test(name="test", disabled_at=timezone.now() - timedelta(days=1))
             result = Result(test=test, status=Status.FAILED, created_at=timezone.now())
             expect(result.markers) == ["disabled"]

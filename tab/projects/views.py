@@ -224,7 +224,6 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
 
         tests = self.get_queryset().filter(id__in=test_ids)
         for test in tests:
-            test.disabled = disabled
             test.disabled_at = timezone.now() if disabled else None
             test.disabled_reason = disabled_reason
             test.disabled_tracker = disabled_tracker
@@ -437,7 +436,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         )
         return {
             "test_id": test.id,
-            "disabled": test.disabled,
+            "disabled": bool(test.disabled_at),
             "disabled_reason": test.disabled_reason,
             "disabled_tracker": test.disabled_tracker,
             "disabled_user": original_email or current_email,
@@ -449,21 +448,20 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             project__repository__iendswith=self.kwargs["path"].strip("/"),
             id=self.kwargs["test_id"],
         )
-        previously_disabled = test.disabled
+        previously_disabled = bool(test.disabled_at)
 
-        test.disabled = form.cleaned_data["disabled"]
-        test.disabled_at = timezone.now() if test.disabled else None
+        test.disabled_at = timezone.now() if form.cleaned_data["disabled"] else None
         test.disabled_reason = form.cleaned_data["disabled_reason"]
         test.disabled_tracker = form.cleaned_data["disabled_tracker"]
         test.disabled_user = get_or_create_user(form.cleaned_data["disabled_user"])
-        if test.disabled:
+        if test.disabled_at:
             test.disabled_platforms = []
         test.failure_rate += FAILURE_RATE_EPSILON  # prevent from being restored on save
         test.save()
 
         log.info(f"{self.request.user} updated test {test.name}")
-        blocking = "disabled from blocking" if test.disabled else "allowed to block"
-        if test.disabled != previously_disabled:
+        blocking = "disabled from blocking" if test.disabled_at else "allowed to block"
+        if bool(test.disabled_at) != previously_disabled:
             blocking = "now " + blocking
         messages.success(self.request, f"Test is {blocking} merges.")
 
