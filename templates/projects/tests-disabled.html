@@ -52,7 +52,7 @@
                        name="search"
                        value="{{ search }}"
                        class="form-control border-dark_"
-                       placeholder="Filter tests by name, reason, tracker, or email..."
+                       placeholder="Filter tests by name, reason, tracker, or user..."
                        required>
                 {% if search %}
                     <a href="{% url 'projects:disabled-tests' project.path %}{% if enabled != 'true' %}?enabled={{ enabled }}{% endif %}"
