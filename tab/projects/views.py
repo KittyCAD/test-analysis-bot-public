@@ -404,7 +404,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             expand = self.request.GET["expand"] == "true"
         else:
             expand = bool(test.last_result) and test.failure_rate > 0.25
-        weeks = float(self.request.GET.get("weeks", 2))
+        weeks = float(self.request.GET.get("weeks", 1.5))
 
         context["project"] = project
         context["test"] = test

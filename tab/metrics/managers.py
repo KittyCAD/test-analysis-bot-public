@@ -33,7 +33,7 @@ class HistoryManager(models.Manager):
 
         return history
 
-    def get_data(self, test: Test, weeks: float = 2) -> list[dict]:
+    def get_data(self, test: Test, weeks: float) -> list[dict]:
         data = []
         cutoff = timezone.now() - timedelta(weeks=weeks)
         histories = self.filter(timestamp__gte=cutoff).order_by("timestamp")
