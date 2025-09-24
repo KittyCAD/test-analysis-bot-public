@@ -72,6 +72,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f"Sample test already exists"))
             test.history.all().delete()
 
+        # TODO: Make this generate 6 months of data and confirm it in the chart
         count = 0
         days = 8
         failure_rate = 0.25

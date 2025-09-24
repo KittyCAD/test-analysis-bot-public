@@ -27,16 +27,16 @@ class HistoryManager(models.Manager):
             average_duration=test.average_duration,
         )
 
-        cutoff = timezone.now() - timedelta(weeks=3)
+        cutoff = timezone.now() - timedelta(weeks=26)
         if count := self.filter(test=test, timestamp__lt=cutoff).delete()[0]:
             log.debug(f"Deleted {count} old metrics")
 
         return history
 
-    def get_data(self, test: Test) -> list[dict]:
+    def get_data(self, test: Test, weeks: float = 2) -> list[dict]:
         data = []
-        cutoff_date = timezone.now() - timedelta(days=7)
-        histories = self.filter(timestamp__gte=cutoff_date).order_by("timestamp")
+        cutoff = timezone.now() - timedelta(weeks=weeks)
+        histories = self.filter(timestamp__gte=cutoff).order_by("timestamp")
         for history in cast(list["History"], histories):
             data.append(
                 {
@@ -59,7 +59,7 @@ class HistoryManager(models.Manager):
             data.insert(
                 0,
                 {
-                    "date": cutoff_date.strftime("%Y-%m-%d %H:%M"),
+                    "date": cutoff.strftime("%Y-%m-%d %H:%M"),
                     "failure_rate": data[0]["failure_rate"],
                     "block_rate": data[0]["block_rate"],
                     "average_duration": data[0]["average_duration"],

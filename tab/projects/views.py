@@ -404,6 +404,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             expand = self.request.GET["expand"] == "true"
         else:
             expand = bool(test.last_result) and test.failure_rate > 0.25
+        weeks = float(self.request.GET.get("weeks", 2))
 
         context["project"] = project
         context["test"] = test
@@ -411,7 +412,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         context["branch"] = self.request.GET.get("branch")
         context["platform"] = self.request.GET.get("platform", "").strip()
         context["show"] = self.request.GET.get("show", "all")
-        context["history_data"] = test.history.get_data(test)
+        context["history_data"] = test.history.get_data(test, weeks)
         for field in test._meta.get_fields():
             if hasattr(field, "help_text") and field.help_text:
                 context[f"{field.name}_help"] = field.help_text
