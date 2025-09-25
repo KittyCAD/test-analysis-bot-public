@@ -194,9 +194,10 @@ uml: install
 	poetry install --with=docs
 	@ echo
 	poetry run pyreverse $(PROJECT) -p $(PROJECT) -a 1 -f ALL -o png --ignore admin.py,migrations,management,tests
+	rm -f docs/*.png
 	mv -f classes_$(PROJECT).png docs/classes.png
 	mv -f packages_$(PROJECT).png docs/packages.png
-	./manage.py graph_models --all-applications --group-models --output=docs/tables.png --exclude-models=AbstractUser,AbstractBaseSession,Session
+	./manage.py graph_models --group-models --output=docs/tables.png core projects metrics
 
 # HELP ########################################################################
 
