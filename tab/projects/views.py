@@ -110,7 +110,9 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView
             queryset = queryset.filter(
                 Q(suite__name__icontains=search) | Q(name__icontains=search)
             )
-        if tag:
+        if tag == "disabled":
+            queryset = queryset.filter(disabled_at__isnull=False)
+        elif tag:
             queryset = queryset.filter(
                 Q(last_result__metadata__tags__icontains=tag)
                 | Q(last_result__metadata__tags__icontains=f"@{tag}")
@@ -290,7 +292,9 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
             )
         if platform:
             queryset = queryset.filter(platform=platform)
-        if tag:
+        if tag == "disabled":
+            queryset = queryset.filter(test__disabled_at__isnull=False)
+        elif tag:
             queryset = queryset.filter(
                 Q(metadata__tags__icontains=tag)
                 | Q(metadata__tags__icontains=f"@{tag}")
