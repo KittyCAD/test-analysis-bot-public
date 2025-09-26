@@ -61,10 +61,10 @@ class SubscriptionAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "team",
-        "primary",
         "project",
         "suite",
         "test",
+        "primary",
     )
     list_filter = (
         "primary",
@@ -75,10 +75,19 @@ class SubscriptionAdmin(admin.ModelAdmin):
 
 @admin.register(Alert)
 class AlertAdmin(admin.ModelAdmin):
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "history__test__project", "history__test__suite", "history__result"
+            )
+        )
+
     list_display = (
         "_message_text",
         "created_at",
-        "_teams",
+        "_subscriptions",
         "sent_at",
     )
     list_filter = ("created_at", "sent_at")
@@ -102,13 +111,9 @@ class AlertAdmin(admin.ModelAdmin):
         html = markdown(message.markdown, extensions=["fenced_code"])
         return mark_safe(html)
 
-    @admin.display(description="Teams")
-    def _teams(self, alert: Alert):
-        return mark_safe(
-            '<div style="white-space: nowrap;">'
-            + "<br>".join([team.slack_channel_name for team in alert.teams])
-            + "</div>"
-        )
+    @admin.display(description="Subscriptions")
+    def _subscriptions(self, alert: Alert):
+        return mark_safe("<br><br>".join([str(s) for s in alert.subscriptions]))
 
     @admin.action(description="Send selected alerts (test)")
     def send(self, request, queryset):
@@ -117,10 +122,7 @@ class AlertAdmin(admin.ModelAdmin):
         for alert in queryset:
             count += alert.send(test=True)
         s = "" if count == 1 else "s"
-        self.message_user(
-            request,
-            f"Successfully sent {count} test alert{s}.",
-        )
+        self.message_user(request, f"Successfully sent {count} test alert{s}.")
 
     actions = [send]
 
@@ -129,7 +131,7 @@ class AlertAdmin(admin.ModelAdmin):
         "_message_html",
         "_message_markdown",
         "created_at",
-        "_teams",
+        "_subscriptions",
         "sent_at",
         "url",
     )

@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 
 from django.conf import settings
@@ -32,9 +33,7 @@ class History(models.Model):
 
     class Meta:
         ordering = ["-timestamp"]
-        indexes = [
-            models.Index(fields=["test", "timestamp"]),
-        ]
+        indexes = [models.Index(fields=["test", "timestamp"])]
         verbose_name_plural = "Histories"
 
     def __str__(self):
@@ -46,9 +45,9 @@ class History(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        self.create_alert()
+        self.evaluate()
 
-    def create_alert(self) -> bool:
+    def evaluate(self) -> bool:
         if not self.test.enabled:
             return False
 
@@ -113,10 +112,18 @@ class Subscription(models.Model):
     primary = models.BooleanField(default=True)
 
     class Meta:
+        ordering = ["team", "project"]
         unique_together = ["team", "project", "suite", "test"]
 
     def __str__(self):
-        return f"{self.team} › {self.project}"
+        value = f"{self.team} | {self.project}"
+        if self.suite:
+            value += f" › {self.suite}"
+        if self.test:
+            value += f" › {self.test}"
+        if not self.primary:
+            value += f" [SECONDARY]"
+        return value
 
 
 class Alert(models.Model):
@@ -140,16 +147,41 @@ class Alert(models.Model):
         return self.build()
 
     @property
-    def teams(self) -> list[Team]:
-        # TODO: Match by specificity first
-        # TODO: Implement test name substring matching
-        # TODO: Cross-post message URL to secondary teams
-        subscriptions = Subscription.objects.filter(
-            primary=True, project=self.history.test.project
-        )
-        return [subscription.team for subscription in subscriptions]
+    def subscriptions(self) -> list[Subscription]:
+        matches: list[Subscription] = []
 
-    def build(self, *, test: bool = False) -> Message:
+        subscriptions = Subscription.objects.filter(
+            project=self.history.test.project
+        ).select_related("project", "team__organization")
+
+        for primary in (True, False):
+            for suite in (self.history.test.suite, None):
+                for subscription in subscriptions:
+                    if subscription.primary != primary:
+                        continue
+
+                    if subscription.suite != suite:
+                        continue
+
+                    if subscription.test and not re.search(
+                        subscription.test, self.history.test.name
+                    ):
+                        continue
+
+                    if subscription not in matches:
+                        matches.append(subscription)
+
+        return matches
+
+    def build(self, *, url: str | None = None, test: bool = False) -> Message:
+        if url:
+            return Message(
+                text=f"Relevant alert",
+                label="original thread",
+                url=url,
+                test=test,
+            )
+
         text = f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today"
         url = settings.BASE_URL + reverse(
             "projects:test-results",
@@ -160,20 +192,31 @@ class Alert(models.Model):
 
     def send(self, *, test: bool = False, force: bool = False) -> int:
         count = 0
-        message = self.build(test=test)
-        for team in self.teams:
+
+        for subscription in self.subscriptions:
+
+            if subscription.primary:
+                message = self.build(test=test)
+            else:
+                message = self.build(test=test, url=self.url)
+
+            team: Team = subscription.team
             if team.recently_alerted and not force:
                 log.info(f"Skipped redundant alert for team: {team}")
                 continue
+
             if url := send_slack_message(
                 team.organization, team.slack_channel_name, message
             ):
+                count += 1
                 team.alerted_at = timezone.now()
                 team.save()
-                self.url = self.url or url
-                self.sent_at = team.alerted_at
-                self.save()
-                count += 1
+                if not self.url:
+                    self.url = url
+                    self.sent_at = team.alerted_at
+                    self.save()
+
         if not count:
             log.warning(f"No teams alertable for test: {self.history.test}")
+
         return count
