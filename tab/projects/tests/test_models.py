@@ -6,7 +6,7 @@ import log
 import pytest
 
 from ..constants import DEFAULT_SUITE, FAILURE_RATE_EPSILON
-from ..enums import Platform, Status
+from ..enums import Status
 from ..models import Project, Result, Suite, Test
 from . import EXAMPLE_TESTS, ExampleTest
 
@@ -97,13 +97,6 @@ def describe_test():
             expect(test.substring) == example_test.substring
 
     def describe_disabled():
-        @pytest.mark.django_db
-        def it_is_set_if_disabled_for_any_platform(expect, project: Project):
-            project.save()
-            test = Test.objects.create(
-                project=project, name="my-test", disabled_platforms=[Platform.WINDOWS]
-            )
-            expect(bool(test.disabled_at)) == True
 
         @pytest.mark.django_db
         def it_is_cleared_after_zero_failures(expect, admin_user, project: Project):
@@ -120,7 +113,6 @@ def describe_test():
             test.failure_rate = 0
             test.save()
             expect(bool(test.disabled_at)) == False
-            expect(test.disabled_platforms) == []
             expect(test.disabled_user) == admin_user
 
     def describe_enabled():
@@ -239,16 +231,6 @@ def describe_result():
             test = Test(name="test", disabled_at=timezone.now() - timedelta(days=1))
             result = Result(test=test, status=Status.FAILED, created_at=timezone.now())
             expect(result.markers) == ["disabled"]
-
-        def it_adds_disabled_marker_if_test_is_disabled_on_platform(expect):
-            test = Test(name="test", disabled_platforms=[Platform.WINDOWS])
-            result = Result(test=test, status=Status.FAILED, platform=Platform.WINDOWS)
-            expect(result.markers) == ["disabled"]
-
-        def it_does_not_add_disabled_marker_if_another_platform(expect):
-            test = Test(name="test", disabled_platforms=[Platform.WINDOWS])
-            result = Result(test=test, status=Status.FAILED, platform=Platform.MACOS)
-            expect(result.markers) == []
 
     def describe_command():
         def it_includes_checkout_command(expect):

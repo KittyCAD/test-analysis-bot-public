@@ -230,12 +230,10 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
             test.disabled_reason = disabled_reason
             test.disabled_tracker = disabled_tracker
             test.disabled_user = disabled_user
-            if not disabled:
-                test.disabled_platforms = []
-                if test.last_result.status in Status.test_disabled():
-                    # Modify status to hide it from this view
-                    test.last_result.status = Status.INTERRUPTED
-                    test.last_result.save()
+            if not disabled and test.last_result.status in Status.test_disabled():
+                # Modify status to hide it from this view
+                test.last_result.status = Status.INTERRUPTED
+                test.last_result.save()
             test.save()
 
         log.info(f"{self.request.user} updated {len(tests)} tests")
@@ -462,8 +460,6 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         test.disabled_reason = form.cleaned_data["disabled_reason"]
         test.disabled_tracker = form.cleaned_data["disabled_tracker"]
         test.disabled_user = get_or_create_user(form.cleaned_data["disabled_user"])
-        if test.disabled_at:
-            test.disabled_platforms = []
         test.failure_rate += FAILURE_RATE_EPSILON  # prevent from being restored on save
         test.save()
 

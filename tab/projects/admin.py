@@ -1,10 +1,9 @@
 from django import forms
 from django.contrib import admin
-from django.db.models import Q
 from django.utils import timezone
 from django.utils.timesince import timesince
 
-from .models import Platform, Project, Result, Suite, Test
+from .models import Project, Result, Suite, Test
 
 
 class SuiteAdminForm(forms.ModelForm):
@@ -169,11 +168,8 @@ class TestAdmin(admin.ModelAdmin):
     @admin.action(description="Disable selected tests")
     def disable(self, request, queryset):
         count = 0
-        for test in queryset.filter(
-            Q(disabled_at__isnull=True) | ~Q(disabled_platforms=[])
-        ):
+        for test in queryset.filter(disabled_at__isnull=True):
             test.disabled_at = timezone.now()
-            test.disabled_platforms = []
             test.disabled_user = test.disabled_user or request.user
             test.save()
             count += 1
@@ -182,40 +178,11 @@ class TestAdmin(admin.ModelAdmin):
             request, f"Successfully marked {count} test{s} as non-blocking."
         )
 
-    @admin.action(description=f"Disable selected tests on {Platform.MACOS.label}")
-    def disable_macos(self, request, queryset):
-        count = 0
-        for test in queryset.exclude(disabled_platforms__contains=[Platform.MACOS]):
-            test.disabled_platforms.append(Platform.MACOS)
-            test.disabled_user = test.disabled_user or request.user
-            test.save()
-            count += 1
-        s = "" if count == 1 else "s"
-        self.message_user(
-            request,
-            f"Successfully marked {count} test{s} as non-blocking on {Platform.MACOS.label}.",
-        )
-
-    @admin.action(description=f"Disable selected tests on {Platform.WINDOWS.label}")
-    def disable_windows(self, request, queryset):
-        count = 0
-        for test in queryset.exclude(disabled_platforms__contains=[Platform.WINDOWS]):
-            test.disabled_platforms.append(Platform.WINDOWS)
-            test.disabled_user = test.disabled_user or request.user
-            test.save()
-            count += 1
-        s = "" if count == 1 else "s"
-        self.message_user(
-            request,
-            f"Successfully marked {count} test{s} as non-blocking on {Platform.WINDOWS.label}.",
-        )
-
     @admin.action(description="Enable selected tests")
     def enable(self, request, queryset):
         count = 0
         for test in queryset.filter(disabled_at__isnull=False):
             test.disabled_at = None
-            test.disabled_platforms = []
             test.disabled_user = test.disabled_user or request.user
             test.save()
             count += 1
@@ -234,7 +201,7 @@ class TestAdmin(admin.ModelAdmin):
         s = "" if count == 1 else "s"
         self.message_user(request, f"Successfully updated {count} test{s}.")
 
-    actions = [disable, disable_macos, disable_windows, enable, update]
+    actions = [disable, enable, update]
 
     raw_id_fields = ("project", "suite", "disabled_user")
     readonly_fields = (
@@ -256,7 +223,6 @@ class TestAdmin(admin.ModelAdmin):
             field in form.changed_data
             for field in [
                 "disabled_at",
-                "disabled_platform",
                 "disabled_reason",
                 "disabled_tracker",
             ]

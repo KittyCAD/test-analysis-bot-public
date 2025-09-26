@@ -184,11 +184,6 @@ class Test(models.Model):
         db_index=True,
         help_text="Timestamp of when the test was disabled",
     )
-    disabled_platforms = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="Platforms to limit the disabled override",
-    )
     disabled_reason = models.TextField(
         default="",
         blank=True,
@@ -452,13 +447,9 @@ class Test(models.Model):
     def save(self, *args, **kwargs):
         if self.pk:
             self._update_last_result()
-        if self.disabled_platforms and not self.disabled_at:
-            log.info(f"Disabling test based on platforms: {self}")
-            self.disabled_at = timezone.now()
         if 0 <= self.failure_rate < FAILURE_RATE_EPSILON and self.disabled_at:
             log.info(f"Restoring test based on failure rate: {self}")
             self.disabled_at = None
-            self.disabled_platforms = []
         self.enabled = bool(
             not self.disabled_at
             and self.last_result
@@ -539,9 +530,6 @@ class Result(models.Model):
         metadata = self.metadata
         # TODO: Consider making 'annotations' and/or 'tags' a proper field
         values = metadata.get("annotations", []) + metadata.get("tags", [])
-        if self.test.disabled_platforms:
-            if self.platform in self.test.disabled_platforms:
-                values.append("disabled")
         if self.created_at is None and self.test.disabled_at:
             values.append("disabled")
         elif (

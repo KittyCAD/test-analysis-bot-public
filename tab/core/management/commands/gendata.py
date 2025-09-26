@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from tab.core.models import Organization
-from tab.metrics.models import History, Subscription, Team
+from tab.metrics.models import History, Team
 from tab.projects.models import Project, Test
 
 
