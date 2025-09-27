@@ -19,7 +19,7 @@
         if (ctx) {
             const chartData = {
                 datasets: [{
-                    data: [{% for point in history_data %}{x: '{{ point.date }}', y: {{ point.failure_rate }}}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    data: [{% for point in history_data %}{x: '{{ point.date }}', y: parseFloat('{{ point.failure_rate|slice:":-1" }}')}{% if not forloop.last %}, {% endif %}{% endfor %}],
                     borderColor: '#0dcaf0',
                     borderWidth: 2,
                     fill: false,
@@ -51,9 +51,9 @@
                                     const dayData = {{ history_data|safe }};
                                     const data = dayData[dayIndex];
                                     return [
-                                        `Failure Rate: ${data.failure_rate}%`,
-                                        `Block Rate: ${data.block_rate}%`,
-                                        `Avg Duration: ${data.average_duration}s`
+                                        `Failure Rate: ${data.failure_rate}`,
+                                        `Block Rate: ${data.block_rate}`,
+                                        `Avg Duration: ${data.average_duration}`
                                     ];
                                 }
                             }

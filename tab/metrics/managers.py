@@ -12,6 +12,18 @@ if TYPE_CHECKING:
     from .models import History
 
 
+def format_percentage(value: float, decimals: int = 1) -> str:
+    if value < 0:
+        return "?"
+    return f"{round(value * 100, decimals)}%"
+
+
+def format_duration(value: float, decimals: int = 1) -> str:
+    if value < 0:
+        return "?"
+    return f"{round(value, decimals)}s"
+
+
 class HistoryManager(models.Manager):
     def create_from_test(self, test: Test, result: Result | None = None):
         limit = timezone.now() - timedelta(hours=1)
@@ -41,18 +53,18 @@ class HistoryManager(models.Manager):
             data.append(
                 {
                     "date": history.timestamp.strftime("%Y-%m-%d %H:%M"),
-                    "failure_rate": round(history.failure_rate * 100, 1),
-                    "block_rate": round(history.block_rate * 100, 1),
-                    "average_duration": round(history.average_duration, 1),
+                    "failure_rate": format_percentage(history.failure_rate),
+                    "block_rate": format_percentage(history.block_rate),
+                    "average_duration": format_duration(history.average_duration),
                 }
             )
         if not data:
             data.append(
                 {
                     "date": timezone.now().strftime("%Y-%m-%d %H:%M"),
-                    "failure_rate": round(test.failure_rate * 100, 1),
-                    "block_rate": round(test.block_rate * 100, 1),
-                    "average_duration": round(test.average_duration, 1),
+                    "failure_rate": format_percentage(test.failure_rate),
+                    "block_rate": format_percentage(test.block_rate),
+                    "average_duration": format_duration(test.average_duration),
                 }
             )
         if len(data) < 10:
