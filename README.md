@@ -23,7 +23,7 @@ jobs:
     ...
     - run: npm run e2e
       env:
-        TAB_API_URL: ${{ secrets.TAB_API_URL }}
+        TAB_API_URL: ${{ vars.TAB_API_URL }}
         TAB_API_KEY: ${{ secrets.TAB_API_KEY }}
         CI_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
         CI_PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -42,7 +42,7 @@ jobs:
         cargo nextest run --profile=ci || true  # let TAB determine failure
         .github/workflows/lib/upload-results.sh
       env:
-        TAB_API_URL: ${{ secrets.TAB_API_URL }}
+        TAB_API_URL: ${{ vars.TAB_API_URL }}
         TAB_API_KEY: ${{ secrets.TAB_API_KEY }}
         CI_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
         CI_PR_NUMBER: ${{ github.event.pull_request.number }}
