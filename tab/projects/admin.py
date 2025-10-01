@@ -90,13 +90,14 @@ class SuiteAdmin(admin.ModelAdmin):
         "project",
         "name",
         "parent",
+        "supports_override",
         "tests_count",
         "command",
         "created_at",
         "updated_at",
     )
     ordering = ("-updated_at",)
-    list_filter = ("name", "project__repository")
+    list_filter = ("name", "supports_override", "project__repository")
 
     @admin.display(description="Command")
     def command(self, suite: Suite):
