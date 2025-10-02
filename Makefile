@@ -176,10 +176,10 @@ test-e2e: install
 
 	./manage.py cleandata
 
-# SERVER TARGETS ##############################################################
+# LOCAL DEVELOPMENT ###########################################################
 
 .PHONY: run
-run: .envrc install migrate ## Run the application
+run: .envrc install migrate ## Start the server
 	./manage.py runserver
 
 .PHONY: run-production
@@ -187,10 +187,12 @@ run-production: .envrc
 	docker build --tag $(IMAGE):latest .
 	docker run --env SECRET_KEY=local --env DATABASE_URL=$(DATABASE_URL) --env REDIS_URL=$(REDIS_URL) --publish=8000:8000 --rm $(IMAGE):latest
 
-# DOCUMENTATION TARGETS #######################################################
+.PHONY: docs
+docs: uml ## Generate documentation
 
 .PHONY: uml
-uml: install
+uml: docs/*.png
+docs/*.png: tab/*/migrations/*
 	poetry install --with=docs
 	@ echo
 	poetry run pyreverse $(PROJECT) -p $(PROJECT) -a 1 -f ALL -o png --ignore admin.py,migrations,management,tests
