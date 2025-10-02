@@ -83,10 +83,10 @@ def describe_results():
 
     @pytest.mark.django_db
     def it_updates_existing_test(expect, client, payload):
-        local_payload = payload.copy()
-        local_payload["branch"] = ""
-        local_payload["commit"] = ""
-        response = post_json(client, url, local_payload)
+        payload2 = payload.copy()
+        payload2["branch"] = ""
+        payload2["commit"] = ""
+        response = post_json(client, url, payload2)
         test = Test.objects.get()
 
         expect(response.status_code) == 201
@@ -135,7 +135,7 @@ def describe_bulk_results():
         test: Test = Test.objects.first()  # type: ignore[assignment]
         expect(test.original_branch) == "main"
         expect(test.original_commit) == "abc123"
-        expect(test.metadata) == {"EXTRA": "foobar", "suite": "unit"}
+        expect(test.original_metadata) == {"EXTRA": "foobar", "suite": "unit"}
         result: Result = Result.objects.first()  # type: ignore[assignment]
         expect(result.branch) == "main"
         expect(result.commit) == "abc123"

@@ -107,7 +107,9 @@ class SuiteAdmin(admin.ModelAdmin):
     def reset_test_origins(self, request, queryset):
         count = 0
         for suite in queryset:
-            suite.tests.update(original_branch="", original_commit="", metadata={})
+            suite.tests.update(
+                original_branch="", original_commit="", original_metadata={}
+            )
             count += 1
         s = "" if count == 1 else "s"
         self.message_user(

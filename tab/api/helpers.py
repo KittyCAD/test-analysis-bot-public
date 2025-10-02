@@ -75,7 +75,7 @@ def parse_junit_xml(
                     "suite": suite,
                     "original_branch": branch,
                     "original_commit": commit,
-                    "metadata": metadata,
+                    "original_metadata": metadata,
                 }
                 result_data = {
                     "test_name": name,
@@ -98,14 +98,14 @@ def parse_junit_xml(
                         suite=suite,
                         original_branch=branch,
                         original_commit=commit,
-                        metadata=metadata,
+                        original_metadata=metadata,
                     ),
                 )
-                if not all([test.suite, test.original_branch, test.original_commit]):
-                    test.suite = test.suite or suite
+                if test.suite != suite or not test.original_branch:
+                    test.suite = suite
                     test.original_branch = test.original_branch or branch
                     test.original_commit = test.original_commit or commit
-                    test.metadata = test.metadata or metadata
+                    test.original_metadata = test.original_metadata or metadata
                     test.save()
                     log.info(f"Updated test: {test}")
                 elif created:
@@ -139,17 +139,17 @@ def parse_junit_xml(
         # Bulk update tests
         tests_to_update: list[Test] = []
         for test in existing_tests.values():
-            if not all([test.suite, test.original_branch, test.original_commit]):
-                test.suite = test.suite or suite
+            if test.suite != suite or not test.original_branch:
+                test.suite = suite
                 test.original_branch = test.original_branch or branch
                 test.original_commit = test.original_commit or commit
-                test.metadata = test.metadata or metadata
+                test.original_metadata = test.original_metadata or metadata
                 tests_to_update.append(test)
 
         if tests_to_update:
             Test.objects.bulk_update(
                 tests_to_update,
-                ["suite", "original_branch", "original_commit", "metadata"],
+                ["suite", "original_branch", "original_commit", "original_metadata"],
             )
             log.info(f"Updated tests: {len(tests_to_update)}")
 

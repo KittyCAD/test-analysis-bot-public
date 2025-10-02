@@ -79,7 +79,7 @@ def results(request, payload: ResultRequest):
             suite=suite,
             original_branch=payload.branch,
             original_commit=payload.commit,
-            metadata=metadata,
+            original_metadata=metadata,
         ),
     )
     if created:
@@ -90,7 +90,7 @@ def results(request, payload: ResultRequest):
         test.suite = test.suite or suite
         test.original_branch = test.original_branch or payload.branch
         test.original_commit = test.original_commit or payload.commit
-        test.metadata = test.metadata or metadata
+        test.original_metadata = test.original_metadata or metadata
         test.save()
         log.info(f"Updated test: {test}")
     else:

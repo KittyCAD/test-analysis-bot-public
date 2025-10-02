@@ -176,7 +176,7 @@ class Test(models.Model):
         default="",
         help_text="Hash of the commit that originally added this test",
     )
-    metadata = models.JSONField(default=dict, blank=True)
+    original_metadata = models.JSONField(default=dict, blank=True)
 
     disabled_at = models.DateTimeField(
         null=True,
