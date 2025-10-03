@@ -70,7 +70,7 @@ migrate: install ## Database | Run database migrations
 .PHONY: data
 data: install migrate ## Database | Seed data for manual testing
 	./manage.py gendata
-	./manage.py loaddata projects
+	./manage.py loaddata projects releases
 
 .PHONY: reset
 reset: install ## Database | Create a new database, migrate, and seed it
@@ -199,7 +199,7 @@ docs/*.png: tab/*/migrations/*
 	rm -f docs/*.png
 	mv -f classes_$(PROJECT).png docs/classes.png
 	mv -f packages_$(PROJECT).png docs/packages.png
-	./manage.py graph_models --group-models --output=docs/tables.png core projects metrics
+	./manage.py graph_models --group-models --output=docs/tables.png core projects metrics releases
 
 # HELP ########################################################################
 

@@ -3,7 +3,7 @@ import pytest
 from tab.core.models import Organization
 from tab.projects.models import Project, Suite, Test
 
-from .models import Alert, History, Subscription, Team
+from ..models import Alert, History, Subscription, Team
 
 
 def describe_alert():

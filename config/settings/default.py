@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "tab.core",
     "tab.projects",
     "tab.metrics",
+    "tab.releases",
 ]
 
 MIDDLEWARE = [
