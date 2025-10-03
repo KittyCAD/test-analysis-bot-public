@@ -48,10 +48,8 @@ class IndexView(LoginRequiredMixin, TemplateView):
             projects = Project.objects.none()
 
         context["projects"] = projects
-        if self.request.user.is_staff and organization:
-            context["admin_url"] = reverse(
-                "admin:core_organization_change", args=[organization.pk]
-            )
+        if self.request.user.is_staff:
+            context["admin_url"] = reverse("admin:index")
 
         return context
 
