@@ -474,6 +474,31 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         return redirect(redirect_url)
 
 
+class TestResultView(LoginRequiredMixin, TemplateView):
+    template_name = "projects/test-result.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
+        result = get_object_or_404(Result, test=test, id=self.kwargs["result_id"])
+
+        context["project"] = project
+        context["test"] = test
+        context["result"] = result
+        context["status"] = Status(result.status)
+
+        if self.request.user.is_staff:
+            context["admin_url"] = reverse(
+                "admin:projects_result_change", args=[result.pk]
+            )
+
+        return context
+
+
 class MetricsView(LoginRequiredMixin, TemplateView):
     template_name = "projects/metrics.html"
 

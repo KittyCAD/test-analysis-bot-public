@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load humanize %}
+{% load color_tags %}
+
+{% block title %}
+    {{ result.test.project.name }} › {{ result.test.name }} › Result #{{ result.id }}
+{% endblock title %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">{{ result.test.project.name }}</h1>
+            <div class="btn-group">
+                <a href="{% url 'projects:test-results' result.test.project.path result.test.id %}"
+                   class="btn btn-sm btn-outline-dark">View All Test Results</a>
+                <button type="button"
+                        class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item small"
+                           href="{% url 'projects:tests' result.test.project.path %}">View All Tests</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <h2 class="mb-4">{% include "projects/_markers.html" with label=result.test.label markers=result.test.markers %}</h2>
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Result Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <h6 class="text-muted">Status</h6>
+                        <span class="badge text-bg-{{ status.color }} fs-6">{{ status.label }}</span>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <h6 class="text-muted">When</h6>
+                        <span>{{ result.created_at|naturaltime }}</span>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <h6 class="text-muted">Duration</h6>
+                        <span class="font-monospace">{{ result.duration_humanized }}</span>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <h6 class="text-muted">Branch</h6>
+                        {% if result.branch %}
+                            <a href="{{ result.branch_url }}"
+                               target="_blank"
+                               class="font-monospace text-decoration-none">{{ result.branch }}</a>
+                        {% else %}
+                            <span class="font-monospace">—</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <h6 class="text-muted">Commit</h6>
+                        {% if result.commit %}
+                            <a href="{{ result.commit_url }}"
+                               target="_blank"
+                               class="font-monospace text-decoration-none">{{ result.commit_humanized }}</a>
+                        {% else %}
+                            <span class="font-monospace">—</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <h6 class="text-muted">Target</h6>
+                        <span>{{ result.target|default:"—" }}</span>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <h6 class="text-muted">Platform</h6>
+                        <span>{{ result.platform|default:"—" }}</span>
+                    </div>
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <h6 class="text-muted">Final Rerun</h6>
+                        {% if result.final %}
+                            <i class="fa-solid fa-check text-success"></i>
+                        {% else %}
+                            <i class="fa-solid fa-xmark text-danger"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                <hr>
+                {% include "projects/_result_details.html" with result=result %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}

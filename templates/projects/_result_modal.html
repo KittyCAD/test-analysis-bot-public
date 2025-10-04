@@ -1,0 +1,21 @@
+<button type="button"
+        class="btn btn-sm btn-outline-dark"
+        title="View result details"
+        data-bs-toggle="modal"
+        data-bs-target="#details-{{ result.pk }}">
+    <i class="fa-solid fa-maximize"></i>
+</button>
+<div class="modal fade" id="details-{{ result.pk }}" tabindex="-1">
+    <div class="modal-dialog modal-xl wide-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Result Details</h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body">{% include "projects/_result_details.html" with result=result %}</div>
+        </div>
+    </div>
+</div>

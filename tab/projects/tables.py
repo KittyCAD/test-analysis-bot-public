@@ -269,9 +269,15 @@ class TestResultTable(tables.Table):
 
     def render_status(self, record: Result):
         status = Status(record.status)
-        html = f'<span class="badge text-bg-{status.color} fs-6">{status.label}</span>'
+        url = reverse(
+            "projects:test-result",
+            args=[record.test.project.path, record.test.id, record.id],
+        )
+        html = f'<a href="{url}" class="badge text-bg-{status.color} fs-6 text-decoration-none">{status.label}</a>'
         if record.message:
-            details = render_to_string("projects/_details.html", {"result": record})
+            details = render_to_string(
+                "projects/_result_modal.html", {"result": record}
+            )
             html = f'<div class="d-flex align-items-center gap-1">{html} <span class="ms-1">{details}</span></div>'
         return mark_safe(html)
 
