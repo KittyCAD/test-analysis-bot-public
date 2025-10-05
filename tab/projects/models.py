@@ -1,3 +1,4 @@
+import json
 import re
 from datetime import timedelta
 
@@ -633,10 +634,36 @@ class Result(models.Model):
         return f"{self.duration:.1f}s"
 
     @property
-    def logs(self):
-        if logs := self.metadata.get("logs"):
-            return logs
-        return None
+    def logs(self) -> list:
+        return self.metadata.get("logs") or []
+
+    @property
+    def logs_json(self) -> str:
+        if not self.logs:
+            return "[]"
+        return json.dumps(self.logs, indent=2)
+
+    @property
+    def logs_table_data(self):
+        if not self.logs:
+            return {"headers": [], "rows": []}
+
+        first_entry = self.logs[0]
+        if not isinstance(first_entry, dict):
+            return {"headers": [], "rows": []}
+
+        headers = sorted(list(first_entry.keys()))
+        rows = []
+
+        for log_entry in self.logs:
+            if isinstance(log_entry, dict):
+                row = []
+                for key in headers:
+                    value = log_entry.get(key, "—")
+                    row.append(value)
+                rows.append(row)
+
+        return {"headers": headers, "rows": rows}
 
     def normalize(self):
         if self.duration:
