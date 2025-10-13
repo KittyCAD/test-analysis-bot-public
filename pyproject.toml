@@ -34,7 +34,7 @@ redis = "^6.4.0"
 
 # Integrations
 pygithub = "^2.8.1"
-slack-sdk = "^3.36.0"
+slack-sdk = "^3.37.0"
 
 # Utilities
 markdown = "^3.9"
