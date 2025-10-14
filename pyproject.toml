@@ -49,7 +49,7 @@ whitenoise = "^6.11.0"
 
 # Formatting
 black = "^25.9.0"
-isort = "^6.1.0"
+isort = "^7.0.0"
 djlint = "^1.36.4"
 
 # Linting
