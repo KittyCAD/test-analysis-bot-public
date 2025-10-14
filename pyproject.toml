@@ -29,7 +29,7 @@ django-ninja = "^1.4.3"
 
 # Storage
 dj-database-url = "*"
-psycopg2-binary = "^2.9.1"
+psycopg2-binary = "^2.9.11"
 redis = "^6.4.0"
 
 # Integrations
