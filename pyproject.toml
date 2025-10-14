@@ -54,7 +54,7 @@ djlint = "^1.36.4"
 
 # Linting
 mypy = "^1.18.2"
-django-stubs = { version = "^5.2.6", extras = ["compatible-mypy"] }
+django-stubs = { version = "^5.2.7", extras = ["compatible-mypy"] }
 types-markdown = "*"
 
 # Testing
