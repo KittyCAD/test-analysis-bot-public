@@ -36,9 +36,10 @@ class SuiteInline(admin.TabularInline):
 class ProjectAdmin(admin.ModelAdmin):
     search_fields = ("repository", "error_indicators")
     list_display = (
-        "name",
+        "id",
         "repository",
         "default_branch",
+        "sample_count",
         "branch_inactive_threshold_humanized",
         "test_inactive_threshold_humanized",
         "test_stale_threshold_humanized",
@@ -48,7 +49,12 @@ class ProjectAdmin(admin.ModelAdmin):
         "updated_at",
     )
     ordering = ("repository",)
-    list_filter = ("cleaned_at", "created_at", "updated_at")
+    list_filter = (
+        "sample_count",
+        "cleaned_at",
+        "created_at",
+        "updated_at",
+    )
 
     @admin.display(description="Branches Inactive")
     def branch_inactive_threshold_humanized(self, project: Project) -> str:
