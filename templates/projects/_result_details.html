@@ -14,7 +14,7 @@
             <h5 class="text-muted mb-0">Additional Logs</h5>
             <button class="btn btn-sm btn-outline-secondary copy-btn"
                     data-clipboard-text="{{ result.logs_json }}"
-                    title="Copy logs to clipboard">
+                    title="Copy JSON">
                 <i class="fa-regular fa-copy"></i>
             </button>
         </div>
@@ -49,7 +49,7 @@
                     {% if copyable %}
                         <button class="btn btn-sm btn-outline-secondary ms-2 copy-btn"
                                 data-clipboard-text="{{ line }}"
-                                title="Copy to clipboard">
+                                title="Copy Line">
                             <i class="fa-regular fa-copy"></i>
                         </button>
                     {% endif %}
