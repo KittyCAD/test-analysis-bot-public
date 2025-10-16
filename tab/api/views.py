@@ -11,6 +11,7 @@ from unidecode import unidecode
 from tab.core.models import Organization
 from tab.projects.enums import Status
 from tab.projects.models import Project, Result, Suite, Test
+from tab.releases.models import Environment
 
 from .helpers import parse_junit_xml, update_status
 from .schemas import (
@@ -104,6 +105,7 @@ def results(request, payload: ResultRequest):
         metadata=metadata,
     )
     log.info(f"Created result: {result}")
+    Environment.objects.process(project, [result])
 
     return status, ResultResponse(
         suite=unidecode(str(suite)),
@@ -155,6 +157,7 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
             metadata,
             deferred=deferred,
         )
+        Environment.objects.process(project, results)
         return 200, BulkResultResponse(
             suite=unidecode(str(suite)),
             branch=payload.branch,

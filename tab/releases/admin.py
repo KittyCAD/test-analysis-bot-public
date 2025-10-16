@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Environment
+from .models import Environment, Release
 
 
 @admin.register(Environment)
@@ -21,3 +21,19 @@ class EnvironmentAdmin(admin.ModelAdmin):
 
     raw_id_fields = ("project",)
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(Release)
+class ReleaseAdmin(admin.ModelAdmin):
+
+    search_fields = ()
+    list_display = (
+        "id",
+        "environment",
+        "branch",
+        "commit",
+        "created_at",
+        "results_passed",
+        "results_total",
+        "tested_at",
+    )
