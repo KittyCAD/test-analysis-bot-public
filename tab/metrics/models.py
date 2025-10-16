@@ -83,7 +83,7 @@ class Team(models.Model):
 
     @property
     def recently_alerted(self):
-        threshold = timezone.now() - timedelta(hours=1)
+        threshold = timezone.now() - timedelta(hours=4)
         return self.alerted_at and self.alerted_at > threshold
 
     def save(self, *args, **kwargs):
