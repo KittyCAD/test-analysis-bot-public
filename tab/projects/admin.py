@@ -39,7 +39,6 @@ class ProjectAdmin(admin.ModelAdmin):
         "id",
         "repository",
         "default_branch",
-        "sample_count",
         "branch_inactive_threshold_humanized",
         "test_inactive_threshold_humanized",
         "test_stale_threshold_humanized",
@@ -50,7 +49,6 @@ class ProjectAdmin(admin.ModelAdmin):
     )
     ordering = ("repository",)
     list_filter = (
-        "sample_count",
         "cleaned_at",
         "created_at",
         "updated_at",

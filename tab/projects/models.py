@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import re
 from datetime import timedelta
@@ -5,6 +7,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import QuerySet
 from django.utils import timezone
 
 import log
@@ -25,10 +28,6 @@ class Project(models.Model):
     default_branches = models.JSONField(
         default=get_default_branches,
         help_text="Results from these branches will be considered in computed metrics",
-    )
-    sample_count = models.IntegerField(
-        default=100,
-        help_text="Number of recent test results to consider in computed metrics",
     )
     error_indicators = models.JSONField(
         default=list,
@@ -361,13 +360,13 @@ class Test(models.Model):
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
-        results = self.results.filter(
+        queryset = self.results.filter(
             branch__in=self.significant_branches,
         ).order_by("-created_at")
-        if not results.exists():
+        if not queryset.exists():
             return False
 
-        results = results[: self.project.sample_count]
+        results = self._bias_to_recent(queryset)
         failed = sum(result.status in Status.test_failed() for result in results)
         new = round(failed / len(results), 6)
 
@@ -393,14 +392,14 @@ class Test(models.Model):
 
     def update_block_rate(self) -> bool:
         old = self.block_rate
-        results = self.results.filter(
+        queryset = self.results.filter(
             branch__in=self.significant_branches,
             final=True,
         ).order_by("-created_at")
-        if not results.exists():
+        if not queryset.exists():
             return False
 
-        results = results[: self.project.sample_count]
+        results = self._bias_to_recent(queryset, min_samples=10)
         failed = sum(result.status in Status.merge_blocked() for result in results)
         new = round(failed / len(results), 6)
 
@@ -413,15 +412,15 @@ class Test(models.Model):
 
     def update_average_duration(self) -> bool:
         old = self.average_duration
-        results = self.results.filter(
+        queryset = self.results.filter(
             branch__in=self.significant_branches,
             status__in=Status.measurable(),
             duration__gt=0,
         ).order_by("-created_at")
-        if not results.exists():
+        if not queryset.exists():
             return False
 
-        results = results[: self.project.sample_count]
+        results = self._bias_to_recent(queryset)
         durations = [result.duration for result in results if result.duration]
         if not durations:
             return False
@@ -433,6 +432,17 @@ class Test(models.Model):
         log.debug(f"Test has new average duration: {old} => {new} seconds")
         self.average_duration = new
         return True
+
+    def _bias_to_recent(
+        self, results: QuerySet[Result], *, min_samples: int = 20, max_samples: int = 60
+    ) -> list[Result]:
+        """Limit results to the past day, backfilling with older results if needed."""
+        lookback_window = timezone.now() - timedelta(days=1)
+        recent_results = results.filter(created_at__gte=lookback_window)
+        if recent_results.count() >= min_samples:
+            return list(recent_results[:max_samples])
+        else:
+            return list(results[:min_samples])
 
     def update(self, result=None) -> bool:
         if failure_rated_updated := self.update_failure_rate():
