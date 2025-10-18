@@ -31,13 +31,14 @@ class HistoryManager(models.Manager):
             log.debug(f"Skipped redundant metric creation: {test}")
             return None
 
-        history = self.create(
+        history: History = self.create(  # type: ignore[assignment]
             test=test,
             result=result,
             failure_rate=test.failure_rate,
             block_rate=test.block_rate,
             average_duration=test.average_duration,
         )
+        history.evaluate()
 
         cutoff = timezone.now() - timedelta(weeks=26)
         if count := self.filter(test=test, timestamp__lt=cutoff).delete()[0]:

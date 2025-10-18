@@ -43,15 +43,21 @@ class History(models.Model):
     def label(self) -> str:
         return self.test.project.name + " › " + self.test.name
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.evaluate()
-
     def evaluate(self) -> bool:
         if not self.test.enabled:
+            log.debug(f"Skipped alert for disabled test: {self.test}")
             return False
 
+        # TODO: Consider using the past history record rather the the property
         if self.test.failure_rate_delta < DELTA_THRESHOLD:
+            log.debug(
+                f"Failure rate {self.test.failure_rate_delta} below threshold: {self.test}"
+            )
+            return False
+
+        previous = self.test.history.filter(timestamp__lt=self.timestamp).first()
+        if previous and previous.failure_rate > self.test.failure_rate:
+            log.debug(f"Failure rate is trending downward: {self.test}")
             return False
 
         key = f"{ALERT_CACHE_KEY}:{self.test.id}"
