@@ -399,7 +399,7 @@ class Test(models.Model):
         if not queryset.exists():
             return False
 
-        results = self._bias_to_recent(queryset, min_samples=10)
+        results = self._bias_to_recent(queryset, min_samples=15)
         failed = sum(result.status in Status.merge_blocked() for result in results)
         new = round(failed / len(results), 6)
 
@@ -420,7 +420,7 @@ class Test(models.Model):
         if not queryset.exists():
             return False
 
-        results = self._bias_to_recent(queryset)
+        results = self._bias_to_recent(queryset, max_samples=150)
         durations = [result.duration for result in results if result.duration]
         if not durations:
             return False
