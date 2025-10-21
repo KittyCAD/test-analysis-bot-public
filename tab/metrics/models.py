@@ -203,8 +203,11 @@ class Alert(models.Model):
 
             if subscription.primary:
                 message = self.build(test=test)
-            else:
+            elif self.url:
                 message = self.build(test=test, url=self.url)
+            else:
+                log.warning(f"No existing primary alert for test: {self.history.test}")
+                continue
 
             team: Team = subscription.team
             if team.recently_alerted and not force:
