@@ -147,6 +147,7 @@ class Suite(models.Model):
 
     class Meta:
         ordering = ["name"]
+        unique_together = ["project", "name"]
 
     def __str__(self):
         if self.name == DEFAULT_SUITE:
