@@ -1,12 +1,14 @@
 from django.contrib import admin, messages
 
+import log
+
 from .models import Organization, generate_key
 
 
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
     search_fields = ("name", "email_domain", "repository_index")
-    actions = ["regenerate_key"]
+    actions = ["regenerate_key", "test_exception"]
     list_display = (
         "name",
         "email_domain",
@@ -29,5 +31,11 @@ class OrganizationAdmin(admin.ModelAdmin):
             f"Successfully regenerated keys for {count} organization{s}.",
             messages.SUCCESS,
         )
+
+    @admin.action(description="Trigger sample exception")
+    def test_exception(self, request, queryset):
+        log.error(f"Sample exception triggered by admin: {request.user}")
+
+        raise RuntimeError("This is a sample exception.")
 
     readonly_fields = ("created_at", "updated_at")

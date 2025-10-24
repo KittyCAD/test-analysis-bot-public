@@ -42,6 +42,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "tab.core.middleware.ExceptionLoggingMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -73,11 +74,21 @@ LOGGING: dict = {
         "standard": {
             "format": "%(levelname)s: %(message)s",
         },
+        "json": {
+            "()": "tab.core.logging.JSONFormatter",
+        },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "standard",
+            "formatter": "json",
+        },
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": [],
+            "level": "CRITICAL",
+            "propagate": False,
         },
     },
     "root": {
