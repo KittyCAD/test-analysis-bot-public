@@ -55,6 +55,7 @@ class Release(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        unique_together = ["environment", "commit"]
 
     def __str__(self):
         return f"{self.environment} › {self.branch}@{self.commit}"
