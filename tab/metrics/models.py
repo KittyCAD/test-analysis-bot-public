@@ -48,6 +48,10 @@ class History(models.Model):
             log.debug(f"Skipped alert for disabled test: {self.test}")
             return False
 
+        if self.test.block_rate <= 0:
+            log.debug(f"Skipped alert for non-blocking test: {self.test}")
+            return False
+
         # TODO: Consider using the past history record rather the the property
         if self.test.failure_rate_delta < DELTA_THRESHOLD:
             log.debug(

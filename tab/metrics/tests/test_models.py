@@ -31,7 +31,7 @@ def describe_history():
             assert test.enabled == True
 
             # Create the initial record
-            history = History.objects.create(
+            history: History = History.objects.create(
                 test=test, failure_rate=0, block_rate=0, average_duration=0
             )
             history.timestamp = timezone.now() - timedelta(days=1)
@@ -62,10 +62,25 @@ def describe_history():
             )
             expect(history.evaluate()) == False
 
-            # Exceed the failure rate threshold
+            # Exceed the failure rate threshold, non-blocking
             test.failure_rate = 0.35
+            test.block_rate = 0
             history = History.objects.create(
-                test=test, failure_rate=0.35, block_rate=0, average_duration=0
+                test=test,
+                failure_rate=0.35,
+                block_rate=-1,
+                average_duration=-1,
+            )
+            expect(history.evaluate()) == False
+
+            # Exceed the failure rate threshold, blocking
+            test.failure_rate = 0.35
+            test.block_rate = 0.01
+            history = History.objects.create(
+                test=test,
+                failure_rate=0.35,
+                block_rate=-1,
+                average_duration=-1,
             )
             expect(history.evaluate()) == True
 
