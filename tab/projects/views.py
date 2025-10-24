@@ -499,6 +499,18 @@ class TestResultView(LoginRequiredMixin, TemplateView):
         return context
 
 
+class ResultDetailsView(LoginRequiredMixin, TemplateView):
+    """API view to lazily load result details modal content."""
+
+    template_name = "projects/_result_details.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        result = get_object_or_404(Result, pk=self.kwargs["result_id"])
+        context["result"] = result
+        return context
+
+
 class MetricsView(LoginRequiredMixin, TemplateView):
     template_name = "projects/metrics.html"
 
