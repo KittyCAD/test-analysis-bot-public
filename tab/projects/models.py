@@ -348,16 +348,18 @@ class Test(models.Model):
     @property
     def failure_rate_delta(self) -> float:
         previous = timezone.now() - timedelta(days=1)
-        if record := self.history.filter(timestamp__lte=previous).first():
-            return self.failure_rate - record.failure_rate
-        return 0
+        record = self.history.filter(timestamp__lte=previous).first()
+        if not record or record.failure_rate < 0:
+            return 0.0
+        return self.failure_rate - record.failure_rate
 
     @property
     def block_rate_delta(self) -> float:
         previous = timezone.now() - timedelta(days=1)
-        if record := self.history.filter(timestamp__lte=previous).first():
-            return self.block_rate - record.block_rate
-        return 0
+        record = self.history.filter(timestamp__lte=previous).first()
+        if not record or record.block_rate < 0:
+            return 0.0
+        return self.block_rate - record.block_rate
 
     def update_failure_rate(self) -> bool:
         old = self.failure_rate
