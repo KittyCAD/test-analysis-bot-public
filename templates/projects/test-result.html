@@ -29,7 +29,9 @@
                 </ul>
             </div>
         </div>
-        <h2 class="mb-4">{% include "projects/_markers.html" with label=result.test.label markers=result.test.markers %}</h2>
+        <h2 class="mb-4">
+            {% include "projects/_markers.html" with label=result.test.label markers=result.test.markers nowrap=True %}
+        </h2>
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">Result Details</h5>

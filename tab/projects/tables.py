@@ -95,7 +95,7 @@ class TestTable(tables.Table):
     def render_name(self, record: Test):
         return render_to_string(
             "projects/_markers.html",
-            {"label": wrap(record.label), "markers": record.markers},
+            {"label": wrap(record.label), "markers": record.markers, "nowrap": True},
         )
 
     def render_enabled(self, value):
@@ -191,7 +191,7 @@ class DisabledTestTable(tables.Table):
     def render_name(self, record: Test):
         return render_to_string(
             "projects/_markers.html",
-            {"label": wrap(str(record)), "markers": record.markers},
+            {"label": wrap(str(record)), "markers": record.markers, "nowrap": True},
         )
 
     def render_failure_rate(self, record: Test):
@@ -321,7 +321,7 @@ class TestResultTable(tables.Table):
         if record.markers:
             html = render_to_string(
                 "projects/_markers.html",
-                {"label": mark_safe(html), "markers": record.markers},
+                {"label": mark_safe(html), "markers": record.markers, "nowrap": False},
             )
         if not record.final:
             html = f'<span class="opacity-25">{html}</span>'

@@ -1,6 +1,6 @@
 <span>
     <span class="me-1">{{ label }}</span>
-    <span class="text-nowrap">
+    <span {% if nowrap %}class="text-nowrap"{% endif %}>
         {% for marker in markers %}<span class="badge rounded-pill bg-secondary me-1">{{ marker }}</span>{% endfor %}
     </span>
 </span>
