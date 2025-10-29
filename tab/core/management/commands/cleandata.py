@@ -4,6 +4,8 @@ from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+import log
+
 from tab.api.constants import TESTS_CACHE_KEY
 from tab.projects.models import Project, Result, Test
 
@@ -23,11 +25,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
         start = timezone.now()
-        self.stdout.write(
-            self.style.MIGRATE_HEADING(
-                f"Started job at {start.strftime('%Y-%m-%d %H:%M:%S')}"
-            )
-        )
+        log.info(f"Started job at {start.strftime('%Y-%m-%d %H:%M:%S')}")
         for project in Project.objects.all():
             count = 0
             if project.test_stale_threshold:
@@ -39,16 +37,10 @@ class Command(BaseCommand):
                 project.save()
         self.update_bulk_tests()
         delta = timezone.now() - start
-        self.stdout.write(
-            self.style.MIGRATE_HEADING(
-                f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}"
-            )
-        )
+        log.info(f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}")
 
     def delete_stale_tests(self, project: Project, dry_run: bool) -> int:
-        self.stdout.write(
-            self.style.MIGRATE_LABEL(f"Cleaning up stale tests: {project}")
-        )
+        log.info(f"Cleaning up stale tests: {project}")
 
         cutoff = timezone.now() - project.test_stale_threshold
         tests = Test.objects.filter(
@@ -58,19 +50,15 @@ class Command(BaseCommand):
         count = tests.count()
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING(f"Would delete {count} tests: {project}")
-            )
+            log.warning(f"Would delete {count} tests: {project}")
             return 0
 
         tests.delete()
-        self.stdout.write(self.style.SUCCESS(f"Deleted {count} tests: {project}"))
+        log.info(f"Deleted {count} tests: {project}")
         return count
 
     def delete_stale_results(self, project: Project, dry_run: bool) -> int:
-        self.stdout.write(
-            self.style.MIGRATE_LABEL(f"Cleaning up stale results: {project}")
-        )
+        log.info(f"Cleaning up stale results: {project}")
 
         cutoff = timezone.now() - project.result_stale_threshold
         results = Result.objects.filter(
@@ -80,9 +68,7 @@ class Command(BaseCommand):
         count = results.count()
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING(f"Would delete {count} results: {project}")
-            )
+            log.warning(f"Would delete {count} results: {project}")
             return 0
 
         deleted = 0
@@ -92,21 +78,17 @@ class Command(BaseCommand):
                 break
             chunk_count = Result.objects.filter(id__in=chunk_ids).delete()[0]
             deleted += chunk_count
-            self.stdout.write(
-                self.style.SUCCESS(f"Deleted {deleted}/{count} results: {project}")
-            )
+            log.info(f"Deleted {deleted}/{count} results: {project}")
         return deleted
 
     def update_bulk_tests(self):
         if test_ids := cache.get(TESTS_CACHE_KEY):
             cache.delete(TESTS_CACHE_KEY)
             tests = Test.objects.filter(id__in=test_ids)
-            self.stdout.write(
-                self.style.MIGRATE_LABEL(f"Processing {tests.count()} tests")
-            )
+            log.info(f"Processing {tests.count()} tests")
             for test in tests:
                 if test.update():
-                    self.stdout.write(self.style.SUCCESS(f"Updated test: {test}"))
+                    log.info(f"Updated test: {test}")
                 test.save()
                 for result in (
                     test.results.filter(

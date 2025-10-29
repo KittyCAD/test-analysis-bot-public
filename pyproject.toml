@@ -132,7 +132,7 @@ addopts = """
 
 --fail-on-template-vars
 
- --junit-xml=test-results/junit.xml
+--junit-xml=test-results/junit.xml
 
 --cov=tab
 --cov-report=html
