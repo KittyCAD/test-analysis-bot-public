@@ -283,8 +283,10 @@ class Test(models.Model):
     @property
     def substring(self) -> str:
         parts = self.name.split(" › ")[-2:]
-        if "." in parts[0]:
+        if "." in parts[0]:  # remove module namespaces
             parts[0] = parts[0].split(".")[-1]
+        if " [" in parts[-1]:  # remove parameterized variant
+            parts[-1] = parts[-1].split(" [")[0]
         return " and ".join(parts).strip()
 
     @property
@@ -448,16 +450,9 @@ class Test(models.Model):
             return list(results[:min_samples])
 
     def update(self, result=None) -> bool:
-        # TODO: Remove this once all tests are updated
-        renamed = False
-        if self.name.endswith("]") and " [" not in self.name:
-            log.warning(f"Fixing test name: {self.name}")
-            self.name = re.sub(r"(\S)\[", r"\1 [", self.name)
-            renamed = True
-
         if failure_rated_updated := self.update_failure_rate():
             self.history.create_from_test(self, result)
-        return renamed or any(
+        return any(
             [
                 failure_rated_updated,
                 self.update_block_rate(),

@@ -60,7 +60,7 @@ EXAMPLE_TESTS = [
     ),
     ExampleTest(
         case="Pytest",
-        name="pytest › app.tests.test_models.describe_test.describe_str › it_formats_name",
+        name="pytest › app.tests.test_models.describe_test.describe_str › it_formats_name [variant]",
         substring="describe_str and it_formats_name",
     ),
 ]
