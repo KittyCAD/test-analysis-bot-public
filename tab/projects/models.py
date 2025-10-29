@@ -448,9 +448,16 @@ class Test(models.Model):
             return list(results[:min_samples])
 
     def update(self, result=None) -> bool:
+        # TODO: Remove this once all tests are updated
+        renamed = False
+        if self.name.endswith("]") and " [" not in self.name:
+            log.warning(f"Fixing test name: {self.name}")
+            self.name = re.sub(r"(\S)\[", r"\1 [", self.name)
+            renamed = True
+
         if failure_rated_updated := self.update_failure_rate():
             self.history.create_from_test(self, result)
-        return any(
+        return renamed or any(
             [
                 failure_rated_updated,
                 self.update_block_rate(),

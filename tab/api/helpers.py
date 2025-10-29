@@ -1,3 +1,4 @@
+import re
 import xml.etree.ElementTree as ET
 
 from django.conf import settings
@@ -66,6 +67,7 @@ def parse_junit_xml(
                 if value and value not in name_components:
                     name_components.append(value)
             name = " › ".join(name_components)
+            name = re.sub(r"(\S)\[", r"\1 [", name)  # pytest parametrized tests
 
             if deferred:
                 # Prepare bulk data

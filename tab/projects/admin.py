@@ -175,6 +175,7 @@ class TestAdmin(admin.ModelAdmin):
     @admin.action(description="Disable selected tests")
     def disable(self, request, queryset):
         count = 0
+        test: Test
         for test in queryset.filter(disabled_at__isnull=True):
             test.disabled_at = timezone.now()
             test.disabled_user = test.disabled_user or request.user
@@ -188,6 +189,7 @@ class TestAdmin(admin.ModelAdmin):
     @admin.action(description="Enable selected tests")
     def enable(self, request, queryset):
         count = 0
+        test: Test
         for test in queryset.filter(disabled_at__isnull=False):
             test.disabled_at = None
             test.disabled_user = test.disabled_user or request.user
@@ -201,6 +203,7 @@ class TestAdmin(admin.ModelAdmin):
     @admin.action(description="Update selected tests")
     def update(self, request, queryset):
         count = 0
+        test: Test
         for test in queryset:
             if test.update():
                 test.save()
