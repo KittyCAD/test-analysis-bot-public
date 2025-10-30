@@ -76,7 +76,7 @@ class TestTable(tables.Table):
             "th": {"class": "text-center"},
         },
     )
-    updated_at = tables.DateTimeColumn(verbose_name="Last Updated")
+    updated_at = tables.DateTimeColumn(verbose_name="Last Run")
 
     class Meta:
         model = Test
