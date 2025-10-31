@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib import admin
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 from django.utils.timesince import timesince
 
 from .models import Project, Result, Suite, Test
@@ -258,7 +259,7 @@ class ResultAdmin(admin.ModelAdmin):
         "id",
         "test__project",
         "test__name",
-        "branch",
+        "_branch",
         "_commit",
         "target",
         "platform",
@@ -278,9 +279,17 @@ class ResultAdmin(admin.ModelAdmin):
         "branch",
     )
 
+    @admin.display(description="Branch")
+    def _branch(self, result: Result):
+        return mark_safe(
+            f'<a href="{result.branch_url}" target="_blank">{result.branch}</a>'
+        )
+
     @admin.display(description="Commit")
     def _commit(self, result: Result):
-        return result.commit_humanized
+        return mark_safe(
+            f'<a href="{result.commit_url}" target="_blank">{result.commit_humanized}</a>'
+        )
 
     raw_id_fields = ("test", "suite")
     readonly_fields = ("markers", "created_at", "logs")

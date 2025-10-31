@@ -27,7 +27,7 @@ class Environment(models.Model):
         ordering = ["-updated_at"]
 
     def __str__(self):
-        return f"{self.get_name_display()}: {self.url or '???'}"
+        return f"{self.get_name_display()}: {self.url or self.project}"
 
     def change(self, branch: str, commit: str) -> Release:
         release, created = Release.objects.get_or_create(
@@ -58,4 +58,20 @@ class Release(models.Model):
         unique_together = ["environment", "commit"]
 
     def __str__(self):
-        return f"{self.environment} › {self.branch}@{self.commit}"
+        return f"{self.environment} › {self.branch}@{self.commit_humanized}"
+
+    @property
+    def branch_url(self) -> str:
+        if not self.branch:
+            return ""
+        return f"{self.environment.project.repository}/tree/{self.branch}"
+
+    @property
+    def commit_humanized(self) -> str:
+        return self.commit[:7]
+
+    @property
+    def commit_url(self) -> str:
+        if not self.commit:
+            return ""
+        return f"{self.environment.project.repository}/commit/{self.commit}"

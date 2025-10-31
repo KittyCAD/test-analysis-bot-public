@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 
 from .models import Environment, Release
 
@@ -30,10 +31,28 @@ class ReleaseAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "environment",
-        "branch",
-        "commit",
+        "_branch",
+        "_commit",
         "created_at",
         "results_passed",
         "results_total",
         "tested_at",
     )
+    list_filter = (
+        "environment__name",
+        "created_at",
+        "tested_at",
+        "environment__project__repository",
+    )
+
+    @admin.display(description="Branch")
+    def _branch(self, release: Release):
+        return mark_safe(
+            f'<a href="{release.branch_url}" target="_blank">{release.branch}</a>'
+        )
+
+    @admin.display(description="Commit")
+    def _commit(self, release: Release):
+        return mark_safe(
+            f'<a href="{release.commit_url}" target="_blank">{release.commit_humanized}</a>'
+        )
