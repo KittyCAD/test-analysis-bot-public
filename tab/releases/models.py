@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from django.db import models
+from django.utils import timezone
 
 import log
 
-from tab.projects.models import Project
+from tab.api.helpers import update_status
+from tab.core.models import Organization
+from tab.projects.models import Project, Result
 
 from .enums import Type
 from .managers import EnvironmentManager
@@ -75,3 +78,18 @@ class Release(models.Model):
         if not self.commit:
             return ""
         return f"{self.environment.project.repository}/commit/{self.commit}"
+
+    def finalize(self) -> bool:
+        if self.tested_at:
+            return False
+
+        project: Project = self.environment.project
+        organization = Organization.objects.get(
+            repository_index=project.repository_index
+        )
+        health = Result.objects.get_health(project, self.commit, finalize=True)
+        update_status(organization, project, self.commit, self.branch, health)
+
+        self.tested_at = timezone.now()
+        self.save()
+        return True

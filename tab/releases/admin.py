@@ -56,3 +56,28 @@ class ReleaseAdmin(admin.ModelAdmin):
         return mark_safe(
             f'<a href="{release.commit_url}" target="_blank">{release.commit_humanized}</a>'
         )
+
+    @admin.action(description="Finalize selected releases")
+    def finalize(self, request, queryset):
+        count = 0
+        release: Release
+        for release in queryset:
+            if release.finalize():
+                count += 1
+        s = "" if count == 1 else "s"
+        self.message_user(request, f"Successfully finalized {count} release{s}.")
+
+    @admin.action(description="Reset selected releases")
+    def reset(self, request, queryset):
+        count = 0
+        release: Release
+        for release in queryset:
+            release.results_passed = 0
+            release.results_total = 0
+            release.tested_at = None
+            release.save()
+            count += 1
+        s = "" if count == 1 else "s"
+        self.message_user(request, f"Successfully reset {count} release{s}.")
+
+    actions = [finalize, reset]

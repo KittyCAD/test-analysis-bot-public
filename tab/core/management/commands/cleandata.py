@@ -108,5 +108,4 @@ class Command(BaseCommand):
         releases = Release.objects.filter(created_at__lt=cutoff, tested_at__isnull=True)
         for release in releases:
             log.warning(f"Finalizing release after {minutes}-minute timeout: {release}")
-            release.tested_at = timezone.now()
-            release.save()
+            release.finalize()

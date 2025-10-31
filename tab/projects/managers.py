@@ -9,7 +9,7 @@ from django.utils import timezone
 
 import log
 
-from .constants import ALL_BRANCHES, PENDING_THRESHOLD
+from .constants import ALL_BRANCHES
 from .enums import Status
 from .types import Health
 
@@ -59,10 +59,14 @@ class ResultManager(models.Manager):
         )
         return queryset.values_list("commit", flat=True).first()
 
-    def get_health(self, project: Project, commit: str | None) -> Health:
+    def get_health(
+        self, project: Project, commit: str | None, *, finalize: bool = False
+    ) -> Health:
         assert "github.com" in project.repository, "Only GitHub is supported for now"
         if not commit:
             return Health(total=0, state="pending", description="no results")
+
+        # TODO: Use the latest tested release to determine expected results
 
         latest_commit = self.get_latest_commit(project, project.default_branch)
         latest_results = self.filter(
@@ -80,16 +84,13 @@ class ResultManager(models.Manager):
         failed = failed_results.count()
         pending = max(0, expected_passed - passed)
 
-        if first_result := results.order_by("created_at").first():
-            age = timezone.now() - first_result.created_at  # type: ignore[attr-defined]
-        else:
-            age = timedelta()
+        # TODO: Mark release as tested once both counts are >= last run
+
         log.info(
             f"Processed expected results for {project.path} @ {commit[:7]}: "
-            f"{passed} of {expected_passed} passing, "
-            f"started {round(age.total_seconds(), 2)} seconds ago"
+            f"{passed} of {expected_passed} passing"
         )
-        if pending and age < PENDING_THRESHOLD:
+        if pending and not finalize:
             state = "pending"
         elif failed:
             state = "failure"

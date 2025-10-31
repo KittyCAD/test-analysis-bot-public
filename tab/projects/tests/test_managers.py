@@ -4,7 +4,6 @@ from django.utils import timezone
 
 import pytest
 
-from ..constants import PENDING_THRESHOLD
 from ..models import Project, Result, Status, Suite, Test
 
 
@@ -97,15 +96,8 @@ def describe_result_manager():
             expect(health.state) == "pending"
             expect(health.description) == "2 of 3 passing, 1 more result expected"
 
-            # Simulate results being old enough to no longer be pending
-            result = Result.objects.filter(branch="my-branch").first()
-            assert result
-            result.created_at = (
-                timezone.now() - PENDING_THRESHOLD - timedelta(minutes=1)
-            )
-            result.save()
-
-            health = Result.objects.get_health(project, "def456")
+            # Simulate a release being finalized after a timeout
+            health = Result.objects.get_health(project, "def456", finalize=True)
 
             expect(health.total) == 3
             expect(health.state) == "failure"

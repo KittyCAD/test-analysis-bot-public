@@ -46,6 +46,6 @@ class EnvironmentManager(models.Manager):
             release.results_total += len(results)
             release.save()
 
-        # TODO: Mark as tested once both counts are >= last run
+        # TODO: Mark release as tested once both counts are >= last run
 
         return environment

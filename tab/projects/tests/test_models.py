@@ -16,6 +16,10 @@ def describe_project():
         project = Project(repository="https://github.com/MyUser/my_repo")
         expect(project.name) == "MyUser › my_repo"
 
+    def it_extracts_repository_index(expect):
+        project = Project(repository="https://github.com/MyUser/my_repo")
+        expect(project.repository_index) == "https://github.com/MyUser"
+
 
 def describe_suite():
     def describe_str():

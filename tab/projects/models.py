@@ -67,6 +67,11 @@ class Project(models.Model):
         return self.name
 
     @property
+    def repository_index(self) -> str:
+        parts = self.repository.split("/")
+        return "/".join(parts[:-1])
+
+    @property
     def path(self) -> str:
         self._update_repository()
         parts = self.repository.split("/")
