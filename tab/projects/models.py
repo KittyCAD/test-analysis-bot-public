@@ -238,6 +238,7 @@ class Test(models.Model):
             models.Index(fields=["project", "name"]),
             models.Index(fields=["project", "enabled"]),
         ]
+        unique_together = [("project", "name")]
 
     def __str__(self):
         if not self.suite:

@@ -103,7 +103,7 @@ class Command(BaseCommand):
 
     def finalize_releases(self):
         age = timedelta(minutes=30)
-        minutes = age.total_seconds() // 60
+        minutes = int(age.total_seconds() / 60)
         cutoff = timezone.now() - age
         releases = Release.objects.filter(created_at__lt=cutoff, tested_at__isnull=True)
         for release in releases:
