@@ -300,6 +300,12 @@ class Test(models.Model):
         return branches
 
     @property
+    def original_branch_url(self) -> str:
+        if not self.original_branch:
+            return ""
+        return f"{self.project.repository}/tree/{self.original_branch}"
+
+    @property
     def original_commit_url(self) -> str:
         if not self.original_commit:
             return ""

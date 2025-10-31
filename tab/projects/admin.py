@@ -147,6 +147,8 @@ class TestAdmin(admin.ModelAdmin):
 
     search_fields = (
         "project__repository",
+        "original_branch",
+        "original_commit",
         "suite__name",
         "name",
         "disabled_user__email",
@@ -160,7 +162,8 @@ class TestAdmin(admin.ModelAdmin):
         "failure_rate",
         "block_rate",
         "average_duration",
-        "original_branch",
+        "_original_branch",
+        "_original_commit",
         "created_at",
         "updated_at",
     )
@@ -170,8 +173,19 @@ class TestAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
         "project__repository",
-        "original_branch",
     )
+
+    @admin.display(description="Original Branch")
+    def _original_branch(self, test: Test):
+        return mark_safe(
+            f'<a href="{test.original_branch_url}" target="_blank">{test.original_branch}</a>'
+        )
+
+    @admin.display(description="Original Commit")
+    def _original_commit(self, test: Test):
+        return mark_safe(
+            f'<a href="{test.original_commit_url}" target="_blank">{test.original_commit}</a>'
+        )
 
     @admin.action(description="Disable selected tests")
     def disable(self, request, queryset):
@@ -276,7 +290,6 @@ class ResultAdmin(admin.ModelAdmin):
         "final",
         "created_at",
         "test__project__repository",
-        "branch",
     )
 
     @admin.display(description="Branch")

@@ -27,7 +27,7 @@ class EnvironmentAdmin(admin.ModelAdmin):
 @admin.register(Release)
 class ReleaseAdmin(admin.ModelAdmin):
 
-    search_fields = ()
+    search_fields = ("environment__project__repository", "branch", "commit")
     list_display = (
         "id",
         "environment",
