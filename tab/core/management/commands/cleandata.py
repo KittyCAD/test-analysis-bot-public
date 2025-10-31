@@ -8,6 +8,7 @@ import log
 
 from tab.api.constants import TESTS_CACHE_KEY
 from tab.projects.models import Project, Result, Test
+from tab.releases.models import Release
 
 CHUNK_SIZE = 1000
 
@@ -36,6 +37,7 @@ class Command(BaseCommand):
                 project.cleaned_at = timezone.now()
                 project.save()
         self.update_bulk_tests()
+        self.finalize_releases()
         delta = timezone.now() - start
         log.info(f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}")
 
@@ -98,3 +100,13 @@ class Command(BaseCommand):
                     .distinct("branch")
                 ):
                     result.finalize()
+
+    def finalize_releases(self):
+        age = timedelta(minutes=30)
+        minutes = age.total_seconds() // 60
+        cutoff = timezone.now() - age
+        releases = Release.objects.filter(created_at__lt=cutoff, tested_at__isnull=True)
+        for release in releases:
+            log.warning(f"Finalizing release after {minutes}-minute timeout: {release}")
+            release.tested_at = timezone.now()
+            release.save()
