@@ -102,12 +102,10 @@ class Command(BaseCommand):
                     result.finalize()
 
     def finalize_releases(self):
-        age = timedelta(minutes=30)
-        minutes = int(age.total_seconds() / 60)
-        cutoff = timezone.now() - age
+        cutoff = timezone.now() - timedelta(minutes=15)
         releases = Release.objects.filter(
             created_at__lt=cutoff, finalized_at__isnull=True
         )
         for release in releases:
-            log.warning(f"Finalizing release after {minutes}-minute timeout: {release}")
+            log.warning(f"Finalizing release after timeout: {release}")
             release.finalize()
