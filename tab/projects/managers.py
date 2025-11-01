@@ -66,8 +66,6 @@ class ResultManager(models.Manager):
         if not commit:
             return Health(total=0, state="pending", description="no results")
 
-        # TODO: Use the latest tested release to determine expected results
-
         latest_commit = self.get_latest_commit(project, project.default_branch)
         latest_results = self.filter(
             test__project=project, commit=latest_commit, final=True
@@ -75,6 +73,7 @@ class ResultManager(models.Manager):
         expected_passed = latest_results.filter(
             status__in=Status.merge_allowed()
         ).count()
+        expected_total = latest_results.count()
 
         results = self.filter(test__project=project, commit=commit, final=True)
         passed_results = results.filter(status__in=Status.merge_allowed())
@@ -84,11 +83,9 @@ class ResultManager(models.Manager):
         failed = failed_results.count()
         pending = max(0, expected_passed - passed)
 
-        # TODO: Mark release as tested once both counts are >= last run
-
         log.info(
             f"Processed expected results for {project.path} @ {commit[:7]}: "
-            f"{passed} of {expected_passed} passing"
+            f"{passed}/{expected_passed} passing, {total}/{expected_total} total"
         )
         if pending and not finalize:
             state = "pending"

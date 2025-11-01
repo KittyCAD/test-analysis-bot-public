@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.db import models
+from django.utils import timezone
 
 import log
 
-from tab.projects.enums import Status
 from tab.projects.models import Project, Result
 
 from .enums import Type
@@ -39,13 +39,8 @@ class EnvironmentManager(models.Manager):
             log.info(f"Found environment: {environment}")
 
         release: Release = environment.change(result.branch, result.commit)
-        if not release.tested_at:
-            release.results_passed += sum(
-                result.status not in Status.test_failed() for result in results
-            )
-            release.results_total += len(results)
-            release.save()
-
-        # TODO: Mark release as tested once both counts are >= last run
+        release.results += len(results)
+        release.tested_at = timezone.now()
+        release.save()
 
         return environment

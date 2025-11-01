@@ -34,14 +34,15 @@ class ReleaseAdmin(admin.ModelAdmin):
         "_branch",
         "_commit",
         "created_at",
-        "results_passed",
-        "results_total",
         "tested_at",
+        "results",
+        "finalized_at",
     )
     list_filter = (
         "environment__name",
         "created_at",
         "tested_at",
+        "finalized_at",
         "environment__project__repository",
     )
 
@@ -72,9 +73,9 @@ class ReleaseAdmin(admin.ModelAdmin):
         count = 0
         release: Release
         for release in queryset:
-            release.results_passed = 0
-            release.results_total = 0
+            release.results = 0
             release.tested_at = None
+            release.finalized_at = None
             release.save()
             count += 1
         s = "" if count == 1 else "s"

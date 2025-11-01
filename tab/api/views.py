@@ -11,7 +11,7 @@ from unidecode import unidecode
 from tab.core.models import Organization
 from tab.projects.enums import Status
 from tab.projects.models import Project, Result, Suite, Test
-from tab.releases.models import Environment
+from tab.releases.models import Environment, Release
 
 from .helpers import parse_junit_xml, update_status
 from .schemas import (
@@ -191,6 +191,16 @@ def share(request, payload: ShareRequest):
 
     health = Result.objects.get_health(project, payload.commit)
     update_status(organization, project, payload.commit, payload.branch, health)
+
+    if health.state != "pending":
+        try:
+            release = Release.objects.get(
+                environment__project=project, commit=payload.commit
+            )
+        except Release.DoesNotExist:
+            log.warning(f"Pending release not found: {project.path} @ {payload.commit}")
+        else:
+            release.finalize(share=False)
 
     return 200, ShareResponse(
         project=unidecode(str(project)),

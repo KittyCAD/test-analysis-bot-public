@@ -50,11 +50,11 @@ class Release(models.Model):
 
     branch = models.CharField(max_length=500, default="", db_index=True)
     commit = models.CharField(max_length=100, default="", db_index=True)
-    results_passed = models.IntegerField(default=0)
-    results_total = models.IntegerField(default=0)
+    results = models.IntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     tested_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    finalized_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -79,17 +79,18 @@ class Release(models.Model):
             return ""
         return f"{self.environment.project.repository}/commit/{self.commit}"
 
-    def finalize(self) -> bool:
-        if self.tested_at:
+    def finalize(self, *, share: bool = True) -> bool:
+        if self.finalized_at:
             return False
 
-        project: Project = self.environment.project
-        organization = Organization.objects.get(
-            repository_index=project.repository_index
-        )
-        health = Result.objects.get_health(project, self.commit, finalize=True)
-        update_status(organization, project, self.commit, self.branch, health)
+        if share:
+            project: Project = self.environment.project
+            organization = Organization.objects.get(
+                repository_index=project.repository_index
+            )
+            health = Result.objects.get_health(project, self.commit, finalize=True)
+            update_status(organization, project, self.commit, self.branch, health)
 
-        self.tested_at = timezone.now()
+        self.finalized_at = timezone.now()
         self.save()
         return True
