@@ -193,13 +193,11 @@ def share(request, payload: ShareRequest):
     update_status(organization, project, payload.commit, payload.branch, health)
 
     if health.state != "pending":
-        try:
-            release = Release.objects.get(
-                environment__project=project, commit=payload.commit
-            )
-        except Release.DoesNotExist:
-            log.warning(f"Pending release not found: {project.path} @ {payload.commit}")
-        else:
+        if release := Release.objects.filter(
+            environment__project=project,
+            commit=payload.commit,
+            finalized_at__isnull=True,
+        ).first():
             log.info(f"Finalizing release after not pending: {release}")
             release.finalize(share=False)
 
