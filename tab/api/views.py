@@ -200,6 +200,7 @@ def share(request, payload: ShareRequest):
         except Release.DoesNotExist:
             log.warning(f"Pending release not found: {project.path} @ {payload.commit}")
         else:
+            log.info(f"Finalizing release after not pending: {release}")
             release.finalize(share=False)
 
     return 200, ShareResponse(

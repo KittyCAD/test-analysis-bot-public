@@ -8,6 +8,7 @@ import log
 
 from tab.api.constants import TESTS_CACHE_KEY
 from tab.projects.models import Project, Result, Test
+from tab.releases.constants import RESULTS_TIMEOUT
 from tab.releases.models import Release
 
 CHUNK_SIZE = 1000
@@ -102,7 +103,7 @@ class Command(BaseCommand):
                     result.finalize()
 
     def finalize_releases(self):
-        cutoff = timezone.now() - timedelta(minutes=15)
+        cutoff = timezone.now() - RESULTS_TIMEOUT
         releases = Release.objects.filter(
             created_at__lt=cutoff, finalized_at__isnull=True
         )
