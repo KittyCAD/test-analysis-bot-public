@@ -230,13 +230,25 @@ def update_status(
         repo = github.get_repo(project.path)
         commit = repo.get_commit(sha)
     except GithubException as e:
-        message = str(e)
+        error_data = getattr(e, "data", {})
+        message = error_data.get("message", str(e))
         log.error(f"Unable to update status for {project.path} @ {sha[:7]}: {message}")
-        return 404, {"detail": message}
-    commit.create_status(
-        state=health.state,
-        target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={branch}&show=fails",
-        description=health.description,
-        context="Test Analysis Bot",
-    )
-    log.info(f"Updated status for {project.path} @ {sha[:7]}: {health.state}")
+        return
+
+    try:
+        commit.create_status(
+            state=health.state,
+            target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={branch}&show=fails",
+            description=health.description,
+            context="Test Analysis Bot",
+        )
+        log.info(f"Updated status for {project.path} @ {sha[:7]}: {health.state}")
+    except GithubException as e:
+        error_data = getattr(e, "data", {})
+        message = error_data.get("message", str(e))
+        if e.status == 422 and "maximum number of statuses" in message:
+            log.warning(
+                f"Unable to update status for {project.path} @ {sha[:7]}: {message}"
+            )
+        else:
+            raise e from None

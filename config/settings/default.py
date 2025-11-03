@@ -78,10 +78,16 @@ LOGGING: dict = {
             "()": "tab.core.logging.JSONFormatter",
         },
     },
+    "filters": {
+        "empty_log_filter": {
+            "()": "tab.core.logging.EmptyLogFilter",
+        },
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "json",
+            "filters": ["empty_log_filter"],
         },
     },
     "loggers": {

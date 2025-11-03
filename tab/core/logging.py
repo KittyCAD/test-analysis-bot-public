@@ -4,6 +4,20 @@ import traceback
 from typing import Any
 
 
+class EmptyLogFilter(logging.Filter):
+    """
+    Filter that prevents empty log entries from being processed.
+
+    This filters out log records that have empty messages and empty level names,
+    preventing them from being sent to log aggregation systems like Axiom.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        levelname = record.levelname
+        return bool(message or levelname)
+
+
 class JSONFormatter(logging.Formatter):
     """
     JSON logging formatter that outputs structured logs for log aggregation systems.
