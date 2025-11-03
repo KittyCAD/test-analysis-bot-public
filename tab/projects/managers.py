@@ -9,7 +9,7 @@ from django.utils import timezone
 
 import log
 
-from .constants import ALL_BRANCHES
+from .constants import ALL_BRANCHES, PENDING_THRESHOLD
 from .enums import Status
 from .types import Health
 
@@ -83,11 +83,16 @@ class ResultManager(models.Manager):
         failed = failed_results.count()
         pending = max(0, expected_passed - passed)
 
+        if first_result := results.order_by("created_at").first():
+            age = timezone.now() - first_result.created_at  # type: ignore[attr-defined]
+        else:
+            age = timedelta()
         log.info(
             f"Processed expected results for {project.path} @ {commit[:7]}: "
             f"{passed}/{expected_passed} passing, {total}/{expected_total} total"
+            f", started {int(age.total_seconds())} seconds ago"
         )
-        if pending and not finalize:
+        if pending and age < PENDING_THRESHOLD and not finalize:
             state = "pending"
         elif failed:
             state = "failure"
