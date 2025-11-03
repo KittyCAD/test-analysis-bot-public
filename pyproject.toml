@@ -30,7 +30,7 @@ django-ninja = "^1.4.5"
 # Storage
 dj-database-url = "*"
 psycopg2-binary = "^2.9.11"
-redis = "^7.0.0"
+redis = "^7.0.1"
 
 # Integrations
 pygithub = "^2.8.1"
