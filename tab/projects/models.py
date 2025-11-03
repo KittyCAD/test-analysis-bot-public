@@ -649,7 +649,7 @@ class Result(models.Model):
     def new_fix(self) -> bool:
         threshold = self.suite.failure_rate_upper_threshold if self.suite else 0.50
         return (
-            self.status not in Status.test_failed()
+            self.status not in Status.test_failed() | {Status.TIMEDOUT}
             and self.test.failure_rate > threshold
             and self.branch not in self.test.project.default_branches
         )
