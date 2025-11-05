@@ -60,7 +60,7 @@ class History(models.Model):
             return False
 
         previous = self.test.history.filter(timestamp__lt=self.timestamp).first()
-        if previous and previous.failure_rate > self.test.failure_rate:
+        if previous and previous.failure_rate >= self.test.failure_rate:
             log.debug(f"Failure rate is trending downward: {self.test}")
             return False
 

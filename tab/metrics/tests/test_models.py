@@ -45,15 +45,16 @@ def describe_history():
             )
             expect(history.evaluate()) == False
 
-            # Exceed the failure rate but then trend downward
+            # Exceed the failure rate threshold: flat trend line
             test.failure_rate = 0.40
+            test.block_rate = 0.01
             history = History.objects.create(
                 test=test,
                 failure_rate=test.failure_rate,
                 block_rate=-1,
                 average_duration=-1,
             )
-            test.failure_rate = 0.30
+            test.failure_rate = 0.40
             history = History.objects.create(
                 test=test,
                 failure_rate=test.failure_rate,
@@ -62,7 +63,7 @@ def describe_history():
             )
             expect(history.evaluate()) == False
 
-            # Exceed the failure rate threshold, non-blocking
+            # Exceed the failure rate threshold: upward trend line but non-blocking
             test.failure_rate = 0.35
             test.block_rate = 0
             history = History.objects.create(
@@ -73,8 +74,8 @@ def describe_history():
             )
             expect(history.evaluate()) == False
 
-            # Exceed the failure rate threshold, blocking
-            test.failure_rate = 0.35
+            # Exceed the failure rate threshold: upward trend line and blocking
+            test.failure_rate = 0.36
             test.block_rate = 0.01
             history = History.objects.create(
                 test=test,
