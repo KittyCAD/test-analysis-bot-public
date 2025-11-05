@@ -244,9 +244,8 @@ def update_status(
         )
         log.info(f"Updated status for {project.path} @ {sha[:7]}: {health.state}")
     except GithubException as e:
-        error_data = getattr(e, "data", {})
-        message = error_data.get("message", str(e))
-        if e.status == 422 and "maximum number of statuses" in message:
+        message = getattr(e, "data", {}).get("errors", str(e))
+        if "maximum number of statuses" in message:
             log.warning(
                 f"Unable to update status for {project.path} @ {sha[:7]}: {message}"
             )
