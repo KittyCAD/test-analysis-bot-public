@@ -230,9 +230,8 @@ def update_status(
         repo = github.get_repo(project.path)
         commit = repo.get_commit(sha)
     except GithubException as e:
-        error_data = getattr(e, "data", {})
-        message = error_data.get("message", str(e))
-        log.error(f"Unable to update status for {project.path} @ {sha[:7]}: {message}")
+        data = getattr(e, "data", {})
+        log.error(f"Unable to update status for {project.path} @ {sha[:7]}: {data}")
         return
 
     try:
@@ -244,10 +243,10 @@ def update_status(
         )
         log.info(f"Updated status for {project.path} @ {sha[:7]}: {health.state}")
     except GithubException as e:
-        message = getattr(e, "data", {}).get("errors", str(e))
-        if "maximum number of statuses" in message:
+        data = getattr(e, "data", {})
+        if "maximum number of statuses" in str(data):
             log.warning(
-                f"Unable to update status for {project.path} @ {sha[:7]}: {message}"
+                f"Unable to update status for {project.path} @ {sha[:7]}: {data}"
             )
         else:
             raise e from None
