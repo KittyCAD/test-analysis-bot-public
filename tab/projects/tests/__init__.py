@@ -19,29 +19,34 @@ EXAMPLE_TESTS = [
     ExampleTest(
         case="Generic spaces",
         name=" name with extra spaces ",
-        regex="name with extra spaces",
+        regex=r"name with extra spaces",
         substring="name with extra spaces",
     ),
     ExampleTest(
         case="Generic quotes",
         name='name with "quoted" words',
-        regex="name with .quoted. words",
+        regex=r"name with .quoted. words",
     ),
     ExampleTest(
         case="Generic grouping",
         name="my_suite › my_test",
-        regex="my_suite.*my_test",
+        regex=r"my_suite.*my_test",
         substring="my_suite and my_test",
     ),
     ExampleTest(
         case="Playwright",
         name="native-file-menu.spec.ts › Native file menu › Home page",
-        regex="Native file menu.*Home page",
+        regex=r"Native file menu.*Home page",
+    ),
+    ExampleTest(
+        case="Playwright",
+        name="Testing loading external models › Load external models from local drive - cylinder.kcl",
+        regex=r"Testing loading external models.*Load external models from local drive \- cylinder\.kcl",
     ),
     ExampleTest(
         case="Jest",
         name="jest tests › billing.jesttest.tsx › Shows a loading spinner when uninitialized credit count",
-        regex="Shows a loading spinner when uninitialized credit count",
+        regex=r"Shows a loading spinner when uninitialized credit count",
     ),
     ExampleTest(
         case="Vitest",
@@ -51,12 +56,12 @@ EXAMPLE_TESTS = [
     ExampleTest(
         case="Cargo Nextest",
         name="nextest-run › kcl-lib › docs::kcl_doc::test::kcl_test_examples_std_helix_0",
-        regex="docs::kcl_doc::test::kcl_test_examples_std_helix_0",
+        regex=r"docs::kcl_doc::test::kcl_test_examples_std_helix_0",
     ),
     ExampleTest(
         case="Cargo Nextest",
         name="nextest-run › kcl-lib::executor › kcl_test_exporting_step_file",
-        regex="kcl_test_exporting_step_file",
+        regex=r"kcl_test_exporting_step_file",
     ),
     ExampleTest(
         case="Pytest",

@@ -265,7 +265,7 @@ class Test(models.Model):
         # Remove file path prefix
         if "." in parts[0]:
             parts = parts[1:]
-        if len(parts) > 1 and "." in parts[1]:
+        if len(parts) > 2 and "." in parts[1]:
             parts = parts[2:]
 
         # Remove prefix for fully-namespaced tests
