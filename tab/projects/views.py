@@ -15,6 +15,7 @@ from django_tables2 import SingleTableMixin
 
 from tab.core.helpers import get_or_create_user
 from tab.core.models import Organization
+from tab.metrics.constants import DELTA_THRESHOLD
 
 from .constants import FAILURE_RATE_EPSILON
 from .forms import BulkUpdateTestForm, UpdateTestForm
@@ -229,7 +230,7 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
             test.disabled_tracker = disabled_tracker
             test.disabled_user = disabled_user
             if not disabled and test.last_result.status in Status.test_disabled():
-                # Modify status to hide it from this view
+                # Change the status to hide it from this view
                 test.last_result.status = Status.INTERRUPTED
                 test.last_result.save()
             test.save()
@@ -399,15 +400,19 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         )
         test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
 
-        if "expand" in self.request.GET:
-            expand = self.request.GET["expand"] == "true"
-        else:
-            expand = bool(test.last_result) and test.failure_rate > 0.25
         if "weeks" in self.request.GET:
             weeks = float(self.request.GET["weeks"])
             expand = True
         else:
             weeks = 1.5
+            if "expand" in self.request.GET:
+                expand = self.request.GET["expand"] == "true"
+            elif test.last_result:
+                expand = test.failure_rate >= DELTA_THRESHOLD
+            elif result := test.results.first():
+                expand = result.status in Status.merge_blocked()
+            else:
+                expand = False
 
         context["project"] = project
         context["test"] = test

@@ -327,7 +327,8 @@ class Test(models.Model):
 
     @property
     def command(self) -> list[tuple[str, bool]]:
-        return self.last_result.command if self.last_result else []
+        result = self.last_result or self.results.first()
+        return result.command if result else []
 
     @property
     def error_indicators(self) -> list[str]:
