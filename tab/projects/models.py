@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import threading
 from datetime import timedelta
 
 from django.conf import settings
@@ -479,6 +480,12 @@ class Test(models.Model):
         if 0 <= self.failure_rate < FAILURE_RATE_EPSILON and self.disabled_at:
             log.info(f"Restoring test based on failure rate: {self}")
             self.disabled_at = None
+            # TODO: Find a way to avoid this circular import
+            from tab.metrics.models import Alert
+
+            alert = Alert.objects.create(test=self)
+            thread = threading.Thread(target=alert.send, kwargs={"forward": False})
+            thread.start()
         self.enabled = bool(
             not self.disabled_at
             and self.last_result

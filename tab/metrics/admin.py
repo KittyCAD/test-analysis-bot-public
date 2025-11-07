@@ -86,6 +86,7 @@ class AlertAdmin(admin.ModelAdmin):
         )
 
     list_display = (
+        "id",
         "_message_text",
         "created_at",
         "_subscriptions",

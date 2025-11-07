@@ -189,33 +189,41 @@ class Alert(models.Model):
                 debug=debug,
             )
 
-        if self.history:
-            text = f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today"
-            extra = self.history.result.message if self.history.result else None
-        elif self.test.disabled_at:
-            text = "Manually disabled from blocking merges"
-            # TODO: Include user and ticket; add tests for missing values
-            extra = self.test.disabled_reason
-        else:
-            log.error(f"Undefined alert for enabled test: {self.test}")
-            text = "[SERVER ERROR] Undefined alert"
-            extra = None
-
         label = self.test.project.name + " › " + self.test.name
+        if _user := self.test.disabled_user:
+            user = _user.get_full_name() or _user.email
+        else:
+            user = "unknown user"
         url = settings.BASE_URL + reverse(
             "projects:test-results",
             args=[self.test.project.path, self.test.id],
         )
 
+        if self.history:
+            text = f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today"
+            extra = self.history.result.message if self.history.result else None
+        elif self.test.disabled_at:
+            text = "Manually disabled from blocking merges"
+            reason = self.test.disabled_reason or "(no reason provided)"
+            extra = f"{user}: {reason}"
+        else:
+            text = "Automatically restored to block merges again"
+            extra = f"Originally disabled by {user}, fixes have made this test pass reliably again."
+
         return Message(text, label, url, extra=extra or "", debug=debug)
 
-    def send(self, *, debug: bool = False, force: bool = False) -> int:
+    def send(
+        self, *, forward: bool = True, debug: bool = False, force: bool = False
+    ) -> int:
         count = 0
 
         for subscription in self.subscriptions:
 
             if subscription.primary:
                 message = self.build(debug=debug)
+            elif not forward:
+                log.debug(f"Skipped secondary alert for test: {self.test}")
+                continue
             elif self.url:
                 message = self.build(debug=debug, url=self.url)
             else:
