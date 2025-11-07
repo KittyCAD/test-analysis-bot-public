@@ -273,6 +273,9 @@ class TestResultTable(tables.Table):
             "projects:test-result",
             args=[record.test.project.path, record.test.id, record.id],
         )
+        if request := getattr(self, "request", None):
+            if query_string := request.GET.urlencode():
+                url += f"?{query_string}"
         html = f'<a href="{url}" class="badge text-bg-{status.color} fs-6 text-decoration-none">{status.label}</a>'
         if record.message:
             details = render_to_string(
