@@ -66,7 +66,7 @@ class History(models.Model):
             return False
 
         alert = Alert.objects.create(test=self.test, history=self)
-        log.warning(str(alert))
+        log.warning(alert.message)
         cache.set(key, True, timeout=ALERT_CACHE_TIMEOUT)
         alert.send()
         return True
@@ -147,7 +147,7 @@ class Alert(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return str(self.message)
+        return f"{self.test.project.name} › Alert {self.pk}"
 
     @property
     def message(self):

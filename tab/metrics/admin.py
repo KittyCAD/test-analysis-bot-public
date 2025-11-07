@@ -87,8 +87,8 @@ class AlertAdmin(admin.ModelAdmin):
 
     list_display = (
         "id",
-        "_message_text",
         "created_at",
+        "_message",
         "_subscriptions",
         "sent_at",
     )
@@ -99,6 +99,12 @@ class AlertAdmin(admin.ModelAdmin):
     )
 
     @admin.display(description="Message")
+    def _message(self, alert: Alert):
+        if alert.url:
+            return mark_safe(f"<a href='{alert.url}' target='_blank'>{alert.url}</a>")
+        return self._message_text(alert)
+
+    @admin.display(description="Message | Text")
     def _message_text(self, alert: Alert):
         return alert.build()
 
@@ -130,9 +136,10 @@ class AlertAdmin(admin.ModelAdmin):
 
     raw_id_fields = ("test", "history")
     readonly_fields = (
+        "created_at",
+        "_message_text",
         "_message_html",
         "_message_markdown",
-        "created_at",
         "_subscriptions",
         "sent_at",
         "url",
