@@ -7,7 +7,7 @@ class Message:
     label: str
     url: str
     extra: str = ""
-    test: bool = False
+    debug: bool = False
 
     def __str__(self):
         return f"{self.text}: {self.label}"
@@ -41,13 +41,13 @@ class Message:
     def _html_prefix(self) -> str:
         return (
             "<span style='display: inline-block; background-color: #28a745; color: #fff; font-size: 0.75em; font-weight: 500; padding: 0.25em 0.5em; border-radius: 0.375rem; text-transform: uppercase; letter-spacing: 0.025em;'>SAMPLE ALERT</span> "
-            if self.test
+            if self.debug
             else ""
         )
 
     @property
     def _markdown_prefix(self) -> str:
-        return "`SAMPLE ALERT` " if self.test else ""
+        return "`SAMPLE ALERT` " if self.debug else ""
 
     @property
     def _markdown_extra(self) -> str:

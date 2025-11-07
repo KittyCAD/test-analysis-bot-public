@@ -1,4 +1,5 @@
 import re
+import threading
 
 from django.conf import settings
 from django.contrib import messages
@@ -16,6 +17,7 @@ from django_tables2 import SingleTableMixin
 from tab.core.helpers import get_or_create_user
 from tab.core.models import Organization
 from tab.metrics.constants import DELTA_THRESHOLD
+from tab.metrics.models import Alert
 
 from .constants import FAILURE_RATE_EPSILON
 from .forms import BulkUpdateTestForm, UpdateTestForm
@@ -470,6 +472,10 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         blocking = "disabled from blocking" if test.disabled_at else "allowed to block"
         if bool(test.disabled_at) != previously_disabled:
             blocking = "now " + blocking
+            if test.disabled_at:
+                alert = Alert.objects.create(test=test)
+                thread = threading.Thread(target=alert.send, kwargs={"force": True})
+                thread.start()
         messages.success(self.request, f"Test is {blocking} merges.")
 
         redirect_url = self.request.path

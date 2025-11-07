@@ -13,7 +13,8 @@ class HistoryAdmin(admin.ModelAdmin):
 
     list_display = (
         "id",
-        "label",
+        "test__project",
+        "test__name",
         "result",
         "failure_rate",
         "block_rate",
@@ -102,12 +103,12 @@ class AlertAdmin(admin.ModelAdmin):
 
     @admin.display(description="Message | HTML")
     def _message_html(self, alert: Alert):
-        message = alert.build(test=True)
+        message = alert.build(debug=True)
         return mark_safe(message.html)
 
     @admin.display(description="Message | Markdown")
     def _message_markdown(self, alert: Alert):
-        message = alert.build(test=True)
+        message = alert.build(debug=True)
         html = markdown(message.markdown, extensions=["fenced_code"])
         return mark_safe(html)
 
@@ -115,18 +116,18 @@ class AlertAdmin(admin.ModelAdmin):
     def _subscriptions(self, alert: Alert):
         return mark_safe("<br><br>".join([str(s) for s in alert.subscriptions]))
 
-    @admin.action(description="Send selected alerts (test)")
+    @admin.action(description="Send selected alerts (debug)")
     def send(self, request, queryset):
         count = 0
         alert: Alert
         for alert in queryset:
-            count += alert.send(test=True)
+            count += alert.send(debug=True)
         s = "" if count == 1 else "s"
         self.message_user(request, f"Successfully sent {count} test alert{s}.")
 
     actions = [send]
 
-    raw_id_fields = ("history",)
+    raw_id_fields = ("test", "history")
     readonly_fields = (
         "_message_html",
         "_message_markdown",

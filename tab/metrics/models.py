@@ -39,10 +39,6 @@ class History(models.Model):
     def __str__(self):
         return f"{self.test.project.name} @ {self.timestamp.date()}"
 
-    @property
-    def label(self) -> str:
-        return self.test.project.name + " › " + self.test.name
-
     def evaluate(self) -> bool:
         if not self.test.enabled:
             log.debug(f"Skipped alert for disabled test: {self.test}")
@@ -69,7 +65,7 @@ class History(models.Model):
             log.debug(f"Skipped redundant alert for test: {self.test}")
             return False
 
-        alert = Alert.objects.create(history=self)
+        alert = Alert.objects.create(test=self.test, history=self)
         log.warning(str(alert))
         cache.set(key, True, timeout=ALERT_CACHE_TIMEOUT)
         alert.send()
@@ -137,8 +133,9 @@ class Subscription(models.Model):
 
 
 class Alert(models.Model):
+    test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="alerts")
     history = models.OneToOneField(
-        History, on_delete=models.CASCADE, related_name="alert"
+        History, on_delete=models.CASCADE, related_name="alert", null=True, blank=True
     )
 
     url = models.URLField(null=True, blank=True, verbose_name="URL")
@@ -161,11 +158,11 @@ class Alert(models.Model):
         matches: list[Subscription] = []
 
         subscriptions = Subscription.objects.filter(
-            project=self.history.test.project
+            project=self.test.project
         ).select_related("project", "team__organization")
 
         for primary in (True, False):
-            for suite in (self.history.test.suite, None):
+            for suite in (self.test.suite, None):
                 for subscription in subscriptions:
                     if subscription.primary != primary:
                         continue
@@ -174,7 +171,7 @@ class Alert(models.Model):
                         continue
 
                     if subscription.test and not re.search(
-                        subscription.test, self.history.test.name
+                        subscription.test, self.test.name
                     ):
                         continue
 
@@ -183,34 +180,46 @@ class Alert(models.Model):
 
         return matches
 
-    def build(self, *, url: str | None = None, test: bool = False) -> Message:
+    def build(self, *, url: str | None = None, debug: bool = False) -> Message:
         if url:
             return Message(
                 text=f"Relevant alert",
                 label="original thread",
                 url=url,
-                test=test,
+                debug=debug,
             )
 
-        text = f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today"
+        if self.history:
+            text = f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today"
+            extra = self.history.result.message if self.history.result else None
+        elif self.test.disabled_at:
+            text = "Manually disabled from blocking merges"
+            # TODO: Include user and ticket; add tests for missing values
+            extra = self.test.disabled_reason
+        else:
+            log.error(f"Undefined alert for enabled test: {self.test}")
+            text = "[SERVER ERROR] Undefined alert"
+            extra = None
+
+        label = self.test.project.name + " › " + self.test.name
         url = settings.BASE_URL + reverse(
             "projects:test-results",
-            args=[self.history.test.project.path, self.history.test.id],
+            args=[self.test.project.path, self.test.id],
         )
-        extra = self.history.result.message if self.history.result else None
-        return Message(text, self.history.label, url, extra=extra or "", test=test)
 
-    def send(self, *, test: bool = False, force: bool = False) -> int:
+        return Message(text, label, url, extra=extra or "", debug=debug)
+
+    def send(self, *, debug: bool = False, force: bool = False) -> int:
         count = 0
 
         for subscription in self.subscriptions:
 
             if subscription.primary:
-                message = self.build(test=test)
+                message = self.build(debug=debug)
             elif self.url:
-                message = self.build(test=test, url=self.url)
+                message = self.build(debug=debug, url=self.url)
             else:
-                log.warning(f"No existing primary alert for test: {self.history.test}")
+                log.warning(f"No existing primary alert for test: {self.test}")
                 continue
 
             team: Team = subscription.team
@@ -230,6 +239,6 @@ class Alert(models.Model):
                     self.save()
 
         if not count:
-            log.warning(f"No teams alertable for test: {self.history.test}")
+            log.warning(f"No teams alertable for test: {self.test}")
 
         return count

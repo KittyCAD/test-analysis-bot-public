@@ -102,11 +102,12 @@ def describe_alert():
         history = History.objects.create(
             test=test, failure_rate=-1, block_rate=-1, average_duration=-1
         )
-        return Alert.objects.create(history=history)
+        return Alert.objects.create(test=test, history=history)
 
     def describe_teams():
         @pytest.mark.django_db
         def it_sorts_by_primary(expect, organization: Organization, alert: Alert):
+            assert alert.history and alert.history.test
             project = alert.history.test.project
             t1 = Team.objects.create(
                 organization=organization, slack_channel_name="#primary"
@@ -123,6 +124,7 @@ def describe_alert():
         def it_matches_by_suite_and_test(
             expect, organization: Organization, alert: Alert
         ):
+            assert alert.history and alert.history.test
             project = alert.history.test.project
             suite = alert.history.test.suite
             team = Team.objects.create(

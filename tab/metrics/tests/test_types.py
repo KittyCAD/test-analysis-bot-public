@@ -34,7 +34,7 @@ def describe_message():
         )
 
     def it_formats_as_mrkdwn_with_test_prefix(expect, message: Message):
-        message.test = True
+        message.debug = True
         expect(message.mrkdwn) == (
             "`SAMPLE ALERT` Failures increased by 10% today: <https://example.com|my project › my test>"
         )
