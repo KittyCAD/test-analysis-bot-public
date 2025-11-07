@@ -14,7 +14,7 @@ def describe_message():
 
     def it_formats_as_text(expect, message: Message):
         expect(str(message)) == (
-            "Failures increased by 10% today: my project › my test2"
+            "Failures increased by 10% today: my project › my test"
         )
 
     def it_formats_as_html(expect, message: Message):
