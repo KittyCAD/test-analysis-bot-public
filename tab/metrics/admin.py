@@ -101,7 +101,8 @@ class AlertAdmin(admin.ModelAdmin):
     @admin.display(description="Message")
     def _message(self, alert: Alert):
         if alert.url:
-            return mark_safe(f"<a href='{alert.url}' target='_blank'>{alert.url}</a>")
+            label = alert.url.split("/archives/")[0]
+            return mark_safe(f"<a href='{alert.url}' target='_blank'>{label}</a>")
         return self._message_text(alert)
 
     @admin.display(description="Message | Text")
