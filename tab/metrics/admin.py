@@ -87,9 +87,9 @@ class AlertAdmin(admin.ModelAdmin):
 
     list_display = (
         "id",
-        "created_at",
         "_message",
         "_subscriptions",
+        "created_at",
         "sent_at",
     )
     list_filter = ("created_at", "sent_at")
@@ -136,11 +136,11 @@ class AlertAdmin(admin.ModelAdmin):
 
     raw_id_fields = ("test", "history")
     readonly_fields = (
-        "created_at",
         "_message_text",
         "_message_html",
         "_message_markdown",
         "_subscriptions",
+        "created_at",
         "sent_at",
         "url",
     )

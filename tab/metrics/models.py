@@ -147,7 +147,7 @@ class Alert(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return f"{self.test.project.name} › Alert {self.pk}"
+        return f"{self.test.project.name}  @ {self.created_at.date()}"
 
     @property
     def message(self):
