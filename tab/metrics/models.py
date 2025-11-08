@@ -12,7 +12,12 @@ import log
 from tab.core.models import Organization
 from tab.projects.models import Project, Result, Suite, Test
 
-from .constants import ALERT_CACHE_KEY, ALERT_CACHE_TIMEOUT, DELTA_THRESHOLD
+from .constants import (
+    ALERT_CACHE_KEY,
+    ALERT_CACHE_TIMEOUT,
+    ALERT_LIMIT,
+    DELTA_THRESHOLD,
+)
 from .helpers import send_slack_message
 from .managers import HistoryManager
 from .types import Message
@@ -89,7 +94,7 @@ class Team(models.Model):
 
     @property
     def recently_alerted(self):
-        threshold = timezone.now() - timedelta(hours=4)
+        threshold = timezone.now() - ALERT_LIMIT
         return self.alerted_at and self.alerted_at > threshold
 
     def save(self, *args, **kwargs):

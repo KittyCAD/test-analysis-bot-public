@@ -123,16 +123,25 @@ class AlertAdmin(admin.ModelAdmin):
     def _subscriptions(self, alert: Alert):
         return mark_safe("<br><br>".join([str(s) for s in alert.subscriptions]))
 
-    @admin.action(description="Send selected alerts (debug)")
+    @admin.action(description="Send selected alerts")
     def send(self, request, queryset):
+        count = 0
+        alert: Alert
+        for alert in queryset:
+            count += alert.send()
+        s = "" if count == 1 else "s"
+        self.message_user(request, f"Successfully sent {count} alert{s}.")
+
+    @admin.action(description="Send selected alerts (debug)")
+    def send_debug(self, request, queryset):
         count = 0
         alert: Alert
         for alert in queryset:
             count += alert.send(debug=True)
         s = "" if count == 1 else "s"
-        self.message_user(request, f"Successfully sent {count} test alert{s}.")
+        self.message_user(request, f"Successfully sent {count} debug alert{s}.")
 
-    actions = [send]
+    actions = [send, send_debug]
 
     raw_id_fields = ("test", "history")
     readonly_fields = (
