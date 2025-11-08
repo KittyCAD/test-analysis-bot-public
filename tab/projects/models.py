@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import QuerySet
+from django.urls import reverse
 from django.utils import timezone
 
 import log
@@ -258,6 +259,13 @@ class Test(models.Model):
         if self.pk and self.project.suites.count() <= 1:
             return self.name
         return str(self)
+
+    @property
+    def url(self) -> str:
+        return settings.BASE_URL + reverse(
+            "projects:test-results",
+            args=[self.project.path, self.id],
+        )
 
     @property
     def regex(self) -> str:
@@ -560,6 +568,13 @@ class Result(models.Model):
         if self.pk and self.test.project.suites.count() <= 1:
             return self.test.name
         return f"{suite.name} › {self.test.name}"
+
+    @property
+    def url(self) -> str:
+        return settings.BASE_URL + reverse(
+            "projects:test-result",
+            args=[self.test.project.path, self.test.id, self.id],
+        )
 
     @property
     def markers(self) -> list[str]:

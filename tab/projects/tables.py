@@ -1,6 +1,5 @@
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.template.loader import render_to_string
-from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 import django_tables2 as tables
@@ -269,10 +268,7 @@ class TestResultTable(tables.Table):
 
     def render_status(self, record: Result):
         status = Status(record.status)
-        url = reverse(
-            "projects:test-result",
-            args=[record.test.project.path, record.test.id, record.id],
-        )
+        url = record.url
         if request := getattr(self, "request", None):
             if query_string := request.GET.urlencode():
                 url += f"?{query_string}"
@@ -385,9 +381,7 @@ class ResultTable(TestResultTable):
             self.paginate(page=page)
 
     def render_test(self, record: Result):
-        url = reverse(
-            "projects:test-results", args=[record.test.project.path, record.test.id]
-        )
+        url = record.test.url
         if record.branch != record.test.project.default_branch:
             url += f"?branch={record.branch}"
         label = wrap(record.test_label)

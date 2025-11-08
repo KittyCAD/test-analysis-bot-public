@@ -1,10 +1,7 @@
 import re
-from datetime import timedelta
 
-from django.conf import settings
 from django.core.cache import cache
 from django.db import models
-from django.urls import reverse
 from django.utils import timezone
 
 import log
@@ -199,10 +196,7 @@ class Alert(models.Model):
             user = _user.get_full_name() or _user.email
         else:
             user = "unknown user"
-        url = settings.BASE_URL + reverse(
-            "projects:test-results",
-            args=[self.test.project.path, self.test.id],
-        )
+        url = self.test.url + "?expand=true"
 
         if self.history:
             text = f"Failure rate increased by {self.history.test.failure_rate_delta:.1%} today"
