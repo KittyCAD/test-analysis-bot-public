@@ -97,16 +97,16 @@ class SuiteAdmin(admin.ModelAdmin):
         "parent",
         "supports_override",
         "tests_count",
-        "command",
+        "_local_command",
         "created_at",
         "updated_at",
     )
     ordering = ("-updated_at",)
     list_filter = ("name", "supports_override", "project__repository")
 
-    @admin.display(description="Command")
-    def command(self, suite: Suite):
-        return suite.local_command.split("\n")[0]
+    @admin.display(description="Local Command")
+    def _local_command(self, suite: Suite):
+        return mark_safe(f"<pre>{suite.local_command}</pre>")
 
     @admin.action(description="Reset test origins for selected suites")
     def reset_test_origins(self, request, queryset):
