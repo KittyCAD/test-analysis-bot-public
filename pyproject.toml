@@ -37,7 +37,7 @@ pygithub = "^2.8.1"
 slack-sdk = "^3.37.0"
 
 # Utilities
-markdown = "^3.9"
+markdown = "^3.10"
 minilog = "*"
 unidecode = "^1.4.0"
 
