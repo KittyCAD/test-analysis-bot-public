@@ -58,7 +58,7 @@ django-stubs = { version = "^5.2.7", extras = ["compatible-mypy"] }
 types-markdown = "*"
 
 # Testing
-pytest = "^8.4.2"
+pytest = "^9.0.0"
 pytest-django = "*"
 pytest-describe = "*"
 pytest-expecter = "*"
