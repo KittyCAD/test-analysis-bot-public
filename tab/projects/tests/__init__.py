@@ -51,7 +51,7 @@ EXAMPLE_TESTS = [
     ExampleTest(
         case="Jest",
         name="jest tests › billing helpers › billing helpers waitForPaymentMethodAttachment resolves when payment method appears",
-        regex=r"billing helpers.*billing helpers waitForPaymentMethodAttachment resolves when payment method appears",
+        regex=r"billing helpers.*waitForPaymentMethodAttachment resolves when payment method appears",
     ),
     ExampleTest(
         case="Vitest",

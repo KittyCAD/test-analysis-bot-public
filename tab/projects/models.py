@@ -272,20 +272,22 @@ class Test(models.Model):
         parts = self.name.split(" › ")
 
         # Remove test runner prefix
-        if "jest" in parts[0]:
+        if "jest" in parts[0] or "vitest" in parts[0]:
             parts = parts[1:]
 
         # Remove file path prefix
         if "." in parts[0]:
             parts = parts[1:]
-        if len(parts) > 2 and "." in parts[1]:
-            parts = parts[2:]
 
         # Remove prefix for fully-namespaced tests
         if len(parts) > 0 and "::" in parts[-1]:
             return parts[-1]
         if len(parts) > 1 and "::" in parts[-2]:
             return parts[-1]
+
+        # Remove duplicate prefixes
+        if len(parts) >= 2:
+            parts[1] = parts[1].removeprefix(parts[0]).strip()
 
         # Join nested description blocks
         escaped_parts = [re.escape(part) for part in parts]
