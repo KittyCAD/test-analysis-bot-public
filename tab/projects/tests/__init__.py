@@ -49,6 +49,11 @@ EXAMPLE_TESTS = [
         regex=r"Shows a loading spinner when uninitialized credit count",
     ),
     ExampleTest(
+        case="Jest",
+        name="jest tests › billing helpers › billing helpers waitForPaymentMethodAttachment resolves when payment method appears",
+        regex=r"billing helpers.*billing helpers waitForPaymentMethodAttachment resolves when payment method appears",
+    ),
+    ExampleTest(
         case="Vitest",
         name="vitest tests › src/lang/modifyAst/faces.test.ts › Testing addShell > should add a shell call on variable-less extrude",
         regex=r"Testing addShell should add a shell call on variable\-less extrude",

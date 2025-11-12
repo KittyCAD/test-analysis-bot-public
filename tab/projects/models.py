@@ -271,6 +271,10 @@ class Test(models.Model):
     def regex(self) -> str:
         parts = self.name.split(" › ")
 
+        # Remove test runner prefix
+        if "jest" in parts[0]:
+            parts = parts[1:]
+
         # Remove file path prefix
         if "." in parts[0]:
             parts = parts[1:]
