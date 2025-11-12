@@ -8,35 +8,35 @@ def describe_message():
     def message():
         return Message(
             text="Failures increased by 10% today",
-            label="my project › my test",
+            label="my_namespace::my project › my test -> my case",
             url="https://example.com",
         )
 
     def it_formats_as_text(expect, message: Message):
         expect(str(message)) == (
-            "Failures increased by 10% today: my project › my test"
+            "Failures increased by 10% today: my_namespace::my project › my test -> my case"
         )
 
     def it_formats_as_html(expect, message: Message):
         expect(message.html) == (
             "Failures increased by 10% today: "
-            "<a href='https://example.com' target='_blank'>my project › my test</a>"
+            "<a href='https://example.com' target='_blank'>my_namespace::my project › my test -> my case</a>"
         )
 
     def it_formats_as_markdown(expect, message: Message):
         expect(message.markdown) == (
-            "Failures increased by 10% today: [my project › my test](https://example.com)"
+            "Failures increased by 10% today: [my_namespace::my project › my test -> my case](https://example.com)"
         )
 
     def it_formats_as_mrkdwn(expect, message: Message):
         expect(message.mrkdwn) == (
-            "Failures increased by 10% today: <https://example.com|my project › my test>"
+            "Failures increased by 10% today: <https://example.com|my_namespace:​:my project › my test → my case>"
         )
 
     def it_formats_as_mrkdwn_with_test_prefix(expect, message: Message):
         message.debug = True
         expect(message.mrkdwn) == (
-            "`SAMPLE ALERT` Failures increased by 10% today: <https://example.com|my project › my test>"
+            "`SAMPLE ALERT` Failures increased by 10% today: <https://example.com|my_namespace:​:my project › my test → my case>"
         )
 
     def it_truncates_extra(expect, message: Message):

@@ -87,6 +87,7 @@ class AlertAdmin(admin.ModelAdmin):
 
     list_display = (
         "id",
+        "test__name",
         "_message",
         "_subscriptions",
         "created_at",
@@ -120,6 +121,10 @@ class AlertAdmin(admin.ModelAdmin):
         html = markdown(message.markdown, extensions=["fenced_code"])
         return mark_safe(html)
 
+    @admin.display(description="Message | Slack")
+    def _message_mrkdwn(self, alert: Alert):
+        return alert.build(debug=True).mrkdwn
+
     @admin.display(description="Subscriptions")
     def _subscriptions(self, alert: Alert):
         return mark_safe("<br><br>".join([str(s) for s in alert.subscriptions]))
@@ -149,6 +154,7 @@ class AlertAdmin(admin.ModelAdmin):
         "_message_text",
         "_message_html",
         "_message_markdown",
+        "_message_mrkdwn",
         "_subscriptions",
         "created_at",
         "sent_at",
