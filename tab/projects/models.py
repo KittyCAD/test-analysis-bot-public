@@ -404,7 +404,8 @@ class Test(models.Model):
         new = round(failed / len(results), 6)
 
         if (
-            new < FAILURE_RATE_EPSILON
+            self.disabled_at
+            and new < FAILURE_RATE_EPSILON
             and self.results.exclude(branch__in=self.significant_branches)
             .filter(
                 status__in=Status.test_failed(),

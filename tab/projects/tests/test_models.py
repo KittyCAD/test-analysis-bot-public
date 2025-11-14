@@ -193,10 +193,16 @@ def describe_test():
             expect(test.block_rate) == 0.5
 
         @pytest.mark.django_db
-        def it_stays_above_zero_if_recent_branch_failures(expect, project: Project):
+        def it_stays_above_zero_if_disabled_and_recent_branch_failures(
+            expect, project: Project
+        ):
             project.save()
             test: Test = project.tests.create(name="my-test")
             test.results.create(test=test, status=Status.PASSED, branch="main")
+            test.failure_rate = -1
+            test.disabled_at = timezone.now()
+            test.save()
+
             test.results.create(test=test, status=Status.FAILED, branch="other")
             expect(test.failure_rate) == FAILURE_RATE_EPSILON
 
