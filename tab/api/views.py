@@ -147,7 +147,7 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
     if tests := request.FILES.get("tests"):
         content = tests.read().decode("utf-8")
         metadata = BulkResultRequest.get_metadata(request.POST.dict())
-        deferred = content.count("</testcase>") > 500
+        deferred = content.count("</testcase>") > 300
         results = parse_junit_xml(
             content,
             project,

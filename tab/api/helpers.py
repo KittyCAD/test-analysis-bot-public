@@ -6,6 +6,7 @@ from django.core.cache import cache
 
 import log
 from github import Auth, Github, GithubException, GithubIntegration
+from requests.exceptions import RequestException
 
 from tab.core.models import Organization
 from tab.projects.enums import Status
@@ -229,8 +230,8 @@ def update_status(
     try:
         repo = github.get_repo(project.path)
         commit = repo.get_commit(sha)
-    except GithubException as e:
-        data = getattr(e, "data", {})
+    except (GithubException, RequestException, OSError) as e:
+        data = getattr(e, "data", e)
         log.error(f"Unable to update status for {project.path} @ {sha[:7]}: {data}")
         return
 
@@ -242,11 +243,14 @@ def update_status(
             context="Test Analysis Bot",
         )
         log.info(f"Updated status for {project.path} @ {sha[:7]}: {health.state}")
-    except GithubException as e:
-        data = getattr(e, "data", {})
-        if "maximum number of statuses" in str(data):
-            log.warning(
-                f"Unable to update status for {project.path} @ {sha[:7]}: {data}"
-            )
+    except (GithubException, RequestException, OSError) as e:
+        if isinstance(e, GithubException):
+            data = getattr(e, "data", {})
+            if "maximum number of statuses" in str(data):
+                log.warning(
+                    f"Unable to update status for {project.path} @ {sha[:7]}: {data}"
+                )
+            else:
+                raise e from None
         else:
-            raise e from None
+            log.error(f"Unable to update status for {project.path} @ {sha[:7]}: {e}")
