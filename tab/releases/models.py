@@ -79,8 +79,8 @@ class Release(models.Model):
             return ""
         return f"{self.environment.project.repository}/commit/{self.commit}"
 
-    def finalize(self, *, share: bool = True) -> bool:
-        if self.finalized_at:
+    def finalize(self, *, share: bool = True, force: bool = False) -> bool:
+        if self.finalized_at and not force:
             return False
 
         if share:

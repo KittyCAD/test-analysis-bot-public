@@ -60,10 +60,17 @@ class ReleaseAdmin(admin.ModelAdmin):
 
     @admin.action(description="Finalize selected releases")
     def finalize(self, request, queryset):
+        self._finalize(request, queryset, force=False)
+
+    @admin.action(description="Finalize selected releases (force)")
+    def finalize_force(self, request, queryset):
+        self._finalize(request, queryset, force=True)
+
+    def _finalize(self, request, queryset, force: bool):
         count = 0
         release: Release
         for release in queryset:
-            if release.finalize():
+            if release.finalize(force=force):
                 count += 1
         s = "" if count == 1 else "s"
         self.message_user(request, f"Successfully finalized {count} release{s}.")
@@ -81,4 +88,4 @@ class ReleaseAdmin(admin.ModelAdmin):
         s = "" if count == 1 else "s"
         self.message_user(request, f"Successfully reset {count} release{s}.")
 
-    actions = [finalize, reset]
+    actions = [finalize, finalize_force, reset]
