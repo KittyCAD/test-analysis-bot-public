@@ -22,7 +22,7 @@ django-crispy-forms = "^2.5"
 crispy-bootstrap5 = "*" # styling for 'django-crispy-forms'
 django-debug-toolbar = "^6.1"
 django-extensions = "*"
-django-tables2 = "^2.7.5"
+django-tables2 = "^2.8.0"
 
 # API
 django-ninja = "^1.4.5"
