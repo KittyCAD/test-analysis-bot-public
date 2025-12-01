@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.db.models import Count, Q
 from django.utils import timezone
 
 import log
@@ -67,26 +68,35 @@ class ResultManager(models.Manager):
             return Health(total=0, state="pending", description="no results")
 
         latest_commit = self.get_latest_commit(project, project.default_branch)
-        latest_results = self.filter(
+        latest_aggregate = self.filter(
             test__project=project, commit=latest_commit, final=True
+        ).aggregate(
+            total=Count("id"),
+            passed=Count("id", filter=Q(status__in=Status.merge_allowed())),
         )
-        expected_passed = latest_results.filter(
-            status__in=Status.merge_allowed()
-        ).count()
-        expected_total = latest_results.count()
+        expected_total = latest_aggregate["total"]
+        expected_passed = latest_aggregate["passed"]
 
         results = self.filter(test__project=project, commit=commit, final=True)
-        passed_results = results.filter(status__in=Status.merge_allowed())
-        failed_results = results.filter(status__in=Status.merge_blocked())
-        total = results.count()
-        passed = passed_results.count()
-        failed = failed_results.count()
+        aggregate = results.aggregate(
+            total=Count("id"),
+            passed=Count("id", filter=Q(status__in=Status.merge_allowed())),
+            failed=Count("id", filter=Q(status__in=Status.merge_blocked())),
+        )
+        total = aggregate["total"]
+        passed = aggregate["passed"]
+        failed = aggregate["failed"]
         pending = max(0, expected_passed - passed)
 
-        if first_result := results.order_by("created_at").first():
-            age = timezone.now() - first_result.created_at  # type: ignore[attr-defined]
+        if (
+            first_result := results.order_by("created_at")
+            .values_list("created_at", flat=True)
+            .first()
+        ):
+            age = timezone.now() - first_result
         else:
             age = timedelta()
+
         log.info(
             f"Processed expected results for {project.path} @ {commit[:7]}: "
             f"{passed}/{expected_passed} passing, {total}/{expected_total} total"
@@ -106,8 +116,13 @@ class ResultManager(models.Manager):
             else:
                 s = "" if pending == 1 else "s"
                 description += f", {pending} more result{s} expected"
-        elif new_failed := sum(1 for r in failed_results if r.new_failure):  # type: ignore
-            s = "" if new_failed == 1 else "s"
-            description += f", {new_failed} new failure{s}"
+        elif failed:
+            failed_results = results.filter(
+                status__in=Status.merge_blocked()
+            ).select_related("test", "test__project", "suite")
+            new_failed = len([r for r in failed_results if r.new_failure])  # type: ignore[attr-defined]
+            if new_failed:
+                s = "" if new_failed == 1 else "s"
+                description += f", {new_failed} new failure{s}"
 
         return Health(total=total, state=state, description=description)
