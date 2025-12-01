@@ -556,6 +556,9 @@ class Result(models.Model):
             models.Index(fields=["test", "branch", "commit"]),
             models.Index(fields=["test", "branch", "created_at"]),
             models.Index(fields=["test", "status", "final"]),
+            # Optimize queries filtering by commit, final, and creation time
+            # used in get_health() and similar queries that filter by test__project
+            models.Index(fields=["test", "commit", "final", "created_at"]),
         ]
 
     def __str__(self):
