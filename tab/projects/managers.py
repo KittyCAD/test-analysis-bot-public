@@ -89,18 +89,19 @@ class ResultManager(models.Manager):
         pending = max(0, expected_passed - passed)
 
         if (
-            first_result := results.order_by("created_at")
-            .values_list("created_at", flat=True)
+            release_created_at := project.environments.filter(releases__commit=commit)
+            .values_list("releases__created_at", flat=True)
+            .order_by("releases__created_at")
             .first()
         ):
-            age = timezone.now() - first_result
+            age = timezone.now() - release_created_at
         else:
             age = timedelta()
 
         log.info(
             f"Processed expected results for {project.path} @ {commit[:7]}: "
             f"{passed}/{expected_passed} passing, {total}/{expected_total} total"
-            f", started {int(age.total_seconds())} seconds ago"
+            f", started {round(age.total_seconds() / 60, 1)} minutes ago"
         )
         if pending and age < PENDING_THRESHOLD and not finalize:
             state = "pending"

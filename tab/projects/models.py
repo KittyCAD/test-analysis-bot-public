@@ -553,12 +553,12 @@ class Result(models.Model):
     class Meta:
         ordering = ["-created_at"]
         indexes = [
+            # Optimizes Test._update_last_result()
             models.Index(fields=["test", "branch", "commit"]),
+            # Optimizes Test.update_*() and ResultManager.get_latest_commit()
             models.Index(fields=["test", "branch", "created_at"]),
-            models.Index(fields=["test", "status", "final"]),
-            # Optimize queries filtering by commit, final, and creation time
-            # used in get_health() and similar queries that filter by test__project
-            models.Index(fields=["test", "commit", "final", "created_at"]),
+            # Optimizes ResultManager.get_health()
+            models.Index(fields=["test", "commit", "final"]),
         ]
 
     def __str__(self):
@@ -754,6 +754,7 @@ class Result(models.Model):
             ).exclude(id=self.id).update(final=False)
 
     def save(self, *args, **kwargs):
+        # TODO: Consider naming these something like pre_save() and post_save()
         self.normalize()
         super().save(*args, **kwargs)
         self.finalize()

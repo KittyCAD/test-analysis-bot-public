@@ -192,6 +192,7 @@ def share(request, payload: ShareRequest):
     health = Result.objects.get_health(project, payload.commit)
     update_status(organization, project, payload.commit, payload.branch, health)
 
+    # TODO: Consider removing this code and just rely on cleandata
     if health.state != "pending":
         if release := Release.objects.filter(
             environment__project=project,
