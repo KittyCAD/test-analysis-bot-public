@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
+from django.db.models import Q
 from django.utils import timezone
 
 import log
@@ -28,6 +29,7 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
         start = timezone.now()
         log.info(f"Started job at {start.strftime('%Y-%m-%d %H:%M:%S')}")
+        self.finalize_releases()
         for project in Project.objects.all():
             count = 0
             if project.test_stale_threshold:
@@ -38,7 +40,6 @@ class Command(BaseCommand):
                 project.cleaned_at = timezone.now()
                 project.save()
         self.update_bulk_tests()
-        self.finalize_releases()
         delta = timezone.now() - start
         log.info(f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}")
 
@@ -49,7 +50,7 @@ class Command(BaseCommand):
         tests = Test.objects.filter(
             project=project,
             updated_at__lt=cutoff,
-        )
+        ).order_by()  # remove default ordering for performance
         count = tests.count()
 
         if dry_run:
@@ -63,25 +64,40 @@ class Command(BaseCommand):
     def delete_stale_results(self, project: Project, dry_run: bool) -> int:
         log.info(f"Cleaning up stale results: {project}")
 
-        cutoff = timezone.now() - project.result_stale_threshold
-        results = Result.objects.filter(
-            test__project=project,
-            created_at__lt=cutoff,
-        ).exclude(branch__in=project.default_branches)
-        count = results.count()
+        short_cutoff = timezone.now() - project.result_stale_threshold
+        long_cutoff = timezone.now() - (project.result_stale_threshold * 20)
+        results = (
+            Result.objects.filter(test__project=project)
+            .filter(
+                # Delete non-default branch results older than the threshold
+                (
+                    Q(created_at__lt=short_cutoff)
+                    & ~Q(branch__in=project.default_branches)
+                )
+                # Delete default branch results older than the threshold
+                | (
+                    Q(branch__in=project.default_branches)
+                    & Q(created_at__lt=long_cutoff)
+                )
+            )
+            .order_by()  # remove default ordering for performance
+        )
 
         if dry_run:
-            log.warning(f"Would delete {count} results: {project}")
+            count = results.count()
+            log.warning(f"Would delete {count} total results: {project}")
             return 0
 
         deleted = 0
         while True:
-            chunk_ids = results.values_list("id", flat=True)[:CHUNK_SIZE]
+            chunk_ids = list(results.values_list("id", flat=True)[:CHUNK_SIZE])
             if not chunk_ids:
                 break
             chunk_count = Result.objects.filter(id__in=chunk_ids).delete()[0]
             deleted += chunk_count
-            log.info(f"Deleted {deleted}/{count} results: {project}")
+            log.info(f"Deleted {chunk_count} chunk results: {project}")
+
+        log.info(f"Deleted {deleted} total results: {project}")
         return deleted
 
     def update_bulk_tests(self):
