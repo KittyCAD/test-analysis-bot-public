@@ -14,3 +14,6 @@ test-results/
 
 # Direnv cache
 .direnv/
+
+# devenv.sh cache
+.devenv/
