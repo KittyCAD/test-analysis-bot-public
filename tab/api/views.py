@@ -192,15 +192,6 @@ def share(request, payload: ShareRequest):
     health = Result.objects.get_health(project, payload.commit)
     update_status(organization, project, payload.commit, payload.branch, health)
 
-    if health.state != "pending":
-        if release := Release.objects.filter(
-            environment__project=project,
-            commit=payload.commit,
-            finalized_at__isnull=True,
-        ).first():
-            log.info(f"Finalizing release after not pending: {release}")
-            release.finalize(share=False)
-
     return 200, ShareResponse(
         project=unidecode(str(project)),
         branch=payload.branch,

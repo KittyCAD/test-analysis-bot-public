@@ -79,18 +79,16 @@ class Release(models.Model):
             return ""
         return f"{self.environment.project.repository}/commit/{self.commit}"
 
-    def finalize(self, *, share: bool = True, force: bool = False) -> bool:
-        if self.finalized_at and not force:
-            return False
+    def finalize(self):
+        log.info(f"Finalizing release: {self}")
 
-        if share:
-            project: Project = self.environment.project
-            organization = Organization.objects.get(
-                repository_index=project.repository_index
-            )
-            health = Result.objects.get_health(project, self.commit, finalize=True)
-            update_status(organization, project, self.commit, self.branch, health)
+        project: Project = self.environment.project
+        organization = Organization.objects.get(
+            repository_index=project.repository_index
+        )
+
+        health = Result.objects.get_health(project, self.commit, final=True)
+        update_status(organization, project, self.commit, self.branch, health)
 
         self.finalized_at = timezone.now()
         self.save()
-        return True

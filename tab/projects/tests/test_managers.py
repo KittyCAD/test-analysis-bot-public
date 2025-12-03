@@ -95,7 +95,7 @@ def describe_result_manager():
             expect(health.description) == "2 of 3 passing, 1 more result expected"
 
             # Simulate a release being finalized after a timeout
-            health = Result.objects.get_health(project, "def456", finalize=True)
+            health = Result.objects.get_health(project, "def456", final=True)
             expect(health.total) == 3
             expect(health.state) == "failure"
             expect(health.description) == "2 of 3 passing, 1 new failure"

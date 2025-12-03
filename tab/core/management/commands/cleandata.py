@@ -124,5 +124,4 @@ class Command(BaseCommand):
             created_at__lt=cutoff, finalized_at__isnull=True
         )
         for release in releases:
-            log.warning(f"Finalizing release after timeout: {release}")
             release.finalize()

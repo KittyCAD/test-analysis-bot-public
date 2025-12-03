@@ -61,7 +61,7 @@ class ResultManager(models.Manager):
         return queryset.values_list("commit", flat=True).first()
 
     def get_health(
-        self, project: Project, commit: str | None, *, finalize: bool = False
+        self, project: Project, commit: str | None, *, final: bool = False
     ) -> Health:
         assert "github.com" in project.repository, "Only GitHub is supported for now"
         if not commit:
@@ -103,7 +103,7 @@ class ResultManager(models.Manager):
             f"{passed}/{expected_passed} passing, {total}/{expected_total} total"
             f", started {round(age.total_seconds() / 60, 1)} minutes ago"
         )
-        if pending and age < PENDING_THRESHOLD and not finalize:
+        if pending and age < PENDING_THRESHOLD and not final:
             state = "pending"
         elif failed:
             state = "failure"
