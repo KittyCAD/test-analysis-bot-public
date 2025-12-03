@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
@@ -14,6 +16,16 @@ from .models import Organization
 
 
 def login(request: HttpRequest) -> HttpResponse:
+    if request.method == "GET" and (otp := request.GET.get("otp")):
+        params = {"otp": otp}
+        if next_url := request.GET.get("next"):
+            params["next"] = next_url
+        query = urlencode(params)
+        url = reverse("verify")
+        if query:
+            url = f"{url}?{query}"
+        return redirect(url)
+
     if request.method == "POST":
         email: str = request.POST["email"]
         domain = email.split("@")[1]
@@ -42,7 +54,7 @@ def verify(request: HttpRequest) -> HttpResponse:
         return redirect("login")
 
     if request.method == "POST":
-        submitted_otp = request.POST.get("otp")
+        submitted_otp = request.POST.get("otp", "")
         log.info(f"Verifying OTP for {email}")
         stored_otp = cache.get(f"otp:{email}")
 
@@ -55,9 +67,11 @@ def verify(request: HttpRequest) -> HttpResponse:
             return redirect(url)
         else:
             messages.error(request, "Invalid OTP. Please try again.")
-            return render(request, "core/verify.html", {"email": email})
+            context = {"email": email, "otp_value": submitted_otp}
+            return render(request, "core/verify.html", context)
 
-    return render(request, "core/verify.html", {"email": email})
+    context = {"email": email, "otp_value": request.GET.get("otp")}
+    return render(request, "core/verify.html", context)
 
 
 def logout(request: HttpRequest) -> HttpResponse:

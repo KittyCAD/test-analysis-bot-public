@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
 from django.db import IntegrityError
+from django.urls import reverse
 
 import log
 
@@ -35,7 +36,8 @@ def generate_otp() -> str:
 
 def send_otp_email(email: str, otp: str):
     subject = "Test Analysis Bot"
-    message = f"Your one-time password is: {otp}"
+    login_url = f"{settings.BASE_URL}{reverse('login')}?otp={otp}"
+    message = f"Your one-time password is: {otp}\n\nLogin: {login_url}"
     from_email = "tab@zoo.dev"
     recipient_list = [email]
     send_mail(subject, message, from_email, recipient_list)

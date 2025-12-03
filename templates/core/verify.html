@@ -17,7 +17,12 @@
                             {% csrf_token %}
                             <div class="mb-3">
                                 <label for="otp" class="form-label">One-Time Password:</label>
-                                <input type="text" class="form-control" id="otp" name="otp" required>
+                                <input type="text"
+                                       class="form-control"
+                                       id="otp"
+                                       name="otp"
+                                       {% if otp_value %}value="{{ otp_value }}"{% endif %}
+                                       required>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <button type="submit" class="btn btn-primary">

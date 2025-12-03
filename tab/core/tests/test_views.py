@@ -1,6 +1,10 @@
 import pytest
+from django.conf import settings
+from django.core import mail
+from django.urls import reverse
 
 from ..constants import TEST_OTP
+from ..helpers import send_otp_email
 from ..models import Organization
 
 
@@ -73,3 +77,43 @@ def describe_login_and_verify():
 
         # Should redirect to the next URL after successful login
         expect(response.redirect_chain[-1][0]).contains("/projects/")
+
+    @pytest.mark.django_db
+    def it_redirects_to_verify_when_otp_is_in_query(expect, client, organization):
+        client.post(login_url, {"email": "test@example.com"}, follow=True)
+
+        response = client.get(f"{login_url}?otp={TEST_OTP}", follow=True)
+        expect(response.status_code) == 200
+        expect(response.redirect_chain[0][0]).contains(f"{verify_url}?otp={TEST_OTP}")
+
+        html = response.content.decode("utf-8")
+        expect(html).contains(f'value="{TEST_OTP}"')
+
+    @pytest.mark.django_db
+    def it_preserves_next_parameter_when_redirecting_with_otp(expect, client, organization):
+        client.post(
+            f"{login_url}?next=/projects/", {"email": "test@example.com"}, follow=True
+        )
+
+        response = client.get(
+            f"{login_url}?otp={TEST_OTP}&next=/projects/", follow=True
+        )
+        expect(response.status_code) == 200
+        expect(response.redirect_chain[0][0]).contains(
+            f"{verify_url}?otp={TEST_OTP}&next=%2Fprojects%2F"
+        )
+
+
+def describe_send_otp_email():
+    @pytest.mark.django_db
+    def it_includes_login_link_in_message(expect):
+        mail.outbox.clear()
+
+        send_otp_email("test@example.com", TEST_OTP)
+
+        expect(len(mail.outbox)) == 1
+        message = mail.outbox[0]
+
+        login_url = f"{settings.BASE_URL}{reverse('login')}"
+        expect(message.body).contains(login_url)
+        expect(message.body).contains(f"otp={TEST_OTP}")
