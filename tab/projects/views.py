@@ -325,12 +325,16 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         context["show"] = self.request.GET.get("show", "all")
         context["base_url"] = settings.BASE_URL
         if self.request.user.is_staff:
-            context["admin_url"] = (
-                reverse(
-                    "admin:projects_result_changelist",
+            if branch != project.default_branch:
+                context["admin_url"] = (
+                    reverse("admin:releases_release_changelist")
+                    + f"?environment__project__repository={project.repository}&branch={branch}"
                 )
-                + f"?test__project__repository={project.repository}"
-            )
+            else:
+                context["admin_url"] = (
+                    reverse("admin:projects_result_changelist")
+                    + f"?test__project__repository={project.repository}"
+                )
 
         return context
 
