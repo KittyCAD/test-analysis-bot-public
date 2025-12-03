@@ -726,6 +726,7 @@ class Result(models.Model):
         return {"headers": headers, "rows": rows}
 
     def normalize(self):
+        """Pre-save logic to normalize payload values."""
         if self.duration:
             self.duration = round(self.duration, 3)
         if self.message:
@@ -743,6 +744,7 @@ class Result(models.Model):
         )
 
     def finalize(self):
+        """Post-save logic to mark other results as reruns."""
         if self.final:
             Result.objects.filter(
                 test=self.test,
@@ -754,7 +756,6 @@ class Result(models.Model):
             ).exclude(id=self.id).update(final=False)
 
     def save(self, *args, **kwargs):
-        # TODO: Consider naming these something like pre_save() and post_save()
         self.normalize()
         super().save(*args, **kwargs)
         self.finalize()
