@@ -11,3 +11,6 @@ staticfiles/
 
 # Testing
 test-results/
+
+# Direnv cache
+.direnv/
