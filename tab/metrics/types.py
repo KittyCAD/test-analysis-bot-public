@@ -32,7 +32,7 @@ class Message:
     def mrkdwn(self) -> str:
         """Slack's Markdown-like format."""
         value = f"{self._markdown_prefix}"
-        label = self.label.replace("::", ":\u200b:")  # prevent interpolation
+        label = self.label.replace("::", "∶∶")  # prevent URL interpolation
         label = label.replace("->", "→")  # prevent breaking link syntax
         value += f"{self.text}: <{self.url}|{label}>"
         value += self._markdown_extra

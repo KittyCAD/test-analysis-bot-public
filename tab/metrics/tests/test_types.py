@@ -30,13 +30,13 @@ def describe_message():
 
     def it_formats_as_mrkdwn(expect, message: Message):
         expect(message.mrkdwn) == (
-            "Failures increased by 10% today: <https://example.com|my_namespace:​:my project › my test → my case>"
+            "Failures increased by 10% today: <https://example.com|my_namespace∶∶my project › my test → my case>"
         )
 
     def it_formats_as_mrkdwn_with_test_prefix(expect, message: Message):
         message.debug = True
         expect(message.mrkdwn) == (
-            "`SAMPLE ALERT` Failures increased by 10% today: <https://example.com|my_namespace:​:my project › my test → my case>"
+            "`SAMPLE ALERT` Failures increased by 10% today: <https://example.com|my_namespace∶∶my project › my test → my case>"
         )
 
     def it_truncates_extra(expect, message: Message):
