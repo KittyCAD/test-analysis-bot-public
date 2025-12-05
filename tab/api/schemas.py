@@ -24,9 +24,9 @@ class ResultRequest(ModelSchema):
     suite: str = DEFAULT_SUITE
     test: str
 
-    class Config:
+    class Meta:
         model = Result
-        model_fields = [
+        fields = [
             "branch",
             "commit",
             "status",
@@ -38,12 +38,12 @@ class ResultRequest(ModelSchema):
 
     @classmethod
     def get_metadata(cls, request_body: dict) -> dict:
-        return {k: v for k, v in request_body.items() if k not in cls.model_fields}
+        return {k: v for k, v in request_body.items() if k not in cls.Meta.fields}
 
     def get_model_fields(self) -> dict:
         return {
             field: getattr(self, field)
-            for field in self.__class__.model_fields
+            for field in self.__class__.Meta.fields
             if field not in ["project", "suite", "test"]
         }
 
