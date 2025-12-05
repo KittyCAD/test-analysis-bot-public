@@ -137,7 +137,7 @@ class TestTable(tables.Table):
 
     def render_updated_at(self, value):
         age = timezone.now() - value
-        opacity_class = "opacity-25" if age > timedelta(hours=1) else ""
+        opacity_class = "opacity-25" if age > timedelta(hours=12) else ""
         return mark_safe(
             f'<span class="text-nowrap {opacity_class}">{naturaltime(value)}</span>'
         )
