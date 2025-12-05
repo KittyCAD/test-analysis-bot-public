@@ -8,7 +8,7 @@ from .types import Message
 
 
 def send_slack_message(
-    organization: Organization, channel: str, message: Message
+    organization: Organization, channel: str, message: Message, unfurl: bool
 ) -> str | None:
     if not organization.slack_bot_token:
         log.warning(f"{organization} has no Slack bot token")
@@ -22,7 +22,7 @@ def send_slack_message(
 
     try:
         response = client.chat_postMessage(
-            channel=channel_id, text=message.mrkdwn, unfurl_links=False
+            channel=channel_id, text=message.mrkdwn, unfurl_links=unfurl
         )
         log.info(f"{organization} Slack message sent to {channel}")
         response = client.chat_getPermalink(

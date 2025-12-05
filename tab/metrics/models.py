@@ -220,11 +220,13 @@ class Alert(models.Model):
 
             if subscription.primary:
                 message = self.build(debug=debug)
+                unfurl = False
             elif not forward:
                 log.debug(f"Skipped secondary alert for test: {self.test}")
                 continue
             elif self.url:
                 message = self.build(debug=debug, url=self.url)
+                unfurl = True
             else:
                 log.warning(f"No existing primary alert for test: {self.test}")
                 continue
@@ -235,7 +237,7 @@ class Alert(models.Model):
                 continue
 
             if url := send_slack_message(
-                team.organization, team.slack_channel_name, message
+                team.organization, team.slack_channel_name, message, unfurl
             ):
                 count += 1
                 team.alerted_at = timezone.now()

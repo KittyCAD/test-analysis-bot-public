@@ -1,7 +1,8 @@
-import pytest
 from django.conf import settings
 from django.core import mail
 from django.urls import reverse
+
+import pytest
 
 from ..constants import TEST_OTP
 from ..helpers import send_otp_email
@@ -90,7 +91,9 @@ def describe_login_and_verify():
         expect(html).contains(f'value="{TEST_OTP}"')
 
     @pytest.mark.django_db
-    def it_preserves_next_parameter_when_redirecting_with_otp(expect, client, organization):
+    def it_preserves_next_parameter_when_redirecting_with_otp(
+        expect, client, organization
+    ):
         client.post(
             f"{login_url}?next=/projects/", {"email": "test@example.com"}, follow=True
         )
