@@ -1,11 +1,11 @@
-import logging
 import sys
 import traceback
 
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.conf import settings
+from django.http import HttpRequest, HttpResponse, HttpResponsePermanentRedirect
 from django.utils.deprecation import MiddlewareMixin
 
-logger = logging.getLogger(__name__)
+import log
 
 
 class ExceptionLoggingMiddleware(MiddlewareMixin):
@@ -28,9 +28,32 @@ class ExceptionLoggingMiddleware(MiddlewareMixin):
         tb_text = "".join(tb_lines)
 
         # Log the exception (the custom formatter will escape newlines)
-        logger.critical(
+        log.critical(
             f"Unhandled exception for {request.method} {request.path}\n{tb_text}",
             exc_info=False,  # Don't include exc_info since we're formatting it ourselves
         )
+
+        return None
+
+
+class DomainRedirectMiddleware(MiddlewareMixin):
+    """
+    Middleware to redirect from the legacy domain.
+    """
+
+    def process_request(self, request: HttpRequest) -> HttpResponse | None:
+        if not settings.ALLOWED_HOSTS:
+            return None
+
+        legacy_domain = settings.ALLOWED_HOSTS[-1]
+        if "test-analysis-bot" not in legacy_domain:
+            return None
+
+        request_host = request.get_host().split(":")[0]
+        if request_host == legacy_domain:
+            path = request.get_full_path()
+            redirect_url = f"{settings.BASE_URL}{path}"
+            log.warning(f"Redirecting from {request_host}{path} to {redirect_url}")
+            return HttpResponsePermanentRedirect(redirect_url)
 
         return None
