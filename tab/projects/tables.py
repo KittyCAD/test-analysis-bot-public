@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.template.loader import render_to_string
+from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 import django_tables2 as tables
@@ -133,7 +136,11 @@ class TestTable(tables.Table):
         return record.average_duration_humanized
 
     def render_updated_at(self, value):
-        return mark_safe(f'<span class="text-nowrap">{naturaltime(value)}</span>')
+        age = timezone.now() - value
+        opacity_class = "opacity-25" if age > timedelta(hours=1) else ""
+        return mark_safe(
+            f'<span class="text-nowrap {opacity_class}">{naturaltime(value)}</span>'
+        )
 
 
 class DisabledTestTable(tables.Table):
@@ -249,7 +256,7 @@ class TestResultTable(tables.Table):
             "th": {"class": "text-center"},
         },
     )
-    created_at = tables.DateTimeColumn(verbose_name="When")
+    created_at = tables.DateTimeColumn(verbose_name="Reported")
 
     class Meta:
         model = Result

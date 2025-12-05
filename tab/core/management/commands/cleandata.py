@@ -104,7 +104,7 @@ class Command(BaseCommand):
         if test_ids := cache.get(TESTS_CACHE_KEY):
             cache.delete(TESTS_CACHE_KEY)
             tests = Test.objects.filter(id__in=test_ids)
-            log.info(f"Processing {tests.count()} tests")
+            log.info(f"Updating tests: {tests.count()} (multiple projects)")
             for test in tests:
                 if test.update():
                     log.info(f"Updated test: {test}")
