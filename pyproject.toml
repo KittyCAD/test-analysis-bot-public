@@ -53,7 +53,7 @@ isort = "^7.0.0"
 djlint = "^1.36.4"
 
 # Linting
-mypy = "^1.18.2"
+mypy = "^1.19.0"
 django-stubs = { version = "^5.2.7", extras = ["compatible-mypy"] }
 types-markdown = "*"
 types-requests = "*"
