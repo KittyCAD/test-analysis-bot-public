@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "django_extensions",
     "django_tables2",
+    "django_user_agents",
     # First-party
     "tab.api",
     "tab.core",
@@ -41,8 +42,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "tab.core.middleware.CrawlerDetectionMiddleware",
-    "tab.core.middleware.CrawlerRenderingMiddleware",
+    "django_user_agents.middleware.UserAgentMiddleware",
+    "tab.core.middleware.CrawlerPreviewMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "tab.core.middleware.ExceptionLoggingMiddleware",

@@ -21,7 +21,6 @@ django-cors-headers = "*"
 django-crispy-forms = "^2.5"
 crispy-bootstrap5 = "*" # styling for 'django-crispy-forms'
 django-debug-toolbar = "^6.1"
-django-extensions = "*"
 django-tables2 = "^2.8.0"
 
 # API
@@ -37,6 +36,8 @@ pygithub = "^2.8.1"
 slack-sdk = "^3.39.0"
 
 # Utilities
+django-extensions = "*"
+django-user-agents = "^0.4.0"
 markdown = "^3.10"
 minilog = "*"
 unidecode = "^1.4.0"

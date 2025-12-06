@@ -1,4 +1,3 @@
-import re
 import sys
 import traceback
 
@@ -65,56 +64,21 @@ class DomainRedirectMiddleware(MiddlewareMixin):
         return None
 
 
-class CrawlerDetectionMiddleware(MiddlewareMixin):
-    """
-    Middleware to detect crawlers like Slack, to show minimal OG tags.
-    """
-
-    # TODO: Look for library that provides this functionality
-    CRAWLER_PATTERNS = [
-        r"facebookexternalhit",
-        r"Facebot",
-        r"Twitterbot",
-        r"LinkedInBot",
-        r"Slackbot",
-        r"Discordbot",
-        r"Applebot",
-        r"Googlebot",
-        r"bingbot",
-        r"Slurp",
-        r"DuckDuckBot",
-        r"Baiduspider",
-        r"YandexBot",
-        r"Sogou",
-        r"Exabot",
-        r"ia_archiver",
-        r"WhatsApp",
-        r"TelegramBot",
-    ]
-
-    def process_request(self, request: HttpRequest) -> HttpResponse | None:
-        user_agent = request.META.get("HTTP_USER_AGENT", "")
-        is_crawler = any(
-            re.search(pattern, user_agent, re.IGNORECASE)
-            for pattern in self.CRAWLER_PATTERNS
-        )
-        setattr(request, "is_crawler", is_crawler)
-        return None
-
-
-class CrawlerRenderingMiddleware(MiddlewareMixin):
+class CrawlerPreviewMiddleware(MiddlewareMixin):
     """
     Middleware to return minimal OG tags for crawlers like Slack.
     """
 
     def process_request(self, request: HttpRequest) -> HttpResponse | None:
-        if (
-            request.method == "GET"
-            and getattr(request, "is_crawler", False)
-            and not request.user.is_authenticated
-        ):
-            if html := self._get_html(request, request.path):
-                return HttpResponse(html, content_type="text/html")
+        if request.method != "GET" or request.user.is_authenticated:
+            return None
+
+        user_agent = request.user_agent  # type: ignore[attr-defined]
+        if not user_agent or not user_agent.is_bot:
+            return None
+
+        if html := self._get_html(request, request.path):
+            return HttpResponse(html, content_type="text/html")
 
         return None
 

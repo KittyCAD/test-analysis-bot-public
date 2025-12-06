@@ -6,7 +6,7 @@ from django.http import HttpRequest, QueryDict
 import pytest
 
 from tab.core.middleware import (
-    CrawlerRenderingMiddleware,
+    CrawlerPreviewMiddleware,
     DomainRedirectMiddleware,
     ExceptionLoggingMiddleware,
 )
@@ -108,10 +108,10 @@ def _extract_og_tags(html: str) -> dict[str, str]:
     return tags
 
 
-def describe_crawler_rendering_middleware():
+def describe_crawler_preview_middleware():
     @pytest.fixture
     def middleware():
-        return CrawlerRenderingMiddleware(get_response=Mock())
+        return CrawlerPreviewMiddleware(get_response=Mock())
 
     @pytest.fixture
     def http_request(mocker):
