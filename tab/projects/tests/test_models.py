@@ -286,9 +286,20 @@ def describe_result():
             ) == "https://github.com/foo/bar/actions/runs/123?pr=456"
 
     def describe_new_failure():
-        def is_true_for_failure_on_rarely_blocking_test(expect):
+        def it_is_true_for_failure_on_rarely_blocking_test(expect):
             test = Test(project=Project(), name="test", block_rate=0.005)
-            result = Result(test=test, status=Status.FAILED)
+            result = Result(test=test, status=Status.FAILED, branch="my-branch")
+            expect(result.new_failure) == True
+
+        def it_is_true_for_failure_new_to_branch(expect):
+            project = Project(default_branches=["main"])
+            test = Test(
+                project=project,
+                name="test",
+                original_branch="my-branch",
+                block_rate=0.5,  # high block rate is ignored
+            )
+            result = Result(test=test, status=Status.FAILED, branch="my-branch")
             expect(result.new_failure) == True
 
     def describe_new_fix():

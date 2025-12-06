@@ -671,7 +671,13 @@ class Result(models.Model):
 
     @property
     def new_failure(self) -> bool:
-        threshold = self.suite.block_rate_lower_threshold if self.suite else 0.01
+        if self.status in Status.merge_blocked() and self.originated_from_branch:
+            return True
+        threshold = (
+            self.suite.block_rate_lower_threshold
+            if self.suite
+            else Suite._meta.get_field("block_rate_lower_threshold").default
+        )
         return (
             self.status in Status.merge_blocked()
             and self.test.block_rate < threshold
@@ -680,7 +686,11 @@ class Result(models.Model):
 
     @property
     def new_fix(self) -> bool:
-        threshold = self.suite.failure_rate_upper_threshold if self.suite else 0.50
+        threshold = (
+            self.suite.failure_rate_upper_threshold
+            if self.suite
+            else Suite._meta.get_field("failure_rate_upper_threshold").default
+        )
         return (
             self.status not in Status.test_failed() | {Status.TIMEDOUT}
             and self.test.failure_rate > threshold

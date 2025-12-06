@@ -9,7 +9,7 @@ import django_tables2 as tables
 import log
 from django_tables2 import A
 
-from .models import Result, Status, Test
+from .models import Result, Status, Suite, Test
 
 
 def wrap(name: str) -> str:
@@ -397,22 +397,35 @@ class ResultTable(TestResultTable):
         )
 
     def render_test__block_rate(self, record: Result):
-        if record.originated_from_branch:
+        if record.originated_from_branch and not record.new_failure:
             return "—"
-        if suite := record.test.suite:
-            tooltip = icon = ""
-            if record.new_failure:
-                tooltip = "Current branch likely broke this test"
-                icon = "warning"
-            elif record.new_fix:
-                tooltip = "Current branch may have fixed this test"
-                icon = "star"
-            return color(
-                record.test.block_rate_humanized,
-                record.test.block_rate,
-                suite.block_rate_lower_threshold,
-                suite.block_rate_upper_threshold,
-                icon,
-                tooltip,
-            )
-        return record.test.block_rate_humanized
+
+        text = record.test.block_rate_humanized
+        tooltip = icon = ""
+        if record.new_failure and record.originated_from_branch:
+            text = ""
+            tooltip = "Current branch added this broken test"
+            icon = "warning"
+        elif record.new_failure:
+            tooltip = "Current branch likely broke this test"
+            icon = "warning"
+        elif record.new_fix:
+            tooltip = "Current branch may have fixed this test"
+            icon = "star"
+
+        return color(
+            text,
+            record.test.block_rate,
+            (
+                record.suite.block_rate_lower_threshold
+                if record.suite
+                else Suite._meta.get_field("block_rate_lower_threshold").default
+            ),
+            (
+                record.suite.block_rate_upper_threshold
+                if record.suite
+                else Suite._meta.get_field("block_rate_upper_threshold").default
+            ),
+            icon,
+            tooltip,
+        )
