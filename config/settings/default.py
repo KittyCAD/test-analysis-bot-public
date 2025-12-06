@@ -41,6 +41,8 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "tab.core.middleware.CrawlerDetectionMiddleware",
+    "tab.core.middleware.CrawlerRenderingMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "tab.core.middleware.ExceptionLoggingMiddleware",

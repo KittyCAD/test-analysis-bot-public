@@ -1,11 +1,17 @@
+import re
 import sys
 import traceback
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse, HttpResponsePermanentRedirect
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 from django.utils.deprecation import MiddlewareMixin
 
 import log
+
+from tab.projects.enums import Status
+from tab.projects.models import Project, Result, Test
 
 
 class ExceptionLoggingMiddleware(MiddlewareMixin):
@@ -57,3 +63,181 @@ class DomainRedirectMiddleware(MiddlewareMixin):
             return HttpResponsePermanentRedirect(redirect_url)
 
         return None
+
+
+class CrawlerDetectionMiddleware(MiddlewareMixin):
+    """
+    Middleware to detect crawlers like Slack, to show minimal OG tags.
+    """
+
+    # TODO: Look for library that provides this functionality
+    CRAWLER_PATTERNS = [
+        r"facebookexternalhit",
+        r"Facebot",
+        r"Twitterbot",
+        r"LinkedInBot",
+        r"Slackbot",
+        r"Discordbot",
+        r"Applebot",
+        r"Googlebot",
+        r"bingbot",
+        r"Slurp",
+        r"DuckDuckBot",
+        r"Baiduspider",
+        r"YandexBot",
+        r"Sogou",
+        r"Exabot",
+        r"ia_archiver",
+        r"WhatsApp",
+        r"TelegramBot",
+    ]
+
+    def process_request(self, request: HttpRequest) -> HttpResponse | None:
+        user_agent = request.META.get("HTTP_USER_AGENT", "")
+        is_crawler = any(
+            re.search(pattern, user_agent, re.IGNORECASE)
+            for pattern in self.CRAWLER_PATTERNS
+        )
+        setattr(request, "is_crawler", is_crawler)
+        return None
+
+
+class CrawlerRenderingMiddleware(MiddlewareMixin):
+    """
+    Middleware to return minimal OG tags for crawlers like Slack.
+    """
+
+    def process_request(self, request: HttpRequest) -> HttpResponse | None:
+        if (
+            request.method == "GET"
+            and getattr(request, "is_crawler", False)
+            and not request.user.is_authenticated
+        ):
+            if html := self._get_html(request, request.path):
+                return HttpResponse(html, content_type="text/html")
+
+        return None
+
+    def _get_html(self, request: HttpRequest, path: str) -> str | None:
+
+        path_parts = path.strip("/").split("/")
+        projects_idx = 0
+
+        # Pattern: projects/<path>/tests/<test_id>/results/<result_id>
+        if (
+            len(path_parts) >= projects_idx + 6
+            and path_parts[projects_idx] == "projects"
+        ):
+            tests_idx = None
+            results_idx = None
+            for i, part in enumerate(path_parts):
+                if part == "tests" and tests_idx is None:
+                    tests_idx = i
+                elif (
+                    part == "results" and results_idx is None and tests_idx is not None
+                ):
+                    results_idx = i
+
+            if (
+                tests_idx is not None
+                and results_idx is not None
+                and results_idx == tests_idx + 2
+                and len(path_parts) > results_idx + 1
+            ):
+                test_id = int(path_parts[tests_idx + 1])
+                result_id = int(path_parts[results_idx + 1])
+                project_path = "/".join(path_parts[projects_idx + 1 : tests_idx])
+                project = get_object_or_404(Project, repository__iendswith=project_path)
+                test = get_object_or_404(Test, project=project, id=test_id)
+                result = get_object_or_404(Result, test=test, id=result_id)
+
+                title = project.name
+                status_label = Status(result.status).label
+                description = f"{status_label} test result for: {test.name}"
+                return self._render_html(title, description, request)
+
+        # Pattern: projects/<path>/tests/disabled
+        if (
+            len(path_parts) >= projects_idx + 3
+            and path_parts[projects_idx] == "projects"
+            and len(path_parts) >= projects_idx + 3
+            and path_parts[-2] == "tests"
+            and path_parts[-1] == "disabled"
+        ):
+            project_path = "/".join(path_parts[projects_idx + 1 : -2])
+            project = get_object_or_404(Project, repository__iendswith=project_path)
+
+            title = project.name
+            description = "Keep tabs on unreliable tests by viewing disabled tests for this project."
+            return self._render_html(title, description, request)
+
+        # Pattern: projects/<path>/tests/<test_id>
+        if (
+            len(path_parts) >= projects_idx + 4
+            and path_parts[projects_idx] == "projects"
+            and path_parts[-2] == "tests"
+        ):
+            test_id = int(path_parts[-1])
+            project_path = "/".join(path_parts[projects_idx + 1 : -2])
+            project = get_object_or_404(Project, repository__iendswith=project_path)
+            test = get_object_or_404(Test, project=project, id=test_id)
+
+            title = project.name
+            description = f"Test result history for: {test.name}"
+            return self._render_html(title, description, request)
+
+        # Pattern: projects/<path>/results
+        if (
+            len(path_parts) >= projects_idx + 3
+            and path_parts[projects_idx] == "projects"
+            and path_parts[-1] == "results"
+        ):
+            project_path = "/".join(path_parts[projects_idx + 1 : -1])
+            project = get_object_or_404(Project, repository__iendswith=project_path)
+
+            title = project.name
+            description = "Keep tabs on unreliable tests by browsing the latest results for this project."
+            return self._render_html(title, description, request)
+
+        # Pattern: projects/<path>/metrics
+        if (
+            len(path_parts) >= projects_idx + 3
+            and path_parts[projects_idx] == "projects"
+            and path_parts[-1] == "metrics"
+        ):
+            project_path = "/".join(path_parts[projects_idx + 1 : -1])
+            project = get_object_or_404(Project, repository__iendswith=project_path)
+
+            title = project.name
+            description = (
+                "Keep tabs on unreliable tests by viewing metrics for this project."
+            )
+            return self._render_html(title, description, request)
+
+        # Pattern: projects/<path>
+        if (
+            len(path_parts) >= projects_idx + 2
+            and path_parts[projects_idx] == "projects"
+        ):
+            project_path = "/".join(path_parts[projects_idx + 1 :])
+            project = get_object_or_404(Project, repository__iendswith=project_path)
+
+            title = project.name
+            if len(path_parts) == projects_idx + 2:
+                description = "Keep tabs on unreliable tests by exploring all projects for this organization."
+            else:
+                description = "Keep tabs on unreliable tests by exploring all tests reported for this project."
+            return self._render_html(title, description, request)
+
+        return None
+
+    def _render_html(
+        self, title: str | None, description: str, request: HttpRequest
+    ) -> str:
+
+        context = {
+            "og_title": title,
+            "og_description": description,
+            "meta_description": description,
+        }
+        return render_to_string("crawler.html", context, request=request)
