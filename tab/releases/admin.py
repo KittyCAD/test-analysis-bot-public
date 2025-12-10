@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.utils.safestring import mark_safe
 
+from tab.projects.models import Result
+
 from .models import Environment, Release
 
 
@@ -82,3 +84,13 @@ class ReleaseAdmin(admin.ModelAdmin):
         self.message_user(request, f"Successfully reset {count} release{s}.")
 
     actions = [finalize, reset]
+
+    readonly_fields = ("health",)
+
+    @admin.display(description="Project Health")
+    def health(self, release: Release):
+        return Result.objects.get_health(
+            release.environment.project,
+            release.commit,
+            final=release.finalized_at is not None,
+        )
