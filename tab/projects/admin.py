@@ -44,6 +44,8 @@ class ProjectAdmin(admin.ModelAdmin):
         "test_inactive_threshold_humanized",
         "test_stale_threshold_humanized",
         "result_stale_threshold_humanized",
+        "suites_count",
+        "tests_count",
         "cleaned_at",
         "created_at",
         "updated_at",
@@ -79,7 +81,21 @@ class ProjectAdmin(admin.ModelAdmin):
             return "Never"
         return timesince(timezone.now() - project.result_stale_threshold)
 
-    readonly_fields = ("cleaned_at", "created_at", "updated_at")
+    @admin.display(description="Suites Count")
+    def suites_count(self, project: Project):
+        return project.suites.count()
+
+    @admin.display(description="Tests Count")
+    def tests_count(self, project: Project):
+        return project.tests.count()
+
+    readonly_fields = (
+        "suites_count",
+        "tests_count",
+        "cleaned_at",
+        "created_at",
+        "updated_at",
+    )
     inlines = [SuiteInline]
 
 
@@ -103,6 +119,10 @@ class SuiteAdmin(admin.ModelAdmin):
     )
     ordering = ("-updated_at",)
     list_filter = ("name", "supports_override", "project__repository")
+
+    @admin.display(description="Tests Count")
+    def tests_count(self, suite: Suite):
+        return suite.tests.count()
 
     @admin.display(description="Local Command")
     def _local_command(self, suite: Suite):
