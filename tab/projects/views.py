@@ -42,7 +42,7 @@ class IndexView(LoginRequiredMixin, TemplateView):
                 )
                 .annotate(
                     suites_count=Count("suites", distinct=True),
-                    tests_count=Count("tests"),
+                    tests_count=Count("tests", distinct=True),
                 )
                 .order_by("repository")
             )
