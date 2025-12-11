@@ -17,13 +17,21 @@ class EnvironmentAdmin(admin.ModelAdmin):
         "project",
         "url",
         "name",
+        "_dependencies",
         "created_at",
         "updated_at",
     )
     list_filter = ("name", "created_at", "updated_at", "project__repository")
 
     raw_id_fields = ("project",)
+    filter_horizontal = ("dependencies",)
     readonly_fields = ("created_at", "updated_at")
+
+    @admin.display(description="Dependencies")
+    def _dependencies(self, environment: Environment):
+        if environments := environment.dependencies.all():
+            return ", ".join(str(e) for e in environments)
+        return "-"
 
 
 @admin.register(Release)

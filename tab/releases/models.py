@@ -21,6 +21,10 @@ class Environment(models.Model):
     url = models.URLField(null=True, blank=True)
     name = models.CharField(max_length=100, choices=Type.choices)
 
+    dependencies = models.ManyToManyField(
+        "self", blank=True, symmetrical=False, related_name="dependents"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
