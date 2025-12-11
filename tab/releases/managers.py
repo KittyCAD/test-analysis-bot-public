@@ -31,6 +31,7 @@ class EnvironmentManager(models.Manager):
             )
             if environments.count() == 1:
                 environment = environments.first()  # type: ignore[assignment]
+                created = False
             else:
                 environment, created = self.get_or_create(  # type: ignore[assignment]
                     project=project, name=Type.STAGING
