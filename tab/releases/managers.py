@@ -26,9 +26,15 @@ class EnvironmentManager(models.Manager):
             )
         elif result.branch == project.default_branch:
             # TODO: Handle multiple environments using the same branch
-            environment, created = self.get_or_create(  # type: ignore[assignment]
-                project=project, name=Type.STAGING
+            environments = self.filter(
+                project=project, name__in=[Type.STAGING, Type.PRODUCTION]
             )
+            if environments.count() == 1:
+                environment = environments.first()  # type: ignore[assignment]
+            else:
+                environment, created = self.get_or_create(  # type: ignore[assignment]
+                    project=project, name=Type.STAGING
+                )
         else:
             environment, created = self.get_or_create(  # type: ignore[assignment]
                 project=project, name=Type.PREVIEW
