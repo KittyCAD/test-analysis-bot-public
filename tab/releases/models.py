@@ -18,7 +18,7 @@ class Environment(models.Model):
         Project, on_delete=models.CASCADE, related_name="environments"
     )
 
-    url = models.URLField(null=True, blank=True)
+    url = models.URLField(null=True, blank=True, verbose_name="URL")
     name = models.CharField(max_length=100, choices=Type.choices)
 
     dependencies = models.ManyToManyField(
@@ -31,10 +31,16 @@ class Environment(models.Model):
     objects: EnvironmentManager = EnvironmentManager()
 
     class Meta:
-        ordering = ["-updated_at"]
+        ordering = [
+            Type.order_expression(),  # type: ignore[list-item]
+            "project__repository",
+        ]
 
     def __str__(self):
-        return f"{self.get_name_display()}: {self.url or self.project}"
+        text = f"{self.get_name_display()}: {self.project}"
+        if self.url:
+            text += f" ({self.url})"
+        return text
 
     def change(self, branch: str, commit: str) -> Release:
         release, created = Release.objects.get_or_create(

@@ -14,24 +14,27 @@ class EnvironmentAdmin(admin.ModelAdmin):
     search_fields = ("project__repository", "name", "url")
     list_display = (
         "id",
+        "name",
         "project",
         "url",
-        "name",
         "_dependencies",
+    )
+    list_filter = (
+        "name",
         "created_at",
         "updated_at",
+        "project__repository",
     )
-    list_filter = ("name", "created_at", "updated_at", "project__repository")
-
-    raw_id_fields = ("project",)
-    filter_horizontal = ("dependencies",)
-    readonly_fields = ("created_at", "updated_at")
 
     @admin.display(description="Dependencies")
     def _dependencies(self, environment: Environment):
         if environments := environment.dependencies.all():
-            return ", ".join(str(e) for e in environments)
+            return mark_safe("<br><br>".join(str(e) for e in environments))
         return "-"
+
+    raw_id_fields = ("project",)
+    filter_horizontal = ("dependencies",)
+    readonly_fields = ("created_at", "updated_at")
 
 
 @admin.register(Release)
