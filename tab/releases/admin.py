@@ -94,6 +94,7 @@ class ReleaseAdmin(admin.ModelAdmin):
         release: Release
         for release in queryset:
             release.results = 0
+            release.dependencies.clear()
             release.tested_at = None
             release.finalized_at = None
             release.save()
@@ -133,14 +134,14 @@ class ReleaseAdmin(admin.ModelAdmin):
     def downstream_health(self, release: Release):
         parts = []
 
-        for dependent in release.environment.dependents.all():
+        for dependent_environment in release.environment.dependents.all():
             if downstream_release := Release.objects.filter(
-                environment=dependent
+                environment=dependent_environment, finalized_at__isnull=False
             ).first():
                 health = Result.objects.get_health(
                     downstream_release.environment.project,
                     downstream_release.commit,
-                    final=downstream_release.finalized_at is not None,
+                    final=True,
                 )
                 url = reverse(
                     "admin:releases_release_change", args=[downstream_release.pk]
