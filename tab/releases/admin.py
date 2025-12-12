@@ -10,7 +10,17 @@ from .models import Environment, Release
 @admin.register(Environment)
 class EnvironmentAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related("project")
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("project")
+            .prefetch_related("dependencies__project")
+        )
+
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == "dependencies":
+            kwargs["queryset"] = Environment.objects.select_related("project")
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     search_fields = ("project__repository", "name", "url")
     list_display = (
@@ -40,6 +50,18 @@ class EnvironmentAdmin(admin.ModelAdmin):
 
 @admin.register(Release)
 class ReleaseAdmin(admin.ModelAdmin):
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("environment__project")
+            .prefetch_related("dependencies__environment__project")
+        )
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "environment":
+            kwargs["queryset"] = Environment.objects.select_related("project")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     search_fields = ("environment__project__repository", "branch", "commit")
     list_display = (
