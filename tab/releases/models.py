@@ -37,10 +37,7 @@ class Environment(models.Model):
         ]
 
     def __str__(self):
-        text = f"{self.get_name_display()}: {self.project}"
-        if self.url:
-            text += f" ({self.url})"
-        return text
+        return f"{self.get_name_display()}: {self.project}"
 
     def change(self, branch: str, commit: str) -> Release:
         release, created = Release.objects.get_or_create(

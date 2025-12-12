@@ -403,7 +403,8 @@ class ResultTable(TestResultTable):
         text = record.test.block_rate_humanized
         tooltip = icon = ""
         if record.new_failure and record.originated_from_branch:
-            text = ""
+            if record.test.block_rate <= 0:
+                text = ""
             tooltip = "Current branch added this broken test"
             icon = "warning"
         elif record.new_failure:
