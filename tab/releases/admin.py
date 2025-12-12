@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 from tab.projects.models import Result
@@ -74,9 +75,8 @@ class ReleaseAdmin(admin.ModelAdmin):
 
     @admin.display(description="Dependencies")
     def _dependencies(self, release: Release):
-        if dependencies := release.dependencies.all():
-            return mark_safe("<br><br>".join(str(d) for d in dependencies))
-        return "-"
+        count = release.dependencies.count()
+        return count if count > 0 else ""
 
     @admin.action(description="Finalize selected releases")
     def finalize(self, request, queryset):
@@ -103,24 +103,48 @@ class ReleaseAdmin(admin.ModelAdmin):
 
     actions = [finalize, reset]
 
-    readonly_fields = ("health",)
+    readonly_fields = ("current_health", "upstream_health", "downstream_health")
 
-    @admin.display(description="System Health")
-    def health(self, release: Release):
+    @admin.display(description="Current Health")
+    def current_health(self, release: Release):
         health = Result.objects.get_health(
             release.environment.project,
             release.commit,
             final=release.finalized_at is not None,
         )
+        return str(health)
 
-        parts = [f"{release}: {health.description} ({health.state})"]
+    @admin.display(description="Upstream Health")
+    def upstream_health(self, release: Release):
+        parts = []
 
-        for dependency in release.dependencies.all():
+        for upstream_release in release.dependencies.all():
             health = Result.objects.get_health(
-                dependency.environment.project,
-                dependency.commit,
-                final=dependency.finalized_at is not None,
+                upstream_release.environment.project,
+                upstream_release.commit,
+                final=upstream_release.finalized_at is not None,
             )
-            parts.append(f"{dependency}: {health.description} ({health.state})")
+            url = reverse("admin:releases_release_change", args=[upstream_release.pk])
+            parts.append(f'<a href="{url}">{upstream_release}</a><br>{health}')
 
-        return mark_safe("<br><br>".join(parts))
+        return mark_safe("<br><br>".join(parts)) if parts else "-"
+
+    @admin.display(description="Downstream Health")
+    def downstream_health(self, release: Release):
+        parts = []
+
+        for dependent in release.environment.dependents.all():
+            if downstream_release := Release.objects.filter(
+                environment=dependent
+            ).first():
+                health = Result.objects.get_health(
+                    downstream_release.environment.project,
+                    downstream_release.commit,
+                    final=downstream_release.finalized_at is not None,
+                )
+                url = reverse(
+                    "admin:releases_release_change", args=[downstream_release.pk]
+                )
+                parts.append(f'<a href="{url}">{downstream_release}</a><br>{health}')
+
+        return mark_safe("<br><br>".join(parts)) if parts else "-"
