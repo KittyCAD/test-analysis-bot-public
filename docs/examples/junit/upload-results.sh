@@ -14,6 +14,7 @@ commit="${CI_COMMIT_SHA:-${GITHUB_SHA:-}}"
 
 echo "Uploading batch results:"
 curl --silent --request POST \
+  --header "User-Agent: GitHub-Actions/1.0" \
   --header "X-API-Key: ${TAB_API_KEY}" \
   --form "project=${project}" \
   --form "suite=${suite}" \
@@ -43,6 +44,7 @@ fi
 
 echo "Sharing updated report:"
 curl --silent --request POST \
+  --header "User-Agent: GitHub-Actions/1.0" \
   --header "Content-Type: application/json" \
   --header "X-API-Key: ${TAB_API_KEY}" \
   --data "{
