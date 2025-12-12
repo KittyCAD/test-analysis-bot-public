@@ -47,6 +47,7 @@ class ReleaseAdmin(admin.ModelAdmin):
         "_branch",
         "_commit",
         "created_at",
+        "_dependencies",
         "tested_at",
         "results",
         "finalized_at",
@@ -70,6 +71,12 @@ class ReleaseAdmin(admin.ModelAdmin):
         return mark_safe(
             f'<a href="{release.commit_url}" target="_blank">{release.commit_humanized}</a>'
         )
+
+    @admin.display(description="Dependencies")
+    def _dependencies(self, release: Release):
+        if dependencies := release.dependencies.all():
+            return mark_safe("<br><br>".join(str(d) for d in dependencies))
+        return "-"
 
     @admin.action(description="Finalize selected releases")
     def finalize(self, request, queryset):
@@ -98,10 +105,22 @@ class ReleaseAdmin(admin.ModelAdmin):
 
     readonly_fields = ("health",)
 
-    @admin.display(description="Project Health")
+    @admin.display(description="System Health")
     def health(self, release: Release):
-        return Result.objects.get_health(
+        health = Result.objects.get_health(
             release.environment.project,
             release.commit,
             final=release.finalized_at is not None,
         )
+
+        parts = [f"{release}: {health.description} ({health.state})"]
+
+        for dependency in release.dependencies.all():
+            health = Result.objects.get_health(
+                dependency.environment.project,
+                dependency.commit,
+                final=dependency.finalized_at is not None,
+            )
+            parts.append(f"{dependency}: {health.description} ({health.state})")
+
+        return mark_safe("<br><br>".join(parts))

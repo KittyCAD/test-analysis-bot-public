@@ -45,6 +45,12 @@ class Environment(models.Model):
         )
         if created:
             log.info(f"Created release: {release}")
+            for dependency in self.dependencies.all():
+                if upstream_release := Release.objects.filter(
+                    environment=dependency
+                ).first():
+                    release.dependencies.add(upstream_release)
+            release.save()
         else:
             log.info(f"Found release: {release}")
         return release
@@ -58,6 +64,10 @@ class Release(models.Model):
     branch = models.CharField(max_length=500, default="", db_index=True)
     commit = models.CharField(max_length=100, default="", db_index=True)
     results = models.IntegerField(default=0)
+
+    dependencies = models.ManyToManyField(
+        "self", blank=True, symmetrical=False, related_name="dependents", editable=False
+    )
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     tested_at = models.DateTimeField(null=True, blank=True, db_index=True)
