@@ -38,7 +38,7 @@ class EnvironmentManager(models.Manager):
                 )
         else:
             environment, created = self.get_or_create(  # type: ignore[assignment]
-                project=project, name=Type.PREVIEW
+                project=project, name=Type.REVIEW
             )
         if created:
             log.info(f"Created environment: {environment}")
