@@ -86,3 +86,7 @@ def describe_message():
                 ]
             )
         )
+
+    def it_keeps_extra_if_a_single_line(expect, message: Message):
+        message.extra = "Jane Doe: This test was disabled because of this long explanation that we don't want to truncate at all."
+        expect(message.markdown).excludes("…")

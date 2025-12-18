@@ -66,7 +66,7 @@ class Message:
                 values += f"({remaining} more line{s} omitted)\n"
                 break
 
-            if len(line) > 100:
+            if len(line) > 100 and len(lines) > 1:
                 line = line[:99] + "…"
 
             values += line + "\n"
