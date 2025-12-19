@@ -158,11 +158,14 @@ def parse_junit_xml(
 
         # Bulk create tests
         tests_to_create: list[Test] = []
+        created_tests: set[str] = set()
         for test_data in tests_data_to_create:
-            if test_data["name"] not in existing_tests:
+            name = test_data["name"]  # type: ignore[assignment]
+            if name not in existing_tests and name not in created_tests:
                 tests_to_create.append(Test(**test_data))
-            else:
-                test = existing_tests[test_data["name"]]  # type: ignore[index]
+                created_tests.add(name)
+            elif name in existing_tests:
+                test = existing_tests[name]  # type: ignore[index]
                 tests_to_update.append(test)
         if tests_to_create:
             Test.objects.bulk_create(tests_to_create)
