@@ -18,7 +18,12 @@ class Environment(models.Model):
         Project, on_delete=models.CASCADE, related_name="environments"
     )
 
-    url = models.URLField(null=True, blank=True, verbose_name="URL")
+    url = models.CharField(
+        max_length=500,
+        null=True,
+        blank=True,
+        verbose_name="URL",
+    )
     name = models.CharField(max_length=100, choices=Type.choices)
 
     dependencies = models.ManyToManyField(
