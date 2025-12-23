@@ -15,7 +15,7 @@ package-mode = false
 [tool.poetry.dependencies]
 
 # Web
-django = "^5.2.9"
+django = "^6.0.0"
 django-browser-reload = "^1.21"
 django-cors-headers = "*"
 django-crispy-forms = "^2.5"
@@ -146,7 +146,6 @@ markers = []
 
 filterwarnings = [
     "ignore::pytest.PytestCollectionWarning",
-    "ignore::django.utils.deprecation.RemovedInDjango60Warning",
     "ignore::DeprecationWarning:pydantic._internal._config:",
     "ignore::DeprecationWarning:ninja.orm.metaclass:"
 ]
