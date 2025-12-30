@@ -232,6 +232,7 @@ class Alert(models.Model):
                 continue
 
             team: Team = subscription.team
+            team.refresh_from_db()
             if team.recently_alerted and not force:
                 log.info(f"Skipped redundant alert for team: {team}")
                 continue
