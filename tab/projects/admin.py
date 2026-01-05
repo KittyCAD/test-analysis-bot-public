@@ -183,6 +183,26 @@ class RunAdmin(admin.ModelAdmin):
             f'<a href="{run.commit_url}" target="_blank">{run.commit_humanized}</a>'
         )
 
+    readonly_fields = ("setup_duration", "tests_duration", "teardown_duration")
+
+    def setup_duration(self, run: Run):
+        if not run.setup_started_at or not run.tests_started_at:
+            return "—"
+        delta = run.tests_started_at - run.setup_started_at
+        return f"{delta.total_seconds():.2f} seconds"
+
+    def tests_duration(self, run: Run):
+        if not run.tests_finished_at or not run.tests_started_at:
+            return "—"
+        delta = run.tests_finished_at - run.tests_started_at
+        return f"{delta.total_seconds():.2f} seconds"
+
+    def teardown_duration(self, run: Run):
+        if not run.teardown_finished_at or not run.tests_finished_at:
+            return "—"
+        delta = run.teardown_finished_at - run.tests_finished_at
+        return f"{delta.total_seconds():.2f} seconds"
+
 
 @admin.register(Test)
 class TestAdmin(admin.ModelAdmin):
