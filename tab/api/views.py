@@ -3,6 +3,7 @@ import tomllib
 
 from django.conf import settings
 from django.shortcuts import redirect
+from django.utils import timezone
 
 import log
 from ninja import Form, NinjaAPI
@@ -10,7 +11,7 @@ from unidecode import unidecode
 
 from tab.core.models import Organization
 from tab.projects.enums import Status
-from tab.projects.models import Project, Result, Suite, Test
+from tab.projects.models import Project, Result, Run, Suite, Test
 from tab.releases.models import Environment, Release
 
 from .helpers import parse_junit_xml, update_status
@@ -23,6 +24,8 @@ from .schemas import (
     ResultResponse,
     ShareRequest,
     ShareResponse,
+    TrackRequest,
+    TrackResponse,
 )
 
 project = tomllib.load(open("pyproject.toml", "rb"))["project"]
@@ -73,6 +76,13 @@ def results(request, payload: ResultRequest):
         log.info(f"Found suite: {suite}")
 
     metadata = ResultRequest.get_metadata(json.loads(request.body))
+    Run.objects.track_step(
+        suite=suite,
+        branch=payload.branch,
+        commit=payload.commit,
+        step="start",
+        metadata=metadata,
+    )
     test, created = Test.objects.get_or_create(
         project=project,
         name=payload.test,
@@ -106,6 +116,14 @@ def results(request, payload: ResultRequest):
     )
     log.info(f"Created result: {result}")
     Environment.objects.process(project, [result])
+
+    Run.objects.track_step(
+        suite=suite,
+        branch=payload.branch,
+        commit=payload.commit,
+        step="finish",
+        metadata=metadata,
+    )
 
     return status, ResultResponse(
         suite=unidecode(str(suite)),
@@ -147,6 +165,13 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
     if tests := request.FILES.get("tests"):
         content = tests.read().decode("utf-8")
         metadata = BulkResultRequest.get_metadata(request.POST.dict())
+        Run.objects.track_step(
+            suite=suite,
+            branch=payload.branch,
+            commit=payload.commit,
+            step="start",
+            metadata=metadata,
+        )
         deferred = content.count("</testcase>") > 300
         results = parse_junit_xml(
             content,
@@ -158,6 +183,13 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
             deferred=deferred,
         )
         Environment.objects.process(project, results)
+        Run.objects.track_step(
+            suite=suite,
+            branch=payload.branch,
+            commit=payload.commit,
+            step="finish",
+            metadata=metadata,
+        )
         return 200, BulkResultResponse(
             suite=unidecode(str(suite)),
             branch=payload.branch,
@@ -197,4 +229,51 @@ def share(request, payload: ShareRequest):
         branch=payload.branch,
         commit=payload.commit,
         tests=health.total,
+    )
+
+
+@api.post(
+    "/track",
+    auth=api_key,
+    response={
+        200: TrackResponse,
+        422: ErrorResponse,
+    },
+    tags=["Tests"],
+)
+def track(request, payload: Form[TrackRequest]):
+    try:
+        if hasattr(settings, "TEST"):
+            log.warning("Skipping ownership check for tests")
+            project = Project.objects.from_repository(payload.project)
+        else:
+            key = request.headers.get(ApiKey.param_name)
+            organization = Organization.objects.get(key=key)
+            project = Project.objects.from_repository(
+                payload.project, organization.repository_index
+            )
+    except ValueError as e:
+        return 422, {"detail": str(e)}
+
+    suite, created = Suite.objects.get_or_create(project=project, name=payload.suite)
+    if created:
+        log.info(f"Created suite: {suite}")
+    else:
+        log.info(f"Found suite: {suite}")
+
+    metadata = TrackRequest.get_metadata(request.POST.dict())
+    Run.objects.track_step(
+        suite=suite,
+        branch=payload.branch,
+        commit=payload.commit,
+        step=payload.step,
+        metadata=metadata,
+    )
+
+    return 200, TrackResponse(
+        project=unidecode(str(project)),
+        suite=payload.suite,
+        branch=payload.branch,
+        commit=payload.commit,
+        step=payload.step,
     )

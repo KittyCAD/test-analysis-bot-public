@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.timesince import timesince
 
-from .models import Project, Result, Suite, Test
+from .models import Project, Result, Run, Suite, Test
 
 
 class SuiteAdminForm(forms.ModelForm):
@@ -153,6 +153,35 @@ class SuiteAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+
+
+@admin.register(Run)
+class RunAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "suite",
+        "_branch",
+        "_commit",
+        "setup_started_at",
+        "tests_started_at",
+        "tests_finished_at",
+        "teardown_finished_at",
+    )
+    ordering = ("-setup_started_at",)
+    list_filter = (
+        "project__repository",
+        "suite__name",
+    )
+
+    @admin.display(description="Branch")
+    def _branch(self, run: Run):
+        return mark_safe(f'<a href="{run.branch_url}" target="_blank">{run.branch}</a>')
+
+    @admin.display(description="Commit")
+    def _commit(self, run: Run):
+        return mark_safe(
+            f'<a href="{run.commit_url}" target="_blank">{run.commit_humanized}</a>'
+        )
 
 
 @admin.register(Test)

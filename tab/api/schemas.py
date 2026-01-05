@@ -106,3 +106,24 @@ class ShareResponse(Schema):
 
 class ErrorResponse(Schema):
     detail: str
+
+
+class TrackRequest(Schema):
+    project: str
+    suite: str
+    branch: str = ""
+    commit: str = ""
+    step: str
+
+    @classmethod
+    def get_metadata(cls, request_body: dict) -> dict:
+        known_fields = ["project", "suite", "branch", "commit", "step"]
+        return {k: v for k, v in request_body.items() if k not in known_fields}
+
+
+class TrackResponse(Schema):
+    project: str
+    suite: str
+    branch: str
+    commit: str
+    step: str

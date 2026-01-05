@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -15,7 +15,7 @@ from .enums import Status
 from .types import Health
 
 if TYPE_CHECKING:
-    from .models import Project, Test
+    from .models import Project, Run, Suite, Test
 
 
 class ProjectManager(models.Manager):
@@ -127,3 +127,54 @@ class ResultManager(models.Manager):
                 description += f", {new_failed} new failure{s}"
 
         return Health(total=total, state=state, description=description)
+
+
+class RunManager(models.Manager):
+    def track_step(
+        self,
+        suite: Suite,
+        branch: str,
+        commit: str,
+        step: str,
+        metadata: dict,
+    ) -> tuple[Run | None, bool]:
+        assert step in ("setup", "start", "finish", "teardown"), f"Invalid step: {step}"
+
+        run: Run
+        if step == "setup":
+            run, created = self.get_or_create(  # type: ignore[assignment]
+                project=suite.project,
+                suite=suite,
+                branch=branch,
+                commit=commit,
+                defaults={"metadata": metadata},
+            )
+            if created:
+                log.info(f"Created run: {run}")
+            else:
+                log.info(f"Found run: {run}")
+        else:
+            try:
+                run = self.get(  # type: ignore[assignment]
+                    project=suite.project,
+                    suite=suite,
+                    branch=branch,
+                    commit=commit,
+                )
+            except ObjectDoesNotExist:
+                return None, False
+            else:
+                created = False
+                log.info(f"Found run: {run}")
+
+        if step == "setup" and not run.setup_started_at:
+            run.setup_started_at = timezone.now()
+        elif step == "start" and not run.tests_started_at:
+            run.tests_started_at = timezone.now()
+        elif step == "finish":
+            run.tests_finished_at = timezone.now()
+        elif step == "teardown":
+            run.teardown_finished_at = timezone.now()
+        run.save()
+
+        return run, created

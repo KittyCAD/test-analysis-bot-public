@@ -22,7 +22,7 @@ from .constants import (
     get_default_branches,
 )
 from .enums import Platform, Status, Target
-from .managers import ProjectManager, ResultManager
+from .managers import ProjectManager, ResultManager, RunManager
 
 
 class Project(models.Model):
@@ -158,6 +158,49 @@ class Suite(models.Model):
         if self.name == DEFAULT_SUITE:
             return str(self.project)
         return f"{self.project} › {self.name}"
+
+
+class Run(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="runs")
+    suite = models.ForeignKey(Suite, on_delete=models.CASCADE, related_name="runs")
+    branch = models.CharField(max_length=500, default="", db_index=True)
+    commit = models.CharField(max_length=100, default="", db_index=True)
+
+    metadata = models.JSONField(default=dict, blank=True)
+
+    setup_started_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    tests_started_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    tests_finished_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    teardown_finished_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    objects: RunManager = RunManager()
+
+    class Meta:
+        ordering = ["-setup_started_at"]
+        unique_together = ["project", "suite", "branch", "commit"]
+
+    def __str__(self):
+        branch = self.branch or "???"
+        commit = self.commit_humanized if self.commit else "???"
+        return f"{self.suite} on {branch!r} at {commit}"
+
+    @property
+    def branch_url(self) -> str:
+        if not self.branch:
+            return ""
+        return f"{self.project.repository}/tree/{self.branch}"
+
+    @property
+    def commit_humanized(self) -> str:
+        if not self.commit:
+            return ""
+        return self.commit[:7]
+
+    @property
+    def commit_url(self) -> str:
+        if not self.commit:
+            return ""
+        return f"{self.project.repository}/commit/{self.commit}"
 
 
 class Test(models.Model):

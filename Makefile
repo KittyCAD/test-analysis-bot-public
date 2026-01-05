@@ -133,6 +133,16 @@ test-e2e: install
 	TAB_API_KEY=$${TAB_API_KEY:-localhost} \
 	GITHUB_SERVER_URL=https://github.com \
 	GITHUB_REPOSITORY=KittyCAD/modeling-app \
+	GITHUB_HEAD_REF=tab-test \
+	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_STEP=setup \
+	.github/workflows/lib/track-step.sh
+	@ echo
+
+	TAB_API_URL=$${TAB_API_URL:-http://localhost:8000} \
+	TAB_API_KEY=$${TAB_API_KEY:-localhost} \
+	GITHUB_SERVER_URL=https://github.com \
+	GITHUB_REPOSITORY=KittyCAD/modeling-app \
 	GITHUB_RUN_ID=999999 \
 	GITHUB_HEAD_REF=tab-test \
 	CI_COMMIT_SHA=$$(date +%m-%d) \
@@ -175,6 +185,17 @@ test-e2e: install
 	@ echo
 
 	./manage.py cleandata
+	@ echo
+
+	TAB_API_URL=$${TAB_API_URL:-http://localhost:8000} \
+	TAB_API_KEY=$${TAB_API_KEY:-localhost} \
+	GITHUB_SERVER_URL=https://github.com \
+	GITHUB_REPOSITORY=KittyCAD/modeling-app \
+	GITHUB_HEAD_REF=tab-test \
+	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_STEP=teardown \
+	.github/workflows/lib/track-step.sh
+	@ echo
 
 # LOCAL DEVELOPMENT ###########################################################
 

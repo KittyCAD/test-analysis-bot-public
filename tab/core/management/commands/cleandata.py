@@ -8,7 +8,7 @@ from django.utils import timezone
 import log
 
 from tab.api.constants import TESTS_CACHE_KEY
-from tab.projects.models import Project, Result, Test
+from tab.projects.models import Project, Result, Run, Test
 from tab.releases.constants import RESULTS_TIMEOUT
 from tab.releases.models import Release
 
@@ -35,6 +35,7 @@ class Command(BaseCommand):
             if project.test_stale_threshold:
                 count += self.delete_stale_tests(project, dry_run)
             if project.result_stale_threshold:
+                count += self.delete_stale_runs(project, dry_run)
                 count += self.delete_stale_results(project, dry_run)
             if count:
                 project.cleaned_at = timezone.now()
@@ -59,6 +60,24 @@ class Command(BaseCommand):
 
         tests.delete()
         log.info(f"Deleted {count} tests: {project}")
+        return count
+
+    def delete_stale_runs(self, project: Project, dry_run: bool) -> int:
+        log.info(f"Cleaning up stale runs: {project}")
+        cutoff = timezone.now() - (project.result_stale_threshold * 20)
+        runs = (
+            Run.objects.filter(project=project)
+            .filter(setup_started_at__lt=cutoff)
+            .order_by()
+        )
+        count = runs.count()
+
+        if dry_run:
+            log.warning(f"Would delete {count} runs: {project}")
+            return 0
+
+        runs.delete()
+        log.info(f"Deleted {count} runs: {project}")
         return count
 
     def delete_stale_results(self, project: Project, dry_run: bool) -> int:
