@@ -9,7 +9,7 @@ import django_tables2 as tables
 import log
 from django_tables2 import A
 
-from .models import Result, Status, Suite, Test
+from .models import Result, Run, Status, Suite, Test
 
 
 def wrap(name: str) -> str:
@@ -302,19 +302,24 @@ class TestResultTable(tables.Table):
         )
 
     def render_target(self, value, record: Result):
-        if not record.final:
-            return mark_safe(f'<span class="opacity-25">{value}</span>')
-        return value
+        if record.final:
+            return value
+        return mark_safe(f'<span class="opacity-25">{value}</span>')
 
     def render_platform(self, value, record: Result):
-        if not record.final:
-            return mark_safe(f'<span class="opacity-25">{value}</span>')
-        return value
+        if record.final:
+            return value
+        return mark_safe(f'<span class="opacity-25">{value}</span>')
 
     def render_duration(self, record: Result):
-        html = record.duration_humanized
-        if not record.final:
-            html = f'<span class="opacity-25">{html}</span>'
+        value = record.duration_humanized
+        if setup_duration := Run.objects.get_setup_duration(
+            record.suite, record.branch, record.commit
+        ):
+            value += f" (+{setup_duration:.1f}s)"
+        if record.final:
+            return value
+        html = f'<span class="opacity-25">{value}</span>'
         return mark_safe(html)
 
     def render_created_at(self, value, record: Result):

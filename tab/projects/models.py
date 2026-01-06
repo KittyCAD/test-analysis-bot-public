@@ -202,6 +202,12 @@ class Run(models.Model):
             return ""
         return f"{self.project.repository}/commit/{self.commit}"
 
+    @property
+    def setup_duration(self) -> float:
+        if not self.setup_started_at or not self.tests_started_at:
+            return 0.0
+        return (self.tests_started_at - self.setup_started_at).total_seconds()
+
 
 class Test(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="tests")

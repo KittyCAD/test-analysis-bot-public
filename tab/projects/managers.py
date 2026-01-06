@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import TYPE_CHECKING, cast
 
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Count, Q
@@ -10,7 +11,12 @@ from django.utils import timezone
 
 import log
 
-from .constants import ALL_BRANCHES, PENDING_THRESHOLD
+from .constants import (
+    ALL_BRANCHES,
+    PENDING_THRESHOLD,
+    SETUP_DURATION_CACHE_KEY,
+    SETUP_DURATION_CACHE_TIMEOUT,
+)
 from .enums import Status
 from .types import Health
 
@@ -178,3 +184,19 @@ class RunManager(models.Manager):
         run.save()
 
         return run, created
+
+    def get_setup_duration(
+        self, suite: Suite | None, branch: str, commit: str
+    ) -> float:
+        """Get a cached value for the setup duration of a particular commit."""
+        if suite is None:
+            return 0.0
+        cache_key = f"{SETUP_DURATION_CACHE_KEY}:{suite.id}:{branch}:{commit}"
+        duration = cache.get(cache_key)
+        if duration is None:
+            run: Run = self.filter(  # type: ignore[assignment]
+                suite=suite, branch=branch, commit=commit
+            ).first()
+            duration = run.setup_duration if run else 0.0
+            cache.set(cache_key, duration, timeout=SETUP_DURATION_CACHE_TIMEOUT)
+        return duration
