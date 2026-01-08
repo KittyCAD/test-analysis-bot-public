@@ -312,14 +312,14 @@ class TestResultTable(tables.Table):
         return mark_safe(f'<span class="opacity-25">{value}</span>')
 
     def render_duration(self, record: Result):
-        value = record.duration_humanized
+        html = f'<span class="d-inline-flex align-items-center gap-1">{record.duration_humanized}'
         if setup_duration := Run.objects.get_setup_duration(
             record.suite, record.branch, record.commit
         ):
-            value += f" (+{setup_duration:.1f}s)"
-        if record.final:
-            return value
-        html = f'<span class="opacity-25">{value}</span>'
+            html += f'<span class="small">(+{setup_duration:.1f}s)</span>'
+        html += "</span>"
+        if not record.final:
+            html = f'<span class="opacity-25">{html}</span>'
         return mark_safe(html)
 
     def render_created_at(self, value, record: Result):

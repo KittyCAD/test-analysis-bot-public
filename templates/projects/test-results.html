@@ -87,7 +87,12 @@
                     <div class="col d-flex flex-column">
                         <h5 class="card-title">Average Duration</h5>
                         <small class="fst-italic text-muted d-block mb-2">{{ average_duration_help }}</small>
-                        <p class="card-text mt-auto">{% colorize test "average_duration" %}</p>
+                        <p class="card-text mt-auto">
+                            <span class="d-inline-flex align-items-center gap-1">
+                                {% colorize test "average_duration" %}
+                                {% if setup_duration %}<span class="small">(+{{ setup_duration|floatformat:1 }}s)</span>{% endif %}
+                            </span>
+                        </p>
                     </div>
                 </div>
             </div>

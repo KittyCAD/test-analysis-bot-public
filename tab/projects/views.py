@@ -22,7 +22,7 @@ from tab.metrics.models import Alert
 from .constants import FAILURE_RATE_EPSILON
 from .forms import BulkUpdateTestForm, UpdateTestForm
 from .helpers import get_disabled_test_metrics
-from .models import Project, Result, Status, Test
+from .models import Project, Result, Run, Status, Test
 from .tables import DisabledTestTable, ResultTable, TestResultTable, TestTable
 
 
@@ -430,6 +430,9 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         for field in test._meta.get_fields():
             if hasattr(field, "help_text") and field.help_text:
                 context[f"{field.name}_help"] = field.help_text
+        context["setup_duration"] = Run.objects.get_setup_duration(
+            test.suite, context["branch"] or project.default_branch, commit=None
+        )
         if self.request.user.is_staff:
             context["admin_url"] = reverse("admin:projects_test_change", args=[test.pk])
             if test.suite:

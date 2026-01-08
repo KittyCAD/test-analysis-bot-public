@@ -134,9 +134,10 @@ test-e2e: install
 	GITHUB_SERVER_URL=https://github.com \
 	GITHUB_REPOSITORY=KittyCAD/modeling-app \
 	GITHUB_HEAD_REF=tab-test \
-	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_COMMIT_SHA=a1b2c3d4e5 \
 	CI_STEP=setup \
 	.github/workflows/lib/track-step.sh
+	sleep 1.23456789
 	@ echo
 
 	TAB_API_URL=$${TAB_API_URL:-http://localhost:8000} \
@@ -145,7 +146,7 @@ test-e2e: install
 	GITHUB_REPOSITORY=KittyCAD/modeling-app \
 	GITHUB_RUN_ID=999999 \
 	GITHUB_HEAD_REF=tab-test \
-	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_COMMIT_SHA=a1b2c3d4e5 \
 	CI_PR_NUMBER=9999 \
 	time ./docs/examples/junit/upload-results.sh || true
 	@ echo
@@ -156,7 +157,7 @@ test-e2e: install
 	GITHUB_REPOSITORY=KittyCAD/modeling-app \
 	GITHUB_RUN_ID=999999 \
 	GITHUB_HEAD_REF=main \
-	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_COMMIT_SHA=a1b2c3d4e5 \
 	time ./docs/examples/junit/upload-results.sh || true
 	@ echo
 
@@ -169,7 +170,7 @@ test-e2e: install
 	GITHUB_REPOSITORY=KittyCAD/modeling-app \
 	GITHUB_RUN_ID=999999 \
 	GITHUB_HEAD_REF=tab-test \
-	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_COMMIT_SHA=a1b2c3d4e5 \
 	CI_PR_NUMBER=9999 \
 	time ./docs/examples/junit/upload-results.sh || true
 	@ echo
@@ -180,7 +181,7 @@ test-e2e: install
 	GITHUB_REPOSITORY=KittyCAD/modeling-app \
 	GITHUB_RUN_ID=999999 \
 	GITHUB_HEAD_REF=main \
-	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_COMMIT_SHA=a1b2c3d4e5 \
 	time ./docs/examples/junit/upload-results.sh || true
 	@ echo
 
@@ -192,7 +193,7 @@ test-e2e: install
 	GITHUB_SERVER_URL=https://github.com \
 	GITHUB_REPOSITORY=KittyCAD/modeling-app \
 	GITHUB_HEAD_REF=tab-test \
-	CI_COMMIT_SHA=$$(date +%m-%d) \
+	CI_COMMIT_SHA=a1b2c3d4e5 \
 	CI_STEP=teardown \
 	.github/workflows/lib/track-step.sh
 	@ echo
