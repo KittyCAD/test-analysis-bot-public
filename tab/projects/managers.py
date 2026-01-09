@@ -13,9 +13,9 @@ import log
 
 from .constants import (
     ALL_BRANCHES,
+    DURATION_CACHE_KEY,
+    DURATION_CACHE_TIMEOUT,
     PENDING_THRESHOLD,
-    SETUP_DURATION_CACHE_KEY,
-    SETUP_DURATION_CACHE_TIMEOUT,
 )
 from .enums import Status
 from .types import Health
@@ -173,13 +173,17 @@ class RunManager(models.Manager):
                 created = False
                 log.info(f"Found run: {run}")
 
+        expired = (
+            run.tests_started_at
+            and timezone.now() - run.tests_started_at > PENDING_THRESHOLD * 2
+        )
         if step == "setup" and not run.setup_started_at:
             run.setup_started_at = timezone.now()
         elif step == "start" and not run.tests_started_at:
             run.tests_started_at = timezone.now()
-        elif step == "finish":
+        elif step == "finish" and not expired:
             run.tests_finished_at = timezone.now()
-        elif step == "teardown":
+        elif step == "teardown" and not expired:
             run.teardown_finished_at = timezone.now()
         run.save()
 
@@ -188,10 +192,10 @@ class RunManager(models.Manager):
     def get_setup_duration(
         self, suite: Suite | None, branch: str, commit: str | None = None
     ) -> float:
-        """Get a cached value for the setup duration of a particular commit."""
+        """Get a cached value for the setup duration of a suite."""
         if suite is None:
             return 0.0
-        cache_key = f"{SETUP_DURATION_CACHE_KEY}:{suite.id}:{branch}:{commit}"
+        cache_key = f"{DURATION_CACHE_KEY}:setup:{suite.id}:{branch}:{commit}"
         duration = cache.get(cache_key)
         if duration is None:
             query = self.filter(suite=suite, branch=branch)
@@ -199,5 +203,39 @@ class RunManager(models.Manager):
                 query = query.filter(commit=commit)
             run: Run = query.first()  # type: ignore[assignment]
             duration = run.setup_duration if run else 0.0
-            cache.set(cache_key, duration, timeout=SETUP_DURATION_CACHE_TIMEOUT)
+            cache.set(cache_key, duration, timeout=DURATION_CACHE_TIMEOUT)
+        return duration
+
+    def get_tests_duration(
+        self, suite: Suite | None, branch: str, commit: str | None = None
+    ) -> float:
+        """Get a cached value for the tests duration of a suite."""
+        if suite is None:
+            return 0.0
+        cache_key = f"{DURATION_CACHE_KEY}:tests:{suite.id}:{branch}:{commit}"
+        duration = cache.get(cache_key)
+        if duration is None:
+            query = self.filter(suite=suite, branch=branch)
+            if commit:
+                query = query.filter(commit=commit)
+            run: Run = query.first()  # type: ignore[assignment]
+            duration = run.tests_duration if run else 0.0
+            cache.set(cache_key, duration, timeout=DURATION_CACHE_TIMEOUT)
+        return duration
+
+    def get_teardown_duration(
+        self, suite: Suite | None, branch: str, commit: str | None = None
+    ) -> float:
+        """Get a cached value for the teardown duration of a suite."""
+        if suite is None:
+            return 0.0
+        cache_key = f"{DURATION_CACHE_KEY}:teardown:{suite.id}:{branch}:{commit}"
+        duration = cache.get(cache_key)
+        if duration is None:
+            query = self.filter(suite=suite, branch=branch)
+            if commit:
+                query = query.filter(commit=commit)
+            run: Run = query.first()  # type: ignore[assignment]
+            duration = run.teardown_duration if run else 0.0
+            cache.set(cache_key, duration, timeout=DURATION_CACHE_TIMEOUT)
         return duration

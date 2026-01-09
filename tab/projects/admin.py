@@ -157,6 +157,12 @@ class SuiteAdmin(admin.ModelAdmin):
 
 @admin.register(Run)
 class RunAdmin(admin.ModelAdmin):
+    search_fields = (
+        "project__repository",
+        "suite__name",
+        "branch",
+        "commit",
+    )
     list_display = (
         "id",
         "suite",
@@ -191,17 +197,17 @@ class RunAdmin(admin.ModelAdmin):
             return "—"
         return f"{run.setup_duration:.2f} seconds"
 
+    @admin.display(description="Tests Duration")
     def tests_duration(self, run: Run):
-        if not run.tests_finished_at or not run.tests_started_at:
+        if not run.tests_duration:
             return "—"
-        delta = run.tests_finished_at - run.tests_started_at
-        return f"{delta.total_seconds():.2f} seconds"
+        return f"{run.tests_duration:.2f} seconds"
 
+    @admin.display(description="Teardown Duration")
     def teardown_duration(self, run: Run):
-        if not run.teardown_finished_at or not run.tests_finished_at:
+        if not run.teardown_duration:
             return "—"
-        delta = run.teardown_finished_at - run.tests_finished_at
-        return f"{delta.total_seconds():.2f} seconds"
+        return f"{run.teardown_duration:.2f} seconds"
 
 
 @admin.register(Test)

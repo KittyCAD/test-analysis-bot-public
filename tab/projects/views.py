@@ -324,6 +324,18 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         context["tag"] = self.request.GET.get("tag", "").strip()
         context["show"] = self.request.GET.get("show", "all")
         context["base_url"] = settings.BASE_URL
+        if context["suite_id"] and (
+            suite := project.suites.filter(id=context["suite_id"]).first()
+        ):
+            context["setup_duration"] = Run.objects.get_setup_duration(
+                suite, branch, commit=None
+            )
+            context["tests_duration"] = Run.objects.get_tests_duration(
+                suite, branch, commit=None
+            )
+            context["teardown_duration"] = Run.objects.get_teardown_duration(
+                suite, branch, commit=None
+            )
         if self.request.user.is_staff:
             if branch != project.default_branch:
                 context["admin_url"] = (

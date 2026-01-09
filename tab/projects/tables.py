@@ -55,7 +55,6 @@ class TestTable(tables.Table):
             "td": {"class": "text-center"},
             "th": {
                 "class": "text-center",
-                "data-bs-toggle": "tooltip",
                 "title": Test._meta.get_field("failure_rate").help_text,
             },
         },
@@ -66,7 +65,6 @@ class TestTable(tables.Table):
             "td": {"class": "text-center"},
             "th": {
                 "class": "text-center",
-                "data-bs-toggle": "tooltip",
                 "title": Test._meta.get_field("block_rate").help_text,
             },
         },
@@ -167,7 +165,6 @@ class DisabledTestTable(tables.Table):
             "td": {"class": "text-center"},
             "th": {
                 "class": "text-center",
-                "data-bs-toggle": "tooltip",
                 "title": Test._meta.get_field("failure_rate").help_text,
             },
         },
@@ -316,7 +313,7 @@ class TestResultTable(tables.Table):
         if setup_duration := Run.objects.get_setup_duration(
             record.suite, record.branch, record.commit
         ):
-            html += f'<span class="small">(+{setup_duration:.1f}s)</span>'
+            html += f'<span class="small text-muted" title="Suite setup duration">(+{setup_duration:.1f}s)</span>'
         html += "</span>"
         if not record.final:
             html = f'<span class="opacity-25">{html}</span>'
@@ -351,7 +348,6 @@ class ResultTable(TestResultTable):
             "td": {"class": "text-center"},
             "th": {
                 "class": "text-center",
-                "data-bs-toggle": "tooltip",
                 "title": Test._meta.get_field("block_rate").help_text,
             },
         },

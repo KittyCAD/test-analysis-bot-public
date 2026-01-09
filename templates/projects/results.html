@@ -65,6 +65,19 @@
                     </li>
                 {% endfor %}
             </ul>
+            {% if setup_duration %}
+                <div class="mb-3">
+                    <span class="text-muted small d-inline-flex gap-2">
+                        <span>Suite setup duration: <strong>{{ setup_duration|floatformat:1 }}s</strong></span>
+                        {% if tests_duration > 0 %}
+                            <span>Total tests duration: <strong>{{ tests_duration|floatformat:1 }}s</strong></span>
+                        {% endif %}
+                        {% if teardown_duration > 0 %}
+                            <span>Suite teardown duration: <strong>{{ teardown_duration|floatformat:1 }}s</strong></span>
+                        {% endif %}
+                    </span>
+                </div>
+            {% endif %}
         {% endif %}
         <form method="get" class="mb-4">
             <div class="input-group mb-3">

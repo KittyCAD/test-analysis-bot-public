@@ -90,7 +90,9 @@
                         <p class="card-text mt-auto">
                             <span class="d-inline-flex align-items-center gap-1">
                                 {% colorize test "average_duration" %}
-                                {% if setup_duration %}<span class="small">(+{{ setup_duration|floatformat:1 }}s)</span>{% endif %}
+                                {% if setup_duration %}
+                                    <span class="small text-muted" title="Suite setup duration">(+{{ setup_duration|floatformat:1 }}s)</span>
+                                {% endif %}
                             </span>
                         </p>
                     </div>
