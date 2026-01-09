@@ -70,7 +70,7 @@
                     <span class="text-muted small d-inline-flex gap-2">
                         <span>Suite setup duration: <strong>{{ setup_duration|floatformat:1 }}s</strong></span>
                         {% if tests_duration > 0 %}
-                            <span>Total tests duration: <strong>{{ tests_duration|floatformat:1 }}s</strong></span>
+                            <span>Overall tests duration: <strong>{{ tests_duration|floatformat:1 }}s</strong></span>
                         {% endif %}
                         {% if teardown_duration > 0 %}
                             <span>Suite teardown duration: <strong>{{ teardown_duration|floatformat:1 }}s</strong></span>
