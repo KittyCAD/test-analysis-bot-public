@@ -76,7 +76,7 @@ def describe_history():
 
             # Exceed the failure rate threshold: upward trend line and blocking
             test.failure_rate = 0.36
-            test.block_rate = 0.01
+            test.block_rate = 0.05
             history = History.objects.create(
                 test=test,
                 failure_rate=0.35,

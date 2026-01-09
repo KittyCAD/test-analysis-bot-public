@@ -46,7 +46,7 @@ class History(models.Model):
             log.debug(f"Skipped alert for disabled test: {self.test}")
             return False
 
-        if self.test.block_rate <= 0:
+        if self.test.block_rate < 0.05:
             log.debug(f"Skipped alert for non-blocking test: {self.test}")
             return False
 
