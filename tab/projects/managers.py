@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
@@ -173,18 +173,19 @@ class RunManager(models.Manager):
                 created = False
                 log.info(f"Found run: {run}")
 
+        now = timezone.now()
         expired = (
-            run.tests_started_at
-            and timezone.now() - run.tests_started_at > PENDING_THRESHOLD * 2
+            run.tests_started_at and now - run.tests_started_at > PENDING_THRESHOLD * 2
         )
         if step == "setup" and not run.setup_started_at:
-            run.setup_started_at = timezone.now()
+            run.setup_started_at = now
         elif step == "start" and not run.tests_started_at:
-            run.tests_started_at = timezone.now()
+            run.tests_started_at = now
         elif step == "finish" and not expired:
-            run.tests_finished_at = timezone.now()
+            run.tests_finished_at = now
         elif step == "teardown" and not expired:
-            run.teardown_finished_at = timezone.now()
+            run.tests_finished_at = run.tests_finished_at or now
+            run.teardown_finished_at = now
         run.save()
 
         return run, created
