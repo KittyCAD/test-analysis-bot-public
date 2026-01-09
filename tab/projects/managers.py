@@ -174,7 +174,7 @@ class RunManager(models.Manager):
                 log.info(f"Found run: {run}")
 
         now = timezone.now()
-        threshold = PENDING_THRESHOLD * 4
+        threshold = PENDING_THRESHOLD * 3
         expired = run.tests_started_at and now - run.tests_started_at > threshold
         if step == "setup" and not run.setup_started_at:
             run.setup_started_at = now
