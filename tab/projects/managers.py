@@ -174,15 +174,15 @@ class RunManager(models.Manager):
                 log.info(f"Found run: {run}")
 
         now = timezone.now()
-        threshold = PENDING_THRESHOLD * 3
+        threshold = PENDING_THRESHOLD * 2
         expired = run.tests_started_at and now - run.tests_started_at > threshold
         if step == "setup" and not run.setup_started_at:
             run.setup_started_at = now
         elif step == "start" and not run.tests_started_at:
             run.tests_started_at = now
-        elif step == "finish" and not expired:
+        elif step == "finish" and (not run.tests_finished_at or not expired):
             run.tests_finished_at = now
-        elif step == "teardown" and not expired:
+        elif step == "teardown" and (not run.teardown_finished_at or not expired):
             run.tests_finished_at = run.tests_finished_at or now
             run.teardown_finished_at = now
         run.save()
