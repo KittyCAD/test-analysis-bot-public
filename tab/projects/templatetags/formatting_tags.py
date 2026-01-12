@@ -2,6 +2,7 @@ from django import template
 
 from tab.metrics.constants import DELTA_THRESHOLD
 
+from ..helpers import humanize_duration
 from ..models import Test
 from ..tables import color
 
@@ -36,3 +37,8 @@ def colorize(test: Test, field_name: str) -> str:
             tooltip = f"{delta:.1%} today"
 
     return color(text, value, lower_threshold, upper_threshold, icon, tooltip)
+
+
+@register.filter
+def duration(value):
+    return humanize_duration(value)

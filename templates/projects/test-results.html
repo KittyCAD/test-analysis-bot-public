@@ -4,7 +4,7 @@
 {% load static %}
 {% load humanize %}
 {% load crispy_forms_tags %}
-{% load color_tags %}
+{% load formatting_tags %}
 
 {% block title %}
     {{ project.name }} › {{ test.name }}
@@ -91,7 +91,7 @@
                             <span class="d-inline-flex align-items-center gap-1">
                                 {% colorize test "average_duration" %}
                                 {% if setup_duration %}
-                                    <span class="small text-muted" title="Suite setup duration">(+{{ setup_duration|floatformat:1 }}s)</span>
+                                    <span class="small text-muted" title="Suite setup duration">(+{{ setup_duration|duration }})</span>
                                 {% endif %}
                             </span>
                         </p>

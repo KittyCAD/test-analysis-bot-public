@@ -1,6 +1,22 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.contrib.auth.models import User
 
-from .models import Project
+if TYPE_CHECKING:
+    from .models import Project
+
+
+def humanize_duration(value: float | None) -> str:
+    """Format duration in seconds as XmXs when over a minute."""
+    if value is None or value < 0:
+        return "—"
+    if value >= 100:  # 3 or more digits
+        minutes = int(value // 60)
+        seconds = int(value % 60)
+        return f"{minutes}m{seconds}s"
+    return f"{value:.1f}s"
 
 
 def get_disabled_test_metrics(project: Project) -> dict[User, dict[str, int]]:

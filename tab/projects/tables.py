@@ -9,6 +9,7 @@ import django_tables2 as tables
 import log
 from django_tables2 import A
 
+from .helpers import humanize_duration
 from .models import Result, Run, Status, Suite, Test
 
 
@@ -313,7 +314,8 @@ class TestResultTable(tables.Table):
         if setup_duration := Run.objects.get_setup_duration(
             record.suite, record.branch, record.commit
         ):
-            html += f'<span class="small text-muted" title="Suite setup duration">(+{setup_duration:.1f}s)</span>'
+            text = humanize_duration(setup_duration)
+            html += f'<span class="small text-muted" title="Suite setup duration">(+{text})</span>'
         html += "</span>"
         if not record.final:
             html = f'<span class="opacity-25">{html}</span>'

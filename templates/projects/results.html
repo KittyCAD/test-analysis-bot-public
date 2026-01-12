@@ -2,6 +2,7 @@
 
 {% load django_tables2 %}
 {% load static %}
+{% load formatting_tags %}
 
 {% block title %}
     {{ project.name }}
@@ -67,13 +68,16 @@
             </ul>
             {% if setup_duration %}
                 <div class="mb-3">
-                    <span class="text-muted small d-inline-flex gap-2">
-                        <span>Suite setup duration: <strong>{{ setup_duration|floatformat:1 }}s</strong></span>
+                    <span class="text-muted small d-inline-flex gap-3">
+                        <span>Suite setup duration: <strong>{{ setup_duration|duration }}</strong></span>
                         {% if tests_duration > 0 %}
-                            <span>Overall tests duration: <strong>{{ tests_duration|floatformat:1 }}s</strong></span>
+                            <span>Overall tests duration: <strong>{{ tests_duration|duration }}</strong></span>
                         {% endif %}
                         {% if teardown_duration > 0 %}
-                            <span>Suite teardown duration: <strong>{{ teardown_duration|floatformat:1 }}s</strong></span>
+                            <span>Suite teardown duration: <strong>{{ teardown_duration|duration }}</strong></span>
+                        {% endif %}
+                        {% if tests_duration > 0 or teardown_duration > 0 %}
+                            <span>Total duration: <strong>{{ setup_duration|add:tests_duration|add:teardown_duration|duration }}</strong></span>
                         {% endif %}
                     </span>
                 </div>

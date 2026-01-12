@@ -22,6 +22,7 @@ from .constants import (
     get_default_branches,
 )
 from .enums import Platform, Status, Target
+from .helpers import humanize_duration
 from .managers import ProjectManager, ResultManager, RunManager
 
 
@@ -427,7 +428,7 @@ class Test(models.Model):
     def average_duration_humanized(self) -> str:
         if self.average_duration < 0:
             return "—"
-        return f"{self.average_duration:.1f}s"
+        return humanize_duration(self.average_duration)
 
     @property
     def failure_rate_delta(self) -> float:
@@ -753,9 +754,7 @@ class Result(models.Model):
 
     @property
     def duration_humanized(self) -> str:
-        if self.duration is None or self.duration < 0:
-            return "—"
-        return f"{self.duration:.1f}s"
+        return humanize_duration(self.duration)
 
     @property
     def logs(self) -> list:
