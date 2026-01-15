@@ -75,7 +75,10 @@ class ResultManager(models.Manager):
 
         latest_commit = self.get_latest_commit(project, project.default_branch)
         latest_aggregate = self.filter(
-            test__project=project, commit=latest_commit, final=True
+            test__project=project,
+            commit=latest_commit,
+            branch=project.default_branch,
+            final=True,
         ).aggregate(
             total=Count("id"),
             passed=Count("id", filter=Q(status__in=Status.merge_allowed())),

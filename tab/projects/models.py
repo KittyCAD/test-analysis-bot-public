@@ -613,7 +613,7 @@ class Result(models.Model):
             # Optimizes Test.update_*() and ResultManager.get_latest_commit()
             models.Index(fields=["test", "branch", "created_at"]),
             # Optimizes ResultManager.get_health()
-            models.Index(fields=["test", "commit", "final"]),
+            models.Index(fields=["test", "commit", "branch", "final"]),
         ]
 
     def __str__(self):
