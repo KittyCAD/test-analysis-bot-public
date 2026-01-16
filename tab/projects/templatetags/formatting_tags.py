@@ -50,7 +50,7 @@ def duration(value):
 
 @register.filter
 def highlight(value):
-    """Highlight diff lines: green for additions (+), red for deletions (-)."""
+    """Highlight diff lines: green for additions, red for deletions."""
     if not value:
         return value
 
@@ -61,12 +61,12 @@ def highlight(value):
         has_newline = line.endswith("\n")
         line_content = line.rstrip("\n\r")
 
-        if line_content.startswith("+"):
+        if line_content.startswith(("+", "Expected:")):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-success">{escaped}</span>')
             if has_newline:
                 result_lines.append("\n")
-        elif line_content.startswith("-"):
+        elif line_content.startswith(("-", "Received:")):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-danger">{escaped}</span>')
             if has_newline:
