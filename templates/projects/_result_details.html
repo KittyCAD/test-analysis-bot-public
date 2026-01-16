@@ -1,6 +1,6 @@
 {% load formatting_tags %}
 
-{% if result.message %}<pre class="mb-0">{{ result.message }}</pre>{% endif %}
+{% if result.message %}<pre class="mb-0">{{ result.message|highlight }}</pre>{% endif %}
 {% if result.run_url %}
     <div class="mt-3">
         <a class="text-decoration-none"
@@ -94,5 +94,11 @@
 }
 .comment {
     color: #6c757d;
+}
+pre span {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    line-height: inherit;
 }
 </style>
