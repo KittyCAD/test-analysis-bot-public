@@ -1,7 +1,7 @@
 [project]
 
 name = "test-analysis-bot"
-version = "0.1.2"
+version = "0.1.3"
 description = "Keep tabs on unreliable tests."
 readme = "README.md"
 license = "MIT"
