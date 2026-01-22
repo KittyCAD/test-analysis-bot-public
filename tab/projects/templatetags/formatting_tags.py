@@ -1,3 +1,5 @@
+import re
+
 from django import template
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
@@ -61,7 +63,19 @@ def highlight(value):
         has_newline = line.endswith("\n")
         line_content = line.rstrip("\n\r")
 
-        if line_content.startswith(("+", "Received:")):
+        # Handle pytest diffs
+        if re.match(r"^E\s+\s*\+", line_content):
+            escaped = escape(line_content)
+            result_lines.append(f'<span class="text-success">{escaped}</span>')
+            if has_newline:
+                result_lines.append("\n")
+        elif re.match(r"^E\s+\s*\-", line_content):
+            escaped = escape(line_content)
+            result_lines.append(f'<span class="text-danger">{escaped}</span>')
+            if has_newline:
+                result_lines.append("\n")
+        # Handle generic diffs
+        elif line_content.startswith(("+", "Received:")):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-success">{escaped}</span>')
             if has_newline:
