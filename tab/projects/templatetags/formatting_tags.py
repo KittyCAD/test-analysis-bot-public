@@ -56,6 +56,7 @@ def highlight(value):
     if not value:
         return value
 
+    has_expected = "Expected:" in value
     lines = value.splitlines(keepends=True)
     result_lines = []
 
@@ -83,6 +84,11 @@ def highlight(value):
         elif line_content.startswith(("-", "Expected:")):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-danger">{escaped}</span>')
+            if has_newline:
+                result_lines.append("\n")
+        elif has_expected and line_content.startswith("Timeout:"):
+            escaped = escape(line_content)
+            result_lines.append(f'<span class="text-success">{escaped}</span>')
             if has_newline:
                 result_lines.append("\n")
         else:

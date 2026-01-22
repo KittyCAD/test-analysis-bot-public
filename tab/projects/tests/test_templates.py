@@ -48,3 +48,15 @@ def describe_highlight():
         result = highlight(text)
         expect(result).contains("success")
         expect(result).contains("danger")
+
+    def highlights_timeout_when_expected_present(expect):
+        text = "Expected: visible\nTimeout: 5000ms"
+        result = highlight(text)
+        expect(result).contains("danger")
+        expect(result).contains("success")
+
+    def requires_expected_to_highlight_timeout(expect):
+        text = "Timeout: 5000ms"
+        result = highlight(text)
+        expect(result).excludes("success")
+        expect(result).excludes("danger")
