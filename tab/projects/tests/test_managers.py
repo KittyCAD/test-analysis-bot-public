@@ -4,7 +4,8 @@ from django.utils import timezone
 
 import pytest
 
-from ..models import Project, Result, Status, Suite, Test
+from ..constants import PENDING_THRESHOLD
+from ..models import Project, Result, Run, Status, Suite, Test
 
 
 @pytest.fixture
@@ -99,3 +100,214 @@ def describe_result_manager():
             expect(health.total) == 3
             expect(health.state) == "failure"
             expect(health.description) == "2 of 3 passing, 1 new failure"
+
+
+def describe_run_manager():
+    @pytest.fixture
+    def suite(project: Project):
+        return Suite.objects.create(project=project, name="test-suite")
+
+    def describe_track_step():
+        @pytest.mark.django_db
+        def with_full_lifecycle(expect, suite: Suite):
+            # Setup step: creates run
+            run: Run
+            run, created = Run.objects.track_step(  # type: ignore[assignment]
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="setup",
+                metadata={"key": "value"},
+            )
+
+            expect(created) == True
+            expect(run.setup_started_at).is_not(None)
+            expect(run.tests_started_at).is_(None)
+            expect(run.tests_finished_at).is_(None)
+            expect(run.teardown_finished_at).is_(None)
+            expect(run.metadata) == {"key": "value"}
+
+            # Start step: sets tests_started_at
+            run, created = Run.objects.track_step(  # type: ignore[assignment]
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="start",
+                metadata={},
+            )
+
+            expect(created) == False
+            expect(run.tests_started_at).is_not(None)
+            expect(run.tests_finished_at).is_(None)
+
+            # Finish step: sets tests_finished_at
+            run, created = Run.objects.track_step(  # type: ignore[assignment]
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="finish",
+                metadata={},
+            )
+
+            expect(created) == False
+            expect(run.tests_finished_at).is_not(None)
+
+            # Teardown step: sets teardown_finished_at and ensures tests_finished_at
+            run, created = Run.objects.track_step(  # type: ignore[assignment]
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="teardown",
+                metadata={},
+            )
+
+            expect(created) == False
+            expect(run.teardown_finished_at).is_not(None)
+            expect(run.tests_finished_at).is_not(None)
+
+        @pytest.mark.django_db
+        def with_finish_step_adjusts_teardown_if_in_past(expect, suite: Suite):
+            now = timezone.now()
+            tests_started = now - timedelta(minutes=5)
+            tests_finished = now - timedelta(minutes=2)
+            teardown_finished = now - timedelta(minutes=1)
+
+            run: Run = Run.objects.create(
+                project=suite.project,
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                tests_started_at=tests_started,
+                tests_finished_at=tests_finished,
+                teardown_finished_at=teardown_finished,
+            )
+
+            run, created = Run.objects.track_step(  # type: ignore[assignment]
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="finish",
+                metadata={},
+            )
+
+            expect(created) == False
+            assert run.tests_finished_at, f"Invalid state: {run}"
+            expected_teardown = run.tests_finished_at + (
+                teardown_finished - tests_finished
+            )
+            expect(run.teardown_finished_at) == expected_teardown
+
+        @pytest.mark.django_db
+        def with_finish_step_overwrites_if_not_expired(expect, suite: Suite):
+            original_time = timezone.now() - timedelta(minutes=1)
+            Run.objects.create(
+                project=suite.project,
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                tests_started_at=timezone.now() - timedelta(minutes=1),
+                tests_finished_at=original_time,
+            )
+
+            run: Run
+            run, created = Run.objects.track_step(  # type: ignore[assignment]
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="finish",
+                metadata={},
+            )
+
+            expect(run.tests_finished_at) > original_time
+
+        @pytest.mark.django_db
+        def with_finish_step_does_not_overwrite_if_expired(expect, suite: Suite):
+            threshold = PENDING_THRESHOLD * 2
+            expired_time = timezone.now() - threshold - timedelta(minutes=1)
+            Run.objects.create(
+                project=suite.project,
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                tests_started_at=expired_time,
+                tests_finished_at=expired_time,
+            )
+
+            run: Run
+            run, created = Run.objects.track_step(  # type: ignore[assignment]
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="finish",
+                metadata={},
+            )
+
+            expect(run.tests_finished_at) == expired_time
+
+        @pytest.mark.django_db
+        def with_teardown_step_sets_tests_finished_if_missing(expect, suite: Suite):
+            Run.objects.create(
+                project=suite.project,
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                tests_started_at=timezone.now(),
+            )
+
+            run: Run
+            run, created = Run.objects.track_step(  # type: ignore[assignment]
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="teardown",
+                metadata={},
+            )
+
+            expect(run.tests_finished_at).is_not(None)
+
+        @pytest.mark.django_db
+        def with_teardown_step_overwrites_if_not_expired(expect, suite: Suite):
+            original_time = timezone.now() - timedelta(minutes=1)
+            Run.objects.create(
+                project=suite.project,
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                tests_started_at=timezone.now() - timedelta(minutes=2),
+                teardown_finished_at=original_time,
+            )
+
+            run: Run
+            run, created = Run.objects.track_step(  # type: ignore[assignment]
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="teardown",
+                metadata={},
+            )
+
+            expect(run.teardown_finished_at) > original_time
+
+        @pytest.mark.django_db
+        def with_teardown_step_does_not_overwrite_if_expired(expect, suite: Suite):
+            threshold = PENDING_THRESHOLD * 2
+            expired_time = timezone.now() - threshold - timedelta(minutes=1)
+            Run.objects.create(
+                project=suite.project,
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                tests_started_at=expired_time,
+                teardown_finished_at=expired_time,
+            )
+
+            run: Run
+            run, created = Run.objects.track_step(  # type: ignore[assignment]
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="teardown",
+                metadata={},
+            )
+
+            expect(run.teardown_finished_at) == expired_time
