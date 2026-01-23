@@ -184,6 +184,10 @@ class RunManager(models.Manager):
         elif step == "start" and not run.tests_started_at:
             run.tests_started_at = now
         elif step == "finish" and (not run.tests_finished_at or not expired):
+            if run.teardown_finished_at and run.teardown_finished_at < now:
+                assert run.tests_finished_at, f"Invalid state: {run}"
+                delta = run.teardown_finished_at - run.tests_finished_at
+                run.teardown_finished_at = now + delta
             run.tests_finished_at = now
         elif step == "teardown" and (not run.teardown_finished_at or not expired):
             run.tests_finished_at = run.tests_finished_at or now
