@@ -5,6 +5,8 @@ ALL_BRANCHES = "all"
 DEFAULT_SUITE = "default"
 
 ANSI_ESCAPE = re.compile(r"\x1B[@-_][0-?]*[ -/]*[@-~]")
+PYTEST_DIFF_PLUS = re.compile(r"^(E\s+)(\s*\+.*)$")
+PYTEST_DIFF_MINUS = re.compile(r"^(E\s+)(\s*\-.*)$")
 CHECKOUT_COMMAND = (
     "git fetch origin && git checkout {branch} && git reset --hard origin/{branch}"
 )

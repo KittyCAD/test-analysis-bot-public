@@ -3,60 +3,60 @@ from ..templatetags.formatting_tags import highlight
 
 def describe_highlight():
 
-    def returns_empty_string_for_empty_string(expect):
+    def with_empty_string(expect):
         result = highlight("")
         expect(result) == ""
 
-    def does_not_highlight_regular_lines(expect):
+    def with_regular_line(expect):
         text = "This is a regular line"
         result = highlight(text)
         expect(result).excludes("success")
         expect(result).excludes("danger")
 
-    def highlights_addition_lines_with_plus(expect):
+    def with_plus(expect):
         text = "+added line"
         result = highlight(text)
         expect(result).contains("success")
 
-    def highlights_deletion_lines_with_minus(expect):
+    def with_minus(expect):
         text = "-removed line"
         result = highlight(text)
         expect(result).contains("danger")
 
-    def highlights_received_lines(expect):
+    def with_received(expect):
         text = "Received: some value"
         result = highlight(text)
         expect(result).contains("success")
 
-    def highlights_expected_lines(expect):
+    def with_expected(expect):
         text = "Expected: some value"
         result = highlight(text)
         expect(result).contains("danger")
 
-    def highlights_pytest_error_lines_with_plus(expect):
-        text = 'E         +     "/metrics": {'
-        result = highlight(text)
-        expect(result).contains("success")
-
-    def highlights_pytest_error_lines_with_minus(expect):
-        text = 'E         -     "/metrics": {'
-        result = highlight(text)
-        expect(result).contains("danger")
-
-    def highlights_pytest_error_lines_with_varying_whitespace(expect):
-        text = "E       +\nE   -\nE\t+"
-        result = highlight(text)
-        expect(result).contains("success")
-        expect(result).contains("danger")
-
-    def highlights_timeout_when_expected_present(expect):
+    def with_expected_and_timeout(expect):
         text = "Expected: visible\nTimeout: 5000ms"
         result = highlight(text)
         expect(result).contains("danger")
         expect(result).contains("success")
 
-    def requires_expected_to_highlight_timeout(expect):
+    def with_timeout_but_no_expected(expect):
         text = "Timeout: 5000ms"
         result = highlight(text)
         expect(result).excludes("success")
         expect(result).excludes("danger")
+
+    def with_pytest_plus_line(expect):
+        text = 'E         +     "/metrics": {'
+        result = highlight(text)
+        expect(result).contains("success")
+
+    def with_pytest_minus_line(expect):
+        text = 'E         -     "/metrics": {'
+        result = highlight(text)
+        expect(result).contains("danger")
+
+    def with_pytest_varying_whitespace(expect):
+        text = "E       +\nE   -\nE\t+"
+        result = highlight(text)
+        expect(result).contains("success")
+        expect(result).contains("danger")

@@ -1,11 +1,10 @@
-import re
-
 from django import template
 from django.utils.html import escape
 from django.utils.safestring import mark_safe
 
 from tab.metrics.constants import DELTA_THRESHOLD
 
+from ..constants import PYTEST_DIFF_MINUS, PYTEST_DIFF_PLUS
 from ..helpers import humanize_duration
 from ..models import Test
 from ..tables import color
@@ -65,14 +64,20 @@ def highlight(value):
         line_content = line.rstrip("\n\r")
 
         # Handle pytest diffs
-        if re.match(r"^E\s+\s*\+", line_content):
-            escaped = escape(line_content)
-            result_lines.append(f'<span class="text-success">{escaped}</span>')
+        if match := PYTEST_DIFF_PLUS.match(line_content):
+            prefix = escape(match.group(1))
+            colored_part = escape(match.group(2))
+            result_lines.append(
+                f'{prefix}<span class="text-success">{colored_part}</span>'
+            )
             if has_newline:
                 result_lines.append("\n")
-        elif re.match(r"^E\s+\s*\-", line_content):
-            escaped = escape(line_content)
-            result_lines.append(f'<span class="text-danger">{escaped}</span>')
+        elif match := PYTEST_DIFF_MINUS.match(line_content):
+            prefix = escape(match.group(1))
+            colored_part = escape(match.group(2))
+            result_lines.append(
+                f'{prefix}<span class="text-danger">{colored_part}</span>'
+            )
             if has_newline:
                 result_lines.append("\n")
         # Handle generic diffs
