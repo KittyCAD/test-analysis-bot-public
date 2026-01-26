@@ -1,5 +1,6 @@
 import re
 import xml.etree.ElementTree as ET
+from urllib.parse import quote
 
 from django.conf import settings
 from django.core.cache import cache
@@ -241,7 +242,7 @@ def update_status(
     try:
         commit.create_status(
             state=health.state,
-            target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={branch}&show=fails",
+            target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={quote(branch)}&show=fails",
             description=health.description,
             context="Test Analysis Bot",
         )
