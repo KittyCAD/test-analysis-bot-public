@@ -91,7 +91,8 @@ def highlight(value):
             result_lines.append(f'<span class="text-danger">{escaped}</span>')
             if has_newline:
                 result_lines.append("\n")
-        elif has_expected and line_content.startswith("Timeout:"):
+        # Handle playwright diffs
+        elif has_expected and line_content.startswith(("Timeout:", "Error:")):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-success">{escaped}</span>')
             if has_newline:
