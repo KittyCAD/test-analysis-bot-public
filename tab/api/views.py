@@ -237,6 +237,7 @@ def share(request, payload: ShareRequest):
     auth=api_key,
     response={
         200: TrackResponse,
+        404: ErrorResponse,
         422: ErrorResponse,
     },
     tags=["Tests"],
@@ -255,11 +256,12 @@ def track(request, payload: Form[TrackRequest]):
     except ValueError as e:
         return 422, {"detail": str(e)}
 
-    suite, created = Suite.objects.get_or_create(project=project, name=payload.suite)
-    if created:
-        log.info(f"Created suite: {suite}")
-    else:
+    suite = Suite.objects.filter(project=project, name=payload.suite).first()
+    if suite:
         log.info(f"Found suite: {suite}")
+    else:
+        log.warning(f"Skipped tracking for unknown suite: {payload.suite}")
+        return 404, {"detail": f"Unknown suite: {payload.suite}"}
 
     metadata = TrackRequest.get_metadata(request.POST.dict())
     Run.objects.track_step(

@@ -212,3 +212,25 @@ def describe_share():
         expect(response.json()) == {
             "detail": f"Invalid repository URL: {project}",
         }
+
+
+def describe_track():
+    url = "/api/track"
+
+    @pytest.fixture
+    def payload():
+        return {
+            "project": "https://github.com/my-user/my-project",
+            "suite": "e2e",
+            "branch": "main",
+            "commit": "abc123",
+            "step": "setup",
+        }
+
+    @pytest.mark.django_db
+    def it_requires_suite_to_exist(expect, client, payload):
+        response = post_form(client, url, payload)
+        expect(response.status_code) == 404
+        expect(response.json()) == {
+            "detail": "Unknown suite: e2e",
+        }
