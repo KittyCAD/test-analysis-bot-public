@@ -55,6 +55,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING("Default team already exists"))
 
     def generate_sample_metrics(self):
+        for test in Test.objects.filter(name="sample test"):
+            test.save()  # ensure sample tests are enabled
+
         project, created = Project.objects.get_or_create(
             repository="https://github.com/KittyCAD/sample-project"
         )

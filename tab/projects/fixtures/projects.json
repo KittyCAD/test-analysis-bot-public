@@ -66640,5 +66640,290 @@
         "GITHUB_EVENT_NAME": "pull_request"
       }
     }
+  },
+  {
+    "model": "projects.project",
+    "pk": 2,
+    "fields": {
+      "repository": "https://github.com/KittyCAD/sample-project",
+      "default_branches": ["main"],
+      "test_inactive_threshold": "0",
+      "branch_inactive_threshold": "0",
+      "result_stale_threshold": "0",
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.suite",
+    "pk": 1,
+    "fields": {
+      "project": 1,
+      "name": "e2e",
+      "parent": null,
+      "supports_override": true,
+      "local_command": "",
+      "error_indicators": [],
+      "skipped_indicators": [],
+      "failure_rate_upper_threshold": 0.5,
+      "failure_rate_lower_threshold": 0.1,
+      "block_rate_upper_threshold": 0.05,
+      "block_rate_lower_threshold": 0.01,
+      "average_duration_upper_threshold": 60.0,
+      "average_duration_lower_threshold": 30.0,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.suite",
+    "pk": 3,
+    "fields": {
+      "project": 1,
+      "name": "unit",
+      "parent": null,
+      "supports_override": true,
+      "local_command": "",
+      "error_indicators": [],
+      "skipped_indicators": [],
+      "failure_rate_upper_threshold": 0.5,
+      "failure_rate_lower_threshold": 0.1,
+      "block_rate_upper_threshold": 0.05,
+      "block_rate_lower_threshold": 0.01,
+      "average_duration_upper_threshold": 60.0,
+      "average_duration_lower_threshold": 30.0,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.suite",
+    "pk": 4,
+    "fields": {
+      "project": 2,
+      "name": "e2e",
+      "parent": 1,
+      "supports_override": true,
+      "local_command": "",
+      "error_indicators": [],
+      "skipped_indicators": [],
+      "failure_rate_upper_threshold": 0.5,
+      "failure_rate_lower_threshold": 0.1,
+      "block_rate_upper_threshold": 0.05,
+      "block_rate_lower_threshold": 0.01,
+      "average_duration_upper_threshold": 60.0,
+      "average_duration_lower_threshold": 30.0,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.test",
+    "pk": 452,
+    "fields": {
+      "project": 1,
+      "suite": 1,
+      "name": "sample test",
+      "original_branch": "main",
+      "original_commit": "",
+      "original_metadata": {},
+      "disabled_at": null,
+      "disabled_reason": "",
+      "disabled_tracker": null,
+      "disabled_user": null,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.test",
+    "pk": 449,
+    "fields": {
+      "project": 2,
+      "suite": 1,
+      "name": "e2e parent test",
+      "original_branch": "main",
+      "original_commit": "",
+      "original_metadata": {},
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.test",
+    "pk": 451,
+    "fields": {
+      "project": 2,
+      "suite": 4,
+      "name": "sample test",
+      "original_branch": "main",
+      "original_commit": "",
+      "original_metadata": {},
+      "disabled_at": null,
+      "disabled_reason": "",
+      "disabled_tracker": null,
+      "disabled_user": null,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.run",
+    "pk": 1,
+    "fields": {
+      "project": 2,
+      "suite": 4,
+      "branch": "main",
+      "commit": "a1b2c3d4e5f6789",
+      "metadata": {},
+      "setup_started_at": "2025-01-01T12:00:00Z",
+      "tests_started_at": "2025-01-01T12:00:00Z",
+      "tests_finished_at": "2025-01-01T12:05:00Z",
+      "teardown_finished_at": null
+    }
+  },
+  {
+    "model": "projects.result",
+    "pk": 1893,
+    "fields": {
+      "suite": 1,
+      "test": 449,
+      "branch": "main",
+      "commit": "a1b2c3d4e5f6789",
+      "target": "desktop",
+      "platform": "linux",
+      "final": true,
+      "status": "passed",
+      "duration": 12.5,
+      "message": null,
+      "metadata": {},
+      "created_at": "2025-01-01T12:01:00Z"
+    }
+  },
+  {
+    "model": "projects.result",
+    "pk": 1894,
+    "fields": {
+      "suite": 1,
+      "test": 449,
+      "branch": "main",
+      "commit": "a1b2c3d0",
+      "target": "desktop",
+      "platform": "linux",
+      "final": true,
+      "status": "failed",
+      "duration": 8.0,
+      "message": null,
+      "metadata": {},
+      "created_at": "2025-01-01T12:02:00Z"
+    }
+  },
+  {
+    "model": "projects.result",
+    "pk": 1897,
+    "fields": {
+      "suite": 1,
+      "test": 452,
+      "branch": "main",
+      "commit": "b2c3d4e5f67890a1",
+      "target": "desktop",
+      "platform": "linux",
+      "final": true,
+      "status": "passed",
+      "duration": 5.2,
+      "message": null,
+      "metadata": {},
+      "created_at": "2025-01-02T10:00:00Z"
+    }
+  },
+  {
+    "model": "projects.result",
+    "pk": 1898,
+    "fields": {
+      "suite": 1,
+      "test": 452,
+      "branch": "main",
+      "commit": "c3d4e5f67890a1b2",
+      "target": "desktop",
+      "platform": "macos",
+      "final": true,
+      "status": "failed",
+      "duration": 3.1,
+      "message": null,
+      "metadata": {},
+      "created_at": "2025-01-02T14:30:00Z"
+    }
+  },
+  {
+    "model": "projects.result",
+    "pk": 1899,
+    "fields": {
+      "suite": 1,
+      "test": 452,
+      "branch": "main",
+      "commit": "d4e5f67890a1b2c3",
+      "target": "desktop",
+      "platform": "linux",
+      "final": true,
+      "status": "passed",
+      "duration": 4.8,
+      "message": null,
+      "metadata": {},
+      "created_at": "2025-01-03T09:15:00Z"
+    }
+  },
+  {
+    "model": "projects.result",
+    "pk": 1900,
+    "fields": {
+      "suite": 4,
+      "test": 451,
+      "branch": "main",
+      "commit": "a1b2c3d4e5f6789",
+      "target": "desktop",
+      "platform": "linux",
+      "final": true,
+      "status": "passed",
+      "duration": 6.0,
+      "message": null,
+      "metadata": {},
+      "created_at": "2025-01-01T12:01:00Z"
+    }
+  },
+  {
+    "model": "projects.result",
+    "pk": 1901,
+    "fields": {
+      "suite": 4,
+      "test": 451,
+      "branch": "main",
+      "commit": "e5f67890a1b2c3d4",
+      "target": "desktop",
+      "platform": "macos",
+      "final": true,
+      "status": "failed",
+      "duration": 2.5,
+      "message": null,
+      "metadata": {},
+      "created_at": "2025-01-02T11:00:00Z"
+    }
+  },
+  {
+    "model": "projects.result",
+    "pk": 1902,
+    "fields": {
+      "suite": 4,
+      "test": 451,
+      "branch": "main",
+      "commit": "f67890a1b2c3d4e5",
+      "target": "desktop",
+      "platform": "linux",
+      "final": true,
+      "status": "passed",
+      "duration": 5.5,
+      "message": null,
+      "metadata": {},
+      "created_at": "2025-01-03T08:00:00Z"
+    }
   }
 ]

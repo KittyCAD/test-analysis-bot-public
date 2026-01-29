@@ -69,8 +69,8 @@ migrate: install ## Database | Run database migrations
 
 .PHONY: data
 data: install migrate ## Database | Seed data for manual testing
-	./manage.py gendata
 	./manage.py loaddata projects releases
+	./manage.py gendata
 
 .PHONY: reset
 reset: install ## Database | Create a new database, migrate, and seed it
