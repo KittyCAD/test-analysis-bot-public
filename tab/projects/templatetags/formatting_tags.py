@@ -24,7 +24,7 @@ def colorize(test: Test, field_name: str) -> str:
     upper_threshold = getattr(test.suite, f"{field_name}_upper_threshold")
     tooltip = icon = ""
 
-    if delta := getattr(test, f"{field_name}_delta", None):
+    if value >= 0 and (delta := getattr(test, f"{field_name}_delta", None)):
 
         if delta >= DELTA_THRESHOLD:
             icon = "angles-up"
