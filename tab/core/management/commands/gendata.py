@@ -66,6 +66,9 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.WARNING("Sample project already exists"))
 
+        for test in project.tests.all():
+            test.save()  # ensure last_result and enabled are updated
+
         test, created = Test.objects.get_or_create(
             project=project, name="sample test", original_branch="main"
         )
