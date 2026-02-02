@@ -43,7 +43,7 @@ minilog = "*"
 unidecode = "^1.4.0"
 
 # Deployment
-gunicorn = "^23.0.0"
+gunicorn = "^24.1.1"
 whitenoise = "^6.11.0"
 
 [tool.poetry.group.dev.dependencies]
