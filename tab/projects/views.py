@@ -493,9 +493,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             blocking = "now " + blocking
             if test.disabled_at:
                 alert = Alert.objects.create(test=test)
-                thread = threading.Thread(
-                    target=alert.send, kwargs={"forward": False, "force": True}
-                )
+                thread = threading.Thread(target=alert.send, kwargs={"forward": False})
                 thread.start()
         messages.success(self.request, f"Test is {blocking} merges.")
 
