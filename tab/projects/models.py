@@ -23,7 +23,7 @@ from .constants import (
 )
 from .enums import Platform, Status, Target
 from .helpers import humanize_duration
-from .managers import ProjectManager, ResultManager, RunManager
+from .managers import ProjectManager, ResultManager, RunManager, TestManager
 
 
 class Project(models.Model):
@@ -294,6 +294,8 @@ class Test(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
+
+    objects: TestManager = TestManager()
 
     class Meta:
         indexes = [

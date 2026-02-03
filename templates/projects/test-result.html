@@ -30,7 +30,7 @@
             </div>
         </div>
         <h2 class="mb-4">
-            {% include "projects/_markers.html" with label=result.test.label markers=result.test.markers nowrap=True %}
+            {% include "projects/_markers.html" with label=result.test.label|wrap markers=result.test.markers nowrap=True %}
         </h2>
         <div class="card">
             <div class="card-header">

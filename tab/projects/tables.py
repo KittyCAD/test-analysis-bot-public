@@ -9,12 +9,12 @@ import django_tables2 as tables
 import log
 from django_tables2 import A
 
-from .helpers import humanize_duration
+from .helpers import humanize_duration, insert_breaks
 from .models import Result, Run, Status, Suite, Test
 
 
 def wrap(name: str) -> str:
-    return mark_safe(name.replace("_", "_<wbr>"))
+    return mark_safe(insert_breaks(name))
 
 
 def color(

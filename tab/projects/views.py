@@ -416,7 +416,13 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
-        test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
+        test = get_object_or_404(
+            Test.objects.select_related(
+                "suite", "suite__parent", "suite__parent__project"
+            ).prefetch_related("suite__children", "suite__parent__children"),
+            project=project,
+            id=self.kwargs["test_id"],
+        )
 
         if "weeks" in self.request.GET:
             weeks = float(self.request.GET["weeks"])
@@ -434,11 +440,16 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
 
         context["project"] = project
         context["test"] = test
+        context["parent_suite"] = test.suite.parent if test.suite else None
+        context["parent_test"], context["child_tests"] = (
+            Test.objects.get_parent_and_child_tests(test)
+        )
         context["expand"] = expand
         context["branch"] = self.request.GET.get("branch")
         context["platform"] = self.request.GET.get("platform", "").strip()
         context["show"] = self.request.GET.get("show", "all")
         context["history_data"] = test.history.get_data(test, weeks)
+
         for field in test._meta.get_fields():
             if hasattr(field, "help_text") and field.help_text:
                 context[f"{field.name}_help"] = field.help_text

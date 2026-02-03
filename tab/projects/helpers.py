@@ -8,6 +8,11 @@ if TYPE_CHECKING:
     from .models import Project
 
 
+def insert_breaks(text: str) -> str:
+    """Insert line-break opportunities for long test names."""
+    return text.replace("_", "_<wbr>").replace("::", "::<wbr>")
+
+
 def humanize_duration(value: float | None) -> str:
     """Format duration in seconds as XmXs when over a minute."""
     if value is None or value < 0:

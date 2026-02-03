@@ -49,6 +49,39 @@ class ProjectManager(models.Manager):
         return project
 
 
+class TestManager(models.Manager):
+    def get_parent_and_child_tests(self, test: Test) -> tuple[Test | None, list[Test]]:
+        parent_suite = test.suite.parent if test.suite else None
+        parent_test: Test | None = (
+            self.filter(  # type: ignore[assignment]
+                project=parent_suite.project,
+                suite=parent_suite,
+                name=test.name,
+            )
+            .select_related("project")
+            .first()
+            if parent_suite
+            else None
+        )
+        if test.suite and test.suite.children.exists():
+            child_suites = test.suite.children.all()
+        elif parent_suite:
+            child_suites = parent_suite.children.all()
+        else:
+            child_suites = []  # type: ignore[assignment]
+        child_tests: list[Test] = (
+            list(
+                self.filter(suite__in=child_suites, name=test.name)  # type: ignore[arg-type]
+                .exclude(pk=test.pk)
+                .select_related("project")
+                .order_by("project__repository")
+            )
+            if child_suites
+            else []
+        )
+        return parent_test, child_tests
+
+
 class ResultManager(models.Manager):
     def filter_with_default_branches(self, test: Test, branch: str | None):
         if branch == ALL_BRANCHES:

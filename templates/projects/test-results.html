@@ -42,7 +42,41 @@
                 </ul>
             </div>
         </div>
-        <h2 class="mb-4">{% include "projects/_markers.html" with label=test.label markers=test.markers nowrap=True %}</h2>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">
+                {% include "projects/_markers.html" with label=test.label|wrap markers=test.markers nowrap=True %}
+            </h2>
+            {% if parent_test or child_tests %}
+                <div class="dropdown ms-3">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown">Switch Project&nbsp;</button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item active">
+                                {% if parent_suite %}
+                                    Child:
+                                {% else %}
+                                    Parent:
+                                {% endif %}
+                            {{ project.name }}</a>
+                        </li>
+                        {% if parent_test %}
+                            <li>
+                                <a class="dropdown-item"
+                                   href="{% url 'projects:test-results' parent_test.project.path parent_test.id %}">Parent: {{ parent_test.project.name }}</a>
+                            </li>
+                        {% endif %}
+                        {% for other_test in child_tests %}
+                            <li>
+                                <a class="dropdown-item"
+                                   href="{% url 'projects:test-results' other_test.project.path other_test.id %}">Child: {{ other_test.project.name }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+        </div>
         <div class="card mb-4">
             <div class="card-body">
                 <div class="row g-3">

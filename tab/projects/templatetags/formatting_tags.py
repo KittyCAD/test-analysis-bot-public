@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 from tab.metrics.constants import DELTA_THRESHOLD
 
 from ..constants import PYTEST_DIFF_MINUS, PYTEST_DIFF_PLUS
-from ..helpers import humanize_duration
+from ..helpers import humanize_duration, insert_breaks
 from ..models import Test
 from ..tables import color
 
@@ -41,6 +41,14 @@ def colorize(test: Test, field_name: str) -> str:
             tooltip = f"{delta:.1%} today"
 
     return color(text, value, lower_threshold, upper_threshold, icon, tooltip)
+
+
+@register.filter
+def wrap(value):
+    """Insert line-break opportunities for long test names."""
+    if value is None:
+        return ""
+    return mark_safe(insert_breaks(str(value)))
 
 
 @register.filter
