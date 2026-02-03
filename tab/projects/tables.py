@@ -148,7 +148,7 @@ class DisabledTestTable(tables.Table):
         attrs={
             "th__input": {
                 "class": "form-check-input border-dark",
-                "onclick": "this.form.querySelectorAll('tbody input[type=checkbox]').forEach(cb => cb.checked = this.checked)",
+                "onclick": "toggleAllRowCheckboxes(this)",
             },
             "td__input": {"class": "form-check-input border-dark"},
         },

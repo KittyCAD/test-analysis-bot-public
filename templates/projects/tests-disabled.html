@@ -95,10 +95,21 @@
         {% endif %}
     </div>
     <script>
+    // Used by 'onclick' attribute in set in 'projects/tables.py'
+    function toggleAllRowCheckboxes(headerCheckbox) {
+        const table = headerCheckbox.closest('table');
+        if (table) {
+            table.querySelectorAll('tbody input[type="checkbox"]').forEach(function (cb) {
+                cb.checked = headerCheckbox.checked;
+            });
+        }
+    }
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('bulk-update-form');
-        const testIdsInput = form.querySelector('input[name="test_ids"]');
         const table = document.querySelector('table');
+        if (!form || !table) return;
+
+        const testIdsInput = form.querySelector('input[name="test_ids"]');
         const headerCheckbox = table.querySelector('thead input[type="checkbox"]');
 
         // Handle header checkbox to select/deselect all
