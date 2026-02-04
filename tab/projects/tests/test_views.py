@@ -49,18 +49,53 @@ def describe_tests():
         url = "/projects/foo/bar/tests/{pk}"
 
         @pytest.mark.django_db
-        def it_renders_the_test_details_page(
-            expect, admin_client, project: Project, disabled_test: Test
-        ):
+        def it_renders_the_test_details_page(expect, admin_client, disabled_test: Test):
             response = admin_client.get(url.format(pk=disabled_test.pk))
             expect(response.status_code) == 200
+
+        @pytest.mark.django_db
+        def it_updates_override_behavior(
+            expect, admin_client, admin_user, disabled_test: Test
+        ):
+            # Restore the test
+            response = admin_client.post(
+                url.format(pk=disabled_test.pk),
+                data={
+                    "test_id": str(disabled_test.pk),
+                    "disabled_reason": "foo",
+                    "disabled_user": admin_user.email,
+                },
+            )
+            expect(response.status_code) == 302
+            disabled_test.refresh_from_db()
+            expect(disabled_test.disabled_at).is_(None)
+            expect(disabled_test.disabled_reason) == "foo"
+            expect(disabled_test.disabled_user) == admin_user
+            expect(response.url) == url.format(pk=disabled_test.pk)
+
+            # Disable the test
+            response = admin_client.post(
+                url.format(pk=disabled_test.pk),
+                data={
+                    "test_id": str(disabled_test.pk),
+                    "disabled": "on",
+                    "disabled_reason": "bar",
+                    "disabled_user": admin_user.email,
+                },
+            )
+            expect(response.status_code) == 302
+            disabled_test.refresh_from_db()
+            expect(disabled_test.disabled_at).is_not(None)
+            expect(disabled_test.disabled_reason) == "bar"
+            expect(disabled_test.disabled_user) == admin_user
+            expect(response.url) == url.format(pk=disabled_test.pk)
 
     def describe_disabled():
         url = "/projects/foo/bar/tests/disabled"
 
         @pytest.mark.django_db
         def it_renders_the_disabled_tests_page(
-            expect, admin_client, project: Project, disabled_test: Test
+            expect, admin_client, disabled_test: Test
         ):
             response = admin_client.get(url)
             expect(response.status_code) == 200

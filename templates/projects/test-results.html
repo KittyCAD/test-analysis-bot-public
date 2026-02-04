@@ -64,13 +64,13 @@
                         {% if parent_test %}
                             <li>
                                 <a class="dropdown-item"
-                                   href="{% url 'projects:test-results' parent_test.project.path parent_test.id %}">Parent: {{ parent_test.project.name }}</a>
+                                   href="{% url 'projects:test-results' parent_test.project.path parent_test.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">Parent: {{ parent_test.project.name }}</a>
                             </li>
                         {% endif %}
                         {% for other_test in child_tests %}
                             <li>
                                 <a class="dropdown-item"
-                                   href="{% url 'projects:test-results' other_test.project.path other_test.id %}">Child: {{ other_test.project.name }}</a>
+                                   href="{% url 'projects:test-results' other_test.project.path other_test.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">Child: {{ other_test.project.name }}</a>
                             </li>
                         {% endfor %}
                     </ul>
