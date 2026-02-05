@@ -2,7 +2,7 @@ from django.utils import timezone
 
 import pytest
 
-from ..models import Project, Result, Status, Test
+from ..models import Project, Result, Status, Suite, Test
 
 
 @pytest.fixture
@@ -55,23 +55,47 @@ def describe_tests():
 
         @pytest.mark.django_db
         def it_updates_override_behavior(
-            expect, admin_client, admin_user, disabled_test: Test
+            expect, mocker, admin_client, admin_user, disabled_test: Test
         ):
-            # Restore the test
-            response = admin_client.post(
-                url.format(pk=disabled_test.pk),
-                data={
-                    "test_id": str(disabled_test.pk),
-                    "disabled_reason": "foo",
-                    "disabled_user": admin_user.email,
-                },
+            mocker.patch("tab.projects.views.Alert")  # silence thread warnings
+
+            # Create a test in a parent suite
+            parent_project = Project.objects.create(
+                repository="https://github.com/foo/bar/parent"
             )
-            expect(response.status_code) == 302
-            disabled_test.refresh_from_db()
-            expect(disabled_test.disabled_at).is_(None)
-            expect(disabled_test.disabled_reason) == "foo"
-            expect(disabled_test.disabled_user) == admin_user
-            expect(response.url) == url.format(pk=disabled_test.pk)
+            parent_suite = Suite.objects.create(
+                project=parent_project, name="parent suite"
+            )
+            parent_test = Test.objects.create(
+                project=parent_project,
+                suite=parent_suite,
+                name=disabled_test.name,
+            )
+
+            # Update the main test
+            suite = Suite.objects.create(
+                project=disabled_test.project,
+                name="suite",
+                parent=parent_suite,
+            )
+            disabled_test.suite = suite
+            disabled_test.save()
+
+            # Create a test in a child suite
+            child_project = Project.objects.create(
+                repository="https://github.com/foo/bar/child"
+            )
+            child_suite = Suite.objects.create(
+                project=child_project,
+                name="child suite",
+                parent=parent_suite,
+            )
+            child_test = Test.objects.create(
+                project=child_project,
+                suite=child_suite,
+                name=disabled_test.name,
+                disabled_reason="bar",
+            )
 
             # Disable the test
             response = admin_client.post(
@@ -79,16 +103,52 @@ def describe_tests():
                 data={
                     "test_id": str(disabled_test.pk),
                     "disabled": "on",
-                    "disabled_reason": "bar",
+                    "disabled_reason": "foo",
                     "disabled_user": admin_user.email,
                 },
             )
             expect(response.status_code) == 302
             disabled_test.refresh_from_db()
             expect(disabled_test.disabled_at).is_not(None)
-            expect(disabled_test.disabled_reason) == "bar"
+            expect(disabled_test.disabled_reason) == "foo"
             expect(disabled_test.disabled_user) == admin_user
             expect(response.url) == url.format(pk=disabled_test.pk)
+
+            # Check the sibling tests
+            parent_test.refresh_from_db()
+            expect(parent_test.disabled_at).is_not(None)
+            expect(parent_test.disabled_reason) == "foo"
+            expect(parent_test.disabled_user) == admin_user
+            child_test.refresh_from_db()
+            expect(child_test.disabled_at).is_not(None)
+            expect(child_test.disabled_reason) == "bar"  # preserves message
+            expect(child_test.disabled_user) == admin_user
+
+            # Restore the test
+            response = admin_client.post(
+                url.format(pk=disabled_test.pk),
+                data={
+                    "test_id": str(disabled_test.pk),
+                    "disabled_reason": "",
+                    "disabled_user": admin_user.email,
+                },
+            )
+            expect(response.status_code) == 302
+            disabled_test.refresh_from_db()
+            expect(disabled_test.disabled_at).is_(None)
+            expect(disabled_test.disabled_reason) == ""
+            expect(disabled_test.disabled_user) == admin_user
+            expect(response.url) == url.format(pk=disabled_test.pk)
+
+            # Check the sibling tests
+            parent_test.refresh_from_db()
+            expect(parent_test.disabled_at).is_not(None)  # preserves state
+            expect(parent_test.disabled_reason) == "foo"  # preserves message
+            expect(parent_test.disabled_user) == admin_user
+            child_test.refresh_from_db()
+            expect(child_test.disabled_at).is_not(None)  # preserves state
+            expect(child_test.disabled_reason) == "bar"  # preserves message
+            expect(child_test.disabled_user) == admin_user
 
     def describe_disabled():
         url = "/projects/foo/bar/tests/disabled"

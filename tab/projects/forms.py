@@ -24,7 +24,8 @@ class BaseUpdateTestForm(forms.Form):
     )
     disabled_user = forms.EmailField(
         widget=forms.EmailInput(attrs={"class": "form-control"}),
-        required=True,
+        required=False,
+        disabled=True,
         label="Your Email",
         help_text="Person who last updated this override behavior",
     )

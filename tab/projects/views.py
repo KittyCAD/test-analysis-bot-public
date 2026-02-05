@@ -489,23 +489,33 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             project__repository__iendswith=self.kwargs["path"].strip("/"),
             id=self.kwargs["test_id"],
         )
-        previously_disabled = bool(test.disabled_at)
+        disabled = form.cleaned_data["disabled"]
+        disabled_reason = form.cleaned_data["disabled_reason"] or ""
+        disabled_tracker = form.cleaned_data["disabled_tracker"] or ""
 
-        test.disabled_at = timezone.now() if form.cleaned_data["disabled"] else None
-        test.disabled_reason = form.cleaned_data["disabled_reason"]
-        test.disabled_tracker = form.cleaned_data["disabled_tracker"]
-        test.disabled_user = get_or_create_user(form.cleaned_data["disabled_user"])
-        test.failure_rate += FAILURE_RATE_EPSILON  # prevent from being restored on save
-        test.save()
+        previously_disabled = self._update_override_behavior(
+            test,
+            disabled=disabled,
+            disabled_reason=disabled_reason,
+            disabled_tracker=disabled_tracker,
+            sibling=False,
+        )
+
+        parent_test, child_tests = Test.objects.get_parent_and_child_tests(test)
+        related = [t for t in (parent_test, *child_tests) if t is not None]
+        for other in related:
+            self._update_override_behavior(
+                other,
+                disabled=disabled,
+                disabled_reason=disabled_reason,
+                disabled_tracker=disabled_tracker,
+                sibling=True,
+            )
 
         log.info(f"{self.request.user} updated test {test.name}")
         blocking = "disabled from blocking" if test.disabled_at else "allowed to block"
         if bool(test.disabled_at) != previously_disabled:
             blocking = "now " + blocking
-            if test.disabled_at:
-                alert = Alert.objects.create(test=test)
-                thread = threading.Thread(target=alert.send, kwargs={"forward": False})
-                thread.start()
         messages.success(self.request, f"Test is {blocking} merges.")
 
         redirect_url = self.request.path
@@ -513,6 +523,34 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             redirect_url += f"?branch={branch}"
 
         return redirect(redirect_url)
+
+    def _update_override_behavior(
+        self,
+        test: Test,
+        *,
+        disabled: bool,
+        disabled_reason: str,
+        disabled_tracker: str,
+        sibling: bool = False,
+    ):
+        previously_disabled = bool(test.disabled_at)
+        if sibling:
+            test.disabled_reason = test.disabled_reason or disabled_reason
+            test.disabled_tracker = test.disabled_tracker or disabled_tracker
+            if disabled and not previously_disabled:
+                test.disabled_at = timezone.now()
+        else:
+            test.disabled_reason = disabled_reason
+            test.disabled_tracker = disabled_tracker
+            test.disabled_at = timezone.now() if disabled else None
+        test.disabled_user = self.request.user  # type: ignore[assignment]
+        test.failure_rate += FAILURE_RATE_EPSILON  # prevent from being restored on save
+        test.save()
+        newly_disabled = disabled and not previously_disabled
+        if newly_disabled:
+            alert = Alert.objects.create(test=test)
+            threading.Thread(target=alert.send, kwargs={"forward": False}).start()
+        return previously_disabled
 
 
 class TestResultView(LoginRequiredMixin, TemplateView):
