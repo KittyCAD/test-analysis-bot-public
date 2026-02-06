@@ -240,9 +240,12 @@ def update_status(
         return
 
     try:
+        url = f"{settings.BASE_URL}/projects/{project.path}/results?branch={quote(branch)}"
+        if health.state == "failure":
+            url += "&show=fails"
         commit.create_status(
             state=health.state,
-            target_url=f"{settings.BASE_URL}/projects/{project.path}/results?branch={quote(branch)}&show=fails",
+            target_url=url,
             description=health.description,
             context="Test Analysis Bot",
         )
