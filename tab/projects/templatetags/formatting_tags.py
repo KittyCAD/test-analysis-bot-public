@@ -66,6 +66,7 @@ def highlight(value):
     lines = value.splitlines(keepends=True)
     result_lines = []
     seen_expected = False
+    seen_received = False
 
     for line in lines:
         has_newline = line.endswith("\n")
@@ -94,6 +95,8 @@ def highlight(value):
             result_lines.append(f'<span class="text-success">{escaped}</span>')
             if has_newline:
                 result_lines.append("\n")
+            if line_content.startswith("Received:"):
+                seen_received = True
         elif line_content.startswith(("-", "Expected:")):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-danger">{escaped}</span>')
@@ -102,7 +105,11 @@ def highlight(value):
             if line_content.startswith("Expected:"):
                 seen_expected = True
         # Handle playwright diffs
-        elif seen_expected and line_content.startswith(("Timeout:", "Error:")):
+        elif (
+            seen_expected
+            and not seen_received
+            and line_content.startswith(("Timeout:", "Error:"))
+        ):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-success">{escaped}</span>')
             if has_newline:

@@ -39,6 +39,13 @@ def describe_highlight():
         expect(result).contains("danger")
         expect(result).contains("success")
 
+    def with_expected_received_then_timeout(expect):
+        text = "Expected: visible\nReceived: hidden\nTimeout: 5000ms"
+        result = highlight(text)
+        expect(result).contains("danger")  # Expected
+        expect(result).contains("success")  # Received
+        expect(result.count("text-success")) == 1  # only Received, not Timeout
+
     def with_timeout_but_no_expected(expect):
         text = "Timeout: 5000ms"
         result = highlight(text)
