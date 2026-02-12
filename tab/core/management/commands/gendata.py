@@ -5,19 +5,31 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
+import log
+
 from tab.core.models import Organization
 from tab.metrics.models import History, Team
-from tab.projects.models import Project, Test
+from tab.projects.enums import Platform, Status, Target
+from tab.projects.models import Project, Result, Test
 
 
 class Command(BaseCommand):
     help = "Create sample organization, project, and metrics"
 
-    def handle(self, *args, **kwargs):
+    def add_arguments(self, parser):
+        super().add_arguments(parser)
+        for action in parser._actions:
+            if "--verbosity" in getattr(action, "option_strings", []):
+                action.default = 2  # INFO and above by default
+                break
+
+    def handle(self, *args, **options):
+        log.reset()
+        log.init(verbosity=options["verbosity"])
         self.create_default_user()
         self.create_default_organization()
         self.create_default_team()
-        self.generate_sample_metrics()
+        self.generate_sample_data()
 
     def create_default_user(self):
         User = get_user_model()
@@ -54,7 +66,7 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.WARNING("Default team already exists"))
 
-    def generate_sample_metrics(self):
+    def generate_sample_data(self):
         for test in Test.objects.filter(name="sample test"):
             test.save()  # ensure sample tests are enabled
 
@@ -78,9 +90,17 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f"Sample test already exists"))
             test.history.all().delete()
 
-        # TODO: Make this generate 6 months of data and confirm it in the chart
-        count = 0
+        test.results.all().delete()
+
         days = 8
+        num_results = 500
+        end = timezone.now()
+        start = end - timedelta(days=days)
+
+        self._generate_results(test, num_results, start, end)
+        self._generate_history(test, days)
+
+    def _generate_history(self, test, days):
         failure_rate = 0.25
         for hour in range(24 * days):
             timestamp = timezone.now() - timedelta(hours=hour)
@@ -104,8 +124,38 @@ class Command(BaseCommand):
             )
             history.timestamp = timestamp
             history.save()
-            count += 1
+        self.stdout.write(self.style.SUCCESS("Generated history metrics"))
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Generated {count} metrics for past {days} days")
-        )
+    def _generate_results(self, test, num_results, start, end):
+        statuses = [Status.PASSED, Status.FAILED]
+        targets = [None, Target.WEB, Target.DESKTOP]
+        platforms = [None, Platform.MACOS, Platform.WINDOWS, Platform.LINUX]
+        sample_messages = [
+            "",
+            "AssertionError: expected 42",
+            "Timeout 5000ms exceeded",
+            "Connection refused to localhost:5432",
+            "Element not found: .submit-btn",
+            "ValueError: invalid literal for int()",
+            "All assertions passed",
+            "Test completed successfully",
+        ]
+        for i in range(num_results):
+            fraction = (i + 0.5) / num_results
+            created_at = start + (end - start) * fraction
+            result = Result.objects.create(
+                test=test,
+                branch="main",
+                commit=f"sample{i:05x}",
+                status=random.choice(statuses),
+                duration=round(random.uniform(15.0, 60.0), 2),
+                final=True,
+                message=random.choice(sample_messages),
+                target=random.choice(targets),
+                platform=random.choice(platforms),
+            )
+            result.created_at = created_at
+            result.save(update_fields=["created_at"])
+            if (i + 1) % 10 == 0:
+                self.stdout.write(f"Generated {i + 1}/{num_results} results")
+        self.stdout.write(self.style.SUCCESS("Generated test results"))

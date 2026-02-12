@@ -30,6 +30,9 @@ class HistoryManager(models.Manager):
         if self.filter(test=test, timestamp__gte=limit).exists():
             log.debug(f"Skipped redundant metric creation: {test}")
             return None
+        if test.average_duration < 0:
+            log.debug(f"Skipped metric creation for new test")
+            return None
 
         history: History = self.create(  # type: ignore[assignment]
             test=test,
