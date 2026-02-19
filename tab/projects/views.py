@@ -312,6 +312,11 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
         branch = self.request.GET.get("branch", project.default_branch)
+        if not Result.objects.filter(test__project=project, branch=branch).exists():
+            messages.warning(
+                self.request,
+                "No results found. Stale data is pruned automatically. Try rerunning tests on this branch.",
+            )
 
         context["project"] = project
         context["branch"] = branch
