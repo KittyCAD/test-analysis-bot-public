@@ -549,7 +549,10 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             test.disabled_tracker = disabled_tracker
             test.disabled_at = timezone.now() if disabled else None
         test.disabled_user = self.request.user  # type: ignore[assignment]
-        test.failure_rate += FAILURE_RATE_EPSILON  # prevent from being restored on save
+        test.failure_rate = min(  # prevent from being restored on save
+            max(test.failure_rate + FAILURE_RATE_EPSILON, FAILURE_RATE_EPSILON),
+            1.0,
+        )
         test.save()
         newly_disabled = disabled and not previously_disabled
         if newly_disabled:
