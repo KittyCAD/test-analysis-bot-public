@@ -93,10 +93,14 @@ class AlertAdmin(admin.ModelAdmin):
         "created_at",
         "sent_at",
     )
-    list_filter = ("created_at", "sent_at")
+    list_filter = (
+        "created_at",
+        "sent_at",
+        "test__project__repository",
+    )
     search_fields = (
-        "history__test__project__repository",
-        "history__test__name",
+        "test__project__repository",
+        "test__name",
     )
 
     @admin.display(description="Message")
