@@ -135,7 +135,7 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView
         context["project"] = project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
-        context["suites"] = project.suites.all()
+        context["suites"] = project.suites.active()
         context["suite_id"] = self.kwargs.get("suite_id")
         context["search"] = self.request.GET.get("search", "").strip()
         context["tag"] = self.request.GET.get("tag", "").strip()
@@ -322,7 +322,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         context["branch"] = branch
         context["merge_url"] = self._get_merge_url(project, branch)
         context["branches"] = self._get_active_branches(project)
-        context["suites"] = project.suites.all()
+        context["suites"] = project.suites.active()
         context["suite_id"] = self.kwargs.get("suite_id")
         context["search"] = self.request.GET.get("search", "").strip()
         context["platform"] = self.request.GET.get("platform", "").strip()

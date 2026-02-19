@@ -14,6 +14,7 @@ from django.utils import timezone
 
 import log
 
+from . import managers
 from .constants import (
     ANSI_ESCAPE,
     CHECKOUT_COMMAND,
@@ -23,7 +24,6 @@ from .constants import (
 )
 from .enums import Platform, Status, Target
 from .helpers import humanize_duration
-from .managers import ProjectManager, ResultManager, RunManager, TestManager
 
 
 class Project(models.Model):
@@ -64,7 +64,7 @@ class Project(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
-    objects: ProjectManager = ProjectManager()
+    objects: managers.ProjectManager = managers.ProjectManager()
 
     def __str__(self):
         return self.name
@@ -93,7 +93,7 @@ class Project(models.Model):
         super().save(*args, **kwargs)
 
     def _update_repository(self):
-        self.repository = ProjectManager.clean_repository(self.repository)
+        self.repository = managers.ProjectManager.clean_repository(self.repository)
 
 
 class Suite(models.Model):
@@ -151,6 +151,8 @@ class Suite(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
+    objects: managers.SuiteManager = managers.SuiteManager()
+
     class Meta:
         ordering = ["name"]
         unique_together = ["project", "name"]
@@ -174,7 +176,7 @@ class Run(models.Model):
     tests_finished_at = models.DateTimeField(null=True, blank=True, db_index=True)
     teardown_finished_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
-    objects: RunManager = RunManager()
+    objects: managers.RunManager = managers.RunManager()
 
     class Meta:
         ordering = ["-setup_started_at"]
@@ -295,7 +297,7 @@ class Test(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
-    objects: TestManager = TestManager()
+    objects: managers.TestManager = managers.TestManager()
 
     class Meta:
         indexes = [
@@ -605,7 +607,7 @@ class Result(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
-    objects: ResultManager = ResultManager()
+    objects: managers.ResultManager = managers.ResultManager()
 
     class Meta:
         ordering = ["-created_at"]

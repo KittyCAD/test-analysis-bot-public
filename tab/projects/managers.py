@@ -49,6 +49,16 @@ class ProjectManager(models.Manager):
         return project
 
 
+class SuiteManager(models.Manager):
+    def active(self):
+        return (
+            self.get_queryset()
+            .annotate(num_tests=Count("tests"))
+            .filter(num_tests__gt=0)
+            .order_by("name")
+        )
+
+
 class TestManager(models.Manager):
     def get_parent_and_child_tests(self, test: Test) -> tuple[Test | None, list[Test]]:
         parent_suite = test.suite.parent if test.suite else None
