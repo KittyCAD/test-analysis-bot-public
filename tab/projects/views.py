@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import format_html
 from django.views.generic import FormView, ListView, TemplateView
 
 import log
@@ -354,6 +355,28 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
                 )
 
         return context
+
+    def get_table_kwargs(self):
+        return {"request": self.request}
+
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        if result_id := request.POST.get("rerun"):
+            result = get_object_or_404(Result, pk=result_id, test__project=project)
+            if url := result.rerun():
+                messages.success(
+                    request,
+                    format_html(
+                        'Tests are rerunning <a href="{}" target="_blank" rel="noopener">here</a>. '
+                        "Check back in a few minutes for new results.",
+                        url,
+                    ),
+                )
+                return redirect(request.get_full_path())
+        messages.error(request, "Unable to rerun this test.")
+        return redirect(request.get_full_path())
 
     def _get_merge_url(self, project: Project, branch: str) -> str:
         result = (

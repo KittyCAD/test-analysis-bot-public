@@ -214,6 +214,7 @@ def update_status(
 ):
     assert "github.com" in project.repository, "Only GitHub is supported for now"
 
+    # TODO: Consolidate this shared logic between 'api' and 'projects' apps
     if organization.github_app_id and organization.github_app_private_key:
         log.debug("Authenticating with GitHub App")
         auth = Auth.AppAuth(

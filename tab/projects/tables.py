@@ -282,7 +282,7 @@ class TestResultTable(tables.Table):
             details = render_to_string(
                 "projects/_result_modal.html", {"result": record}
             )
-            html = f'<div class="d-flex align-items-center gap-1">{html} <span class="ms-1">{details}</span></div>'
+            html = f'<span class="d-inline-flex align-items-center gap-2">{html} {details}</span>'
         return mark_safe(html)
 
     def render_branch(self, record: Result):
@@ -400,6 +400,21 @@ class ResultTable(TestResultTable):
         )
 
     def render_test__block_rate(self, record: Result):
+        label = self._get_block_rate_label(record)
+        rerun_button = ""
+        if record.rerunnable:
+            rerun_button = " " + render_to_string(
+                "projects/_result_rerun.html",
+                {"result": record},
+                request=getattr(self, "request"),
+            )
+        html = mark_safe(
+            f'<span class="d-inline-flex align-items-center">'
+            f"<span>{label}</span>{rerun_button}</span>"
+        )
+        return html
+
+    def _get_block_rate_label(self, record: Result):
         if record.originated_from_branch and not record.new_failure:
             return "—"
 

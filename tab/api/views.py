@@ -3,7 +3,6 @@ import tomllib
 
 from django.conf import settings
 from django.shortcuts import redirect
-from django.utils import timezone
 
 import log
 from ninja import Form, NinjaAPI

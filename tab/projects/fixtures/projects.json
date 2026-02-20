@@ -339,6 +339,24 @@
     }
   },
   {
+    "model": "projects.test",
+    "pk": 455,
+    "fields": {
+      "project": 2,
+      "suite": 4,
+      "name": "Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor",
+      "original_branch": "main",
+      "original_commit": "",
+      "original_metadata": {},
+      "disabled_at": null,
+      "disabled_reason": "",
+      "disabled_tracker": null,
+      "disabled_user": null,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z"
+    }
+  },
+  {
     "model": "projects.result",
     "pk": 1903,
     "fields": {
@@ -386,13 +404,19 @@
       "test": 451,
       "branch": "sample-branch",
       "commit": "abc123",
-      "target": null,
-      "platform": null,
+      "target": "desktop",
+      "platform": "linux",
       "final": true,
       "status": "passed",
       "duration": 20.0,
       "message": "All assertions passed",
-      "metadata": {"GITHUB_RUN_ID": "1234567890"},
+      "metadata": {
+        "GITHUB_RUN_ID": "1234567890",
+        "tags": [
+          "@desktop",
+          "@web"
+        ]
+      },
       "created_at": "2025-02-20T12:00:00.000Z"
     }
   },
@@ -404,14 +428,37 @@
       "test": 451,
       "branch": "sample-branch",
       "commit": "abc123",
-      "target": null,
-      "platform": null,
+      "target": "web",
+      "platform": "macos",
       "final": true,
       "status": "failed",
       "duration": 25.0,
       "message": "AssertionError: expected 42",
-      "metadata": {"GITHUB_RUN_ID": "1234567890"},
+      "metadata": {
+        "GITHUB_RUN_ID": "1234567890",
+        "tags": [
+          "@desktop",
+          "@web"
+        ]
+      },
       "created_at": "2025-02-20T12:01:00.000Z"
+    }
+  },
+  {
+    "model": "projects.result",
+    "pk": 1907,
+    "fields": {
+      "suite": 4,
+      "test": 455,
+      "branch": "sample-branch",
+      "commit": "abc123",
+      "target": "web",
+      "platform": "linux",
+      "final": true,
+      "status": "timedOut",
+      "duration": 120.0,
+      "message": null,
+      "created_at": "2025-02-20T12:02:00.000Z"
     }
   }
 ]
