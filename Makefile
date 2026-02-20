@@ -7,7 +7,7 @@ all: check test ## CI | Run all validation targets
 
 .PHONY: dev
 dev: install ## CI | Rerun all validation targets in a loop
-	@ rm -rf $(FAILURES)
+	@ rm -rf .cache
 	@ sleep 1 && touch */__init__.py &
 	poetry run watchmedo shell-command --command="clear; make test check && echo Done!" --recursive --drop
 

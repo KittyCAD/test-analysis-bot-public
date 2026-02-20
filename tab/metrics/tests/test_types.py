@@ -48,16 +48,24 @@ def describe_message():
                 "4 xxxxxxxxxxx",
                 "5 xxxxxxxxxxx",
                 "6 xxxxxxxxxxx",
+                "7 xxxxxxxxxxx",
+                "8 xxxxxxxxxxx",
+                "9 xxxxxxxxxxx",
+                "10 xxxxxxxxxxx",
             ]
         )
         expect(message.markdown).contains(
             "\n".join(
                 [
-                    "1 " + "x" * 97 + "…",
+                    "1 " + "x" * 99,
                     "2 xxxxxxxxxxx",
                     "3 xxxxxxxxxxx",
                     "4 xxxxxxxxxxx",
                     "5 xxxxxxxxxxx",
+                    "6 xxxxxxxxxxx",
+                    "7 xxxxxxxxxxx",
+                    "8 xxxxxxxxxxx",
+                    "9 xxxxxxxxxxx",
                     "(1 more line omitted)",
                 ]
             )
@@ -70,9 +78,13 @@ def describe_message():
                 "2 xxxxxxxxx",
                 "3 xxxxxxxxx",
                 "4 xxxxxxxxx",
+                "5 xxxxxxxxx",
+                "6 xxxxxxxxx",
+                "7 xxxxxxxxx",
+                "8 xxxxxxxxx",
                 "Log:",
-                "6",
-                "7",
+                "9",
+                "10",
             ]
         )
         expect(message.markdown).contains(
@@ -82,6 +94,10 @@ def describe_message():
                     "2 xxxxxxxxx",
                     "3 xxxxxxxxx",
                     "4 xxxxxxxxx",
+                    "5 xxxxxxxxx",
+                    "6 xxxxxxxxx",
+                    "7 xxxxxxxxx",
+                    "8 xxxxxxxxx",
                     "(3 more lines omitted)",
                 ]
             )

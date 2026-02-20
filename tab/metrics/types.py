@@ -60,14 +60,11 @@ class Message:
         values = "\n\n```\n"
 
         for count, line in enumerate(lines, start=1):
-            if (count == 5 and len(line) <= 10) or count > 5:
+            if (count == 9 and len(line) <= 10) or count > 9:
                 remaining = len(lines) - count + 1
                 s = "" if remaining == 1 else "s"
                 values += f"({remaining} more line{s} omitted)\n"
                 break
-
-            if len(line) > 100 and len(lines) > 1:
-                line = line[:99] + "…"
 
             values += line + "\n"
 
