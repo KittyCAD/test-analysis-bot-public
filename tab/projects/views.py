@@ -375,7 +375,10 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
                     ),
                 )
                 return redirect(request.get_full_path())
-        messages.error(request, "Unable to rerun this test.")
+        messages.error(
+            request,
+            "Unable to rerun tests. Wait for any existing jobs to complete.",
+        )
         return redirect(request.get_full_path())
 
     def _get_merge_url(self, project: Project, branch: str) -> str:
