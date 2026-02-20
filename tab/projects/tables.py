@@ -414,7 +414,7 @@ class ResultTable(TestResultTable):
         elif record.new_fix:
             tooltip = "Current branch may have fixed this test"
             icon = "star"
-        if record.test.block_rate <= 0 and icon:
+        if record.test.block_rate < 0 and icon:
             text = ""
 
         return color(
