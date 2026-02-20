@@ -761,7 +761,10 @@ class Result(models.Model):
     @property
     def rerunnable(self) -> bool:
         return (
-            self.final and bool(self.run_url) and self.status in Status.merge_blocked()
+            self.final
+            and bool(self.run_url)
+            and self.status in Status.merge_blocked()
+            and self.branch not in self.test.project.default_branches
         )
 
     @property
