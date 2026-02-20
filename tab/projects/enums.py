@@ -13,8 +13,11 @@ class Status(models.TextChoices):
     XFAILED = "xfailed", "Expected Failure"
     XPASSED = "xpassed", "Unexpected Pass"
 
-    RERUN = "rerun", "Rerun"  # TODO: Remove this before merge
     DISABLED = "disabled", "Ignored Failure"
+
+    # TODO: Remove these values once all stale results are deleted
+    RERUN = "rerun", "Rerun"
+    RUNNING = "running", "Running"
 
     @classmethod
     def normalize(
