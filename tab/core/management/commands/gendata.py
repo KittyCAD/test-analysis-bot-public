@@ -1,5 +1,6 @@
 import random
 from datetime import timedelta
+from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
@@ -7,10 +8,15 @@ from django.utils import timezone
 
 import log
 
+from tab.api.helpers import parse_junit_xml
 from tab.core.models import Organization
 from tab.metrics.models import History, Team
 from tab.projects.enums import Platform, Status, Target
-from tab.projects.models import Project, Result, Test
+from tab.projects.models import Project, Result, Suite, Test
+
+JUNIT_FIXTURE_PATH = (
+    Path(__file__).resolve().parents[3] / "api" / "tests" / "files" / "junit.xml"
+)
 
 
 class Command(BaseCommand):
@@ -26,10 +32,32 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         log.reset()
         log.init(verbosity=options["verbosity"])
+        self.load_sample_data()
         self.create_default_user()
         self.create_default_organization()
         self.create_default_team()
         self.generate_sample_data()
+
+    def load_sample_data(self):
+        project, _created = Project.objects.get_or_create(
+            repository="https://github.com/KittyCAD/modeling-app"
+        )
+        content = JUNIT_FIXTURE_PATH.read_text(encoding="utf-8")
+        suite, _created = Suite.objects.get_or_create(project=project, name="unit")
+        metadata = {
+            "GITHUB_RUN_ID": "999999",
+            "GITHUB_HEAD_REF": "main",
+            "CI_COMMIT_SHA": "junit-sample",
+        }
+        results = parse_junit_xml(
+            content,
+            project,
+            suite,
+            branch="main",
+            commit="junit-sample",
+            metadata=metadata,
+        )
+        self.stdout.write(self.style.SUCCESS(f"Loaded {len(results)} test results"))
 
     def create_default_user(self):
         User = get_user_model()
@@ -90,7 +118,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(f"Sample test already exists"))
             test.history.all().delete()
 
-        test.results.all().delete()
+        test.results.filter(branch="main").delete()
 
         days = 8
         num_results = 500
@@ -124,7 +152,7 @@ class Command(BaseCommand):
             )
             history.timestamp = timestamp
             history.save()
-        self.stdout.write(self.style.SUCCESS("Generated history metrics"))
+        self.stdout.write(self.style.SUCCESS("Generated sample history metrics"))
 
     def _generate_results(self, test, num_results, start, end):
         statuses = [Status.PASSED, Status.FAILED]
@@ -140,22 +168,23 @@ class Command(BaseCommand):
             "All assertions passed",
             "Test completed successfully",
         ]
+        results = []
         for i in range(num_results):
             fraction = (i + 0.5) / num_results
             created_at = start + (end - start) * fraction
-            result = Result.objects.create(
-                test=test,
-                branch="main",
-                commit=f"sample{i:05x}",
-                status=random.choice(statuses),
-                duration=round(random.uniform(15.0, 60.0), 2),
-                final=True,
-                message=random.choice(sample_messages),
-                target=random.choice(targets),
-                platform=random.choice(platforms),
+            results.append(
+                Result(
+                    test=test,
+                    branch="main",
+                    commit=f"sample{i:05x}",
+                    status=random.choice(statuses),
+                    duration=round(random.uniform(15.0, 60.0), 2),
+                    final=True,
+                    message=random.choice(sample_messages),
+                    target=random.choice(targets),
+                    platform=random.choice(platforms),
+                    created_at=created_at,
+                )
             )
-            result.created_at = created_at
-            result.save(update_fields=["created_at"])
-            if (i + 1) % 10 == 0:
-                self.stdout.write(f"Generated {i + 1}/{num_results} results")
-        self.stdout.write(self.style.SUCCESS("Generated test results"))
+        Result.objects.bulk_create(results)
+        self.stdout.write(self.style.SUCCESS("Generated sample test results"))
