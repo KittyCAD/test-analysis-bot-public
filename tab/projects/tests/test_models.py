@@ -101,7 +101,6 @@ def describe_test():
             expect(test.substring) == example_test.substring
 
     def describe_disabled():
-
         @pytest.mark.django_db
         def it_is_cleared_after_zero_failures(expect, admin_user, project: Project):
             project.save()
@@ -312,6 +311,22 @@ def describe_result():
             test = Test(project=Project(), name="test", failure_rate=0.51)
             result = Result(test=test, status=Status.DISABLED)
             expect(result.new_fix) == False
+
+    def describe_rerunnable():
+        def it_is_false_for_new_results(expect):
+            test = Test(project=Project(), name="test")
+            result = Result(
+                test=test,
+                status=Status.FAILED,
+                branch="my-branch",
+                final=True,
+                metadata={"GITHUB_RUN_ID": "123"},
+                created_at=timezone.now() - timedelta(minutes=5),
+            )
+            expect(result.rerunnable) == False
+
+            result.created_at = timezone.now() - timedelta(minutes=15)
+            expect(result.rerunnable) == True
 
     def describe_finalize():
         @pytest.mark.django_db

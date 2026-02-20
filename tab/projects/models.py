@@ -22,6 +22,7 @@ from .constants import (
     CHECKOUT_COMMAND,
     DEFAULT_SUITE,
     FAILURE_RATE_EPSILON,
+    PENDING_THRESHOLD,
     get_default_branches,
 )
 from .enums import Platform, Status, Target
@@ -760,11 +761,13 @@ class Result(models.Model):
 
     @property
     def rerunnable(self) -> bool:
+        age = timezone.now() - self.created_at
         return (
             self.final
             and bool(self.run_url)
             and self.status in Status.merge_blocked()
             and self.branch not in self.test.project.default_branches
+            and age > PENDING_THRESHOLD
         )
 
     @property
