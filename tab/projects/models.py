@@ -847,17 +847,9 @@ class Result(models.Model):
         if not self.run_url:
             return None
 
-        # TODO: Considering moving this to the helper
-        try:
-            organization = Organization.objects.get(
-                repository_index=self.test.project.repository_index
-            )
-        except Organization.DoesNotExist:
-            log.warning(
-                f"No organization for {self.test.project.repository_index}, cannot rerun"
-            )
-            return None
-
+        organization = Organization.objects.get(
+            repository_index=self.test.project.repository_index
+        )
         run_id = self.metadata["GITHUB_RUN_ID"]
         if url := rerun_failed_jobs(organization, self.test.project, int(run_id)):
             count = Result.objects.filter(
@@ -868,4 +860,5 @@ class Result(models.Model):
                 metadata__GITHUB_RUN_ID=run_id,
             ).update(final=False)
             log.info(f"Marked {count} results to be rerun")
+
         return url

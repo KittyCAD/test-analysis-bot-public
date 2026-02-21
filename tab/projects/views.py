@@ -363,6 +363,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
+
         if result_id := request.POST.get("rerun"):
             result = get_object_or_404(Result, pk=result_id, test__project=project)
             if url := result.rerun():
@@ -375,6 +376,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
                     ),
                 )
                 return redirect(request.get_full_path())
+
         messages.error(
             request,
             "Unable to rerun tests. Wait for any existing jobs to complete.",
