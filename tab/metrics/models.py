@@ -68,7 +68,7 @@ class History(models.Model):
             return False
 
         alert = Alert.objects.create(test=self.test, history=self)
-        log.warning(alert.message)
+        log.warning(f"Alert triggered: {alert.message}")
         cache.set(key, True, timeout=ALERT_CACHE_TIMEOUT)
         alert.send()
         return True
