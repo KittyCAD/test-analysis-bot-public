@@ -8,14 +8,18 @@ from .types import Message
 
 
 def send_slack_message(
-    organization: Organization, channel: str, message: Message, unfurl: bool
+    organization: Organization,
+    channel: str,
+    channel_id: str | None,
+    message: Message,
+    unfurl: bool,
 ) -> str | None:
     if not organization.slack_bot_token:
         log.warning(f"{organization} has no Slack bot token")
         return None
 
     client = WebClient(token=organization.slack_bot_token)
-    channel_id = _get_channel_id(client, channel)
+    channel_id = channel_id or _get_channel_id(client, channel)
     if not channel_id:
         log.error(f"{organization} Slack channel not found: {channel}")
         return None

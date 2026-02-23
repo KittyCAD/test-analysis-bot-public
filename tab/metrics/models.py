@@ -79,6 +79,7 @@ class Team(models.Model):
         Organization, on_delete=models.CASCADE, related_name="teams"
     )
     slack_channel_name = models.CharField(max_length=100)
+    slack_channel_id = models.CharField(max_length=100, blank=True)
 
     alerted_at = models.DateTimeField(null=True, blank=True)
 
@@ -238,7 +239,11 @@ class Alert(models.Model):
                 continue
 
             if url := send_slack_message(
-                team.organization, team.slack_channel_name, message, unfurl
+                team.organization,
+                team.slack_channel_name,
+                team.slack_channel_id,
+                message,
+                unfurl,
             ):
                 count += 1
                 team.alerted_at = timezone.now()

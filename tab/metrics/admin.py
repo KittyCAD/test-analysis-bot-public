@@ -41,12 +41,14 @@ class TeamAdmin(admin.ModelAdmin):
         "id",
         "organization",
         "slack_channel_name",
+        "slack_channel_id",
         "alerted_at",
     )
     list_filter = ("alerted_at",)
     search_fields = (
         "organization__name",
         "slack_channel_name",
+        "slack_channel_id",
     )
 
 
