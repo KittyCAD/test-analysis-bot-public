@@ -17,7 +17,7 @@ def send_slack_message(
     client = WebClient(token=organization.slack_bot_token)
     channel_id = _get_channel_id(client, channel)
     if not channel_id:
-        log.warning(f"{organization} Slack channel not found: {channel}")
+        log.error(f"{organization} Slack channel not found: {channel}")
         return None
 
     try:
