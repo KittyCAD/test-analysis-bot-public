@@ -4,8 +4,9 @@ from contextlib import suppress
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 from django.db import IntegrityError
+from django.template.loader import render_to_string
 from django.urls import reverse
 
 import log
@@ -35,9 +36,15 @@ def generate_otp() -> str:
 
 
 def send_otp_email(email: str, otp: str):
-    subject = "Test Analysis Bot"
-    login_url = f"{settings.BASE_URL}{reverse('login')}?otp={otp}"
-    message = f"Your one-time password is: {otp}\n\nLogin: {login_url}"
-    from_email = "tab@zoo.dev"
-    recipient_list = [email]
-    send_mail(subject, message, from_email, recipient_list)
+    subject = "Your login code"
+    html = render_to_string(
+        "core/emails/otp.html",
+        {
+            "otp": otp,
+            "login_url": f"{settings.BASE_URL}{reverse('login')}?otp={otp}",
+        },
+    )
+    from_email = "Test Analysis Bot <no-reply@zoo.dev>"
+    message = EmailMessage(subject, html, from_email, [email])
+    message.content_subtype = "html"
+    message.send()
