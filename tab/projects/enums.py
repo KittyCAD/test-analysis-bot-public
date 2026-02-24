@@ -15,10 +15,6 @@ class Status(models.TextChoices):
 
     DISABLED = "disabled", "Ignored Failure"
 
-    # TODO: Remove these values once all stale results are deleted
-    RERUN = "rerun", "Rerun"
-    RUNNING = "running", "Running"
-
     @classmethod
     def normalize(
         cls,
