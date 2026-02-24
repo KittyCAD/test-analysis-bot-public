@@ -767,7 +767,7 @@ class Result(models.Model):
             and bool(self.run_url)
             and self.status in Status.merge_blocked()
             and self.branch not in self.test.project.default_branches
-            and age > PENDING_THRESHOLD
+            and age > PENDING_THRESHOLD / 2
         )
 
     @property

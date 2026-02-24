@@ -2,6 +2,9 @@ import secrets
 
 from django.db import models
 
+import log
+from github import Auth, Github, GithubIntegration
+
 
 def generate_key() -> str:
     return "".join(secrets.choice("0123456789abcdef") for _ in range(32))
@@ -31,3 +34,20 @@ class Organization(models.Model):
 
     def __str__(self):
         return self.name
+
+    def get_github_client(self) -> Github | None:
+        if self.github_app_id and self.github_app_private_key:
+            log.debug("Authenticating with GitHub App")
+            auth = Auth.AppAuth(self.github_app_id, self.github_app_private_key)
+            integration = GithubIntegration(auth=auth)
+            installation = integration.get_org_installation(
+                self.repository_index.removeprefix("https://github.com/")
+            )
+            return installation.get_github_for_installation()
+
+        if self.repository_token:
+            log.debug("Authenticating with repository token")
+            return Github(self.repository_token)
+
+        log.warning(f"{self} has no repository token")
+        return None

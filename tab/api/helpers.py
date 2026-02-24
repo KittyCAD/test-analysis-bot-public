@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.cache import cache
 
 import log
-from github import Auth, Github, GithubException, GithubIntegration
+from github import GithubException
 from requests.exceptions import RequestException
 
 from tab.core.models import Organization
@@ -213,23 +213,8 @@ def update_status(
     health: Health,
 ):
     assert "github.com" in project.repository, "Only GitHub is supported for now"
-
-    # TODO: Consolidate this shared logic between 'api' and 'projects' apps
-    if organization.github_app_id and organization.github_app_private_key:
-        log.debug("Authenticating with GitHub App")
-        auth = Auth.AppAuth(
-            organization.github_app_id, organization.github_app_private_key
-        )
-        integration = GithubIntegration(auth=auth)
-        installation = integration.get_org_installation(
-            organization.repository_index.removeprefix("https://github.com/")
-        )
-        github = installation.get_github_for_installation()
-    elif organization.repository_token:
-        log.debug("Authenticating with repository token")
-        github = Github(organization.repository_token)
-    else:
-        log.warning(f"{organization} has no repository token")
+    github = organization.get_github_client()
+    if not github:
         return
 
     try:
