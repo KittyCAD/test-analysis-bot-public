@@ -1,9 +1,22 @@
-<form method="post" action="" class="d-inline ms-2">
+<form method="post" action="" class="d-inline ms-2 result-rerun-form">
     {% csrf_token %}
     <input type="hidden" name="rerun" value="{{ result.pk }}">
     <button type="submit"
-            class="btn btn-sm btn-outline-dark"
+            class="btn btn-sm btn-outline-dark result-rerun-btn"
             title="Rerun this test">
-        <i class="fa-solid fa-rotate-right"></i>
+        <i class="fa-solid fa-rotate-right result-rerun-icon"></i>
     </button>
 </form>
+<script>
+(function() {
+    document.querySelectorAll('.result-rerun-form').forEach(function(form) {
+        form.addEventListener('submit', function() {
+            var btn = form.querySelector('.result-rerun-btn');
+            var icon = form.querySelector('.result-rerun-icon');
+            if (btn.disabled) return;
+            btn.disabled = true;
+            icon.classList.add('fa-spin');
+        });
+    });
+})();
+</script>
