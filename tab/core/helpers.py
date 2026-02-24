@@ -44,7 +44,6 @@ def send_otp_email(email: str, otp: str):
             "login_url": f"{settings.BASE_URL}{reverse('login')}?otp={otp}",
         },
     )
-    from_email = "Test Analysis Bot <no-reply@zoo.dev>"
-    message = EmailMessage(subject, html, from_email, [email])
+    message = EmailMessage(subject, html, settings.DEFAULT_FROM_EMAIL, [email])
     message.content_subtype = "html"
     message.send()
