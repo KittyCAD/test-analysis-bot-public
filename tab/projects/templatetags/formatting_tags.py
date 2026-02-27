@@ -67,10 +67,13 @@ def highlight(value):
     result_lines = []
     seen_expected = False
     seen_received = False
+    logs_started = False
 
     for line in lines:
         has_newline = line.endswith("\n")
         line_content = line.rstrip("\n\r")
+        if line_content.lower().endswith("log:"):
+            logs_started = True
 
         # Handle pytest diffs
         if match := PYTEST_DIFF_PLUS.match(line_content):
@@ -97,7 +100,7 @@ def highlight(value):
                 result_lines.append("\n")
             if line_content.startswith("Received:"):
                 seen_received = True
-        elif line_content.startswith(("-", "Expected:")):
+        elif line_content.startswith(("-", "Expected:")) and not logs_started:
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-danger">{escaped}</span>')
             if has_newline:

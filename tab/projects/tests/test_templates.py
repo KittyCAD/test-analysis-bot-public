@@ -52,6 +52,11 @@ def describe_highlight():
         expect(result).excludes("success")
         expect(result).excludes("danger")
 
+    def with_dashes_in_logs(expect):
+        text = "Call Log:\n- Timeout 5000ms exceeded while waiting on the predicate"
+        result = highlight(text)
+        expect(result).excludes("text-danger")
+
     def with_pytest_plus_line(expect):
         text = 'E         +     "/metrics": {'
         result = highlight(text)
