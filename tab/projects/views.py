@@ -639,8 +639,10 @@ class MetricsView(LoginRequiredMixin, TemplateView):
 
         context["project"] = project
         week_ago = timezone.now() - timedelta(days=7)
-        least_reliable = Q(failure_rate__gt=0.40, block_rate__gt=0) | Q(
-            block_rate__gt=0.05, failure_rate__gt=0.20
+        least_reliable = (
+            Q(failure_rate__gt=0.40, block_rate__gt=0)
+            | Q(block_rate__gt=0.05, failure_rate__gt=0.20)
+            | Q(failure_rate__gt=0.50)
         )
         context["least_reliable_tests"] = (
             project.tests.filter(
