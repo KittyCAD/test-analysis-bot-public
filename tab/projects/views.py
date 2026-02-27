@@ -646,7 +646,10 @@ class MetricsView(LoginRequiredMixin, TemplateView):
         )
         context["least_reliable_tests"] = (
             project.tests.filter(
-                least_reliable, created_at__lte=week_ago, last_result__isnull=False
+                least_reliable,
+                created_at__lte=week_ago,
+                last_result__isnull=False,
+                disabled_at__isnull=True,
             )
             .select_related("suite")
             .order_by("-failure_rate")[:10]
