@@ -1,5 +1,6 @@
 import re
 import threading
+from datetime import timedelta
 
 from django.conf import settings
 from django.contrib import messages
@@ -637,6 +638,17 @@ class MetricsView(LoginRequiredMixin, TemplateView):
         )
 
         context["project"] = project
+        week_ago = timezone.now() - timedelta(days=7)
+        least_reliable = Q(failure_rate__gt=0.40, block_rate__gt=0) | Q(
+            block_rate__gt=0.05, failure_rate__gt=0.20
+        )
+        context["least_reliable_tests"] = (
+            project.tests.filter(
+                least_reliable, created_at__lte=week_ago, last_result__isnull=False
+            )
+            .select_related("suite")
+            .order_by("-failure_rate")[:10]
+        )
         context["disabled_test_metrics"] = get_disabled_test_metrics(project)
         if self.request.user.is_staff:
             context["admin_url"] = (
