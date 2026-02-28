@@ -651,6 +651,7 @@ class MetricsView(LoginRequiredMixin, TemplateView):
                 last_result__isnull=False,
                 disabled_at__isnull=True,
             )
+            .exclude(last_result__status=Status.DISABLED)
             .select_related("suite")
             .order_by("-failure_rate")[:10]
         )
