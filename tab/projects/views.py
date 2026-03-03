@@ -554,6 +554,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
 
         redirect_url = self.request.path
         if branch := self.request.GET.get("branch"):
+            self._rerun(test, branch)
             redirect_url += f"?branch={branch}"
 
         return redirect(redirect_url)
@@ -585,9 +586,19 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         test.save()
         newly_disabled = disabled and not previously_disabled
         if newly_disabled:
+            log.info(f"Sending alert for disabled test: {test.name}")
             alert = Alert.objects.create(test=test)
-            threading.Thread(target=alert.send, kwargs={"forward": False}).start()
+            thread = threading.Thread(target=alert.send, kwargs={"forward": False})
+            thread.start()
         return previously_disabled
+
+    def _rerun(self, test: Test, branch: str):
+        if result := Result.objects.filter(
+            test=test, branch=branch, final=True
+        ).first():
+            log.info(f"Rerunning test with updated behavior: {test.name}")
+            thread = threading.Thread(target=result.rerun)
+            thread.start()
 
 
 class TestResultView(LoginRequiredMixin, TemplateView):
