@@ -495,7 +495,7 @@ class Test(models.Model):
         if not queryset.exists():
             return False
 
-        results = self._bias_to_recent(queryset, min_samples=15)
+        results = self._bias_to_recent(queryset, min_samples=15, max_samples=40)
         failed = sum(result.status in Status.merge_blocked() for result in results)
         new = round(failed / len(results), 6)
 
