@@ -72,3 +72,20 @@ def describe_highlight():
         result = highlight(text)
         expect(result).contains("success")
         expect(result).contains("danger")
+
+    def with_pytest_approx_assertion_failure(expect):
+        text = (
+            "E           assert response.get_volume() == pytest.approx(\n"
+            "E                8.295468715405207, rel=0, abs=1e-5\n"
+            "E            )\n"
+            "E           assert 16.100358703139904 == 8.295468715405207 ± 1.0e-05\n"
+            "E             \n"
+            "E             comparison failed\n"
+            "E             Obtained: 16.100358703139904\n"
+            "E             Expected: 8.295468715405207 ± 1.0e-05\n"
+        )
+        result = highlight(text)
+        expect(result).contains("success")  # Obtained
+        expect(result).contains("danger")  # Expected
+        expect(result).contains("Obtained: 16.100358703139904")
+        expect(result).contains("Expected: 8.295468715405207 ± 1.0e-05")

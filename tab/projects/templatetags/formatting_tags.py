@@ -4,7 +4,12 @@ from django.utils.safestring import mark_safe
 
 from tab.metrics.constants import DELTA_THRESHOLD
 
-from ..constants import PYTEST_DIFF_MINUS, PYTEST_DIFF_PLUS
+from ..constants import (
+    PYTEST_APPROX_EXPECTED,
+    PYTEST_APPROX_OBTAINED,
+    PYTEST_DIFF_MINUS,
+    PYTEST_DIFF_PLUS,
+)
 from ..helpers import humanize_duration, insert_breaks
 from ..models import Test
 from ..tables import color
@@ -85,6 +90,22 @@ def highlight(value):
             if has_newline:
                 result_lines.append("\n")
         elif match := PYTEST_DIFF_MINUS.match(line_content):
+            prefix = escape(match.group(1))
+            colored_part = escape(match.group(2))
+            result_lines.append(
+                f'{prefix}<span class="text-danger">{colored_part}</span>'
+            )
+            if has_newline:
+                result_lines.append("\n")
+        elif match := PYTEST_APPROX_OBTAINED.match(line_content):
+            prefix = escape(match.group(1))
+            colored_part = escape(match.group(2))
+            result_lines.append(
+                f'{prefix}<span class="text-success">{colored_part}</span>'
+            )
+            if has_newline:
+                result_lines.append("\n")
+        elif match := PYTEST_APPROX_EXPECTED.match(line_content):
             prefix = escape(match.group(1))
             colored_part = escape(match.group(2))
             result_lines.append(
