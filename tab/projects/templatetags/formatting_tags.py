@@ -113,6 +113,17 @@ def highlight(value):
             )
             if has_newline:
                 result_lines.append("\n")
+        # Handle Rust assertion left/right
+        elif line_content.startswith("  left:"):
+            escaped = escape(line_content)
+            result_lines.append(f'<span class="text-danger">{escaped}</span>')
+            if has_newline:
+                result_lines.append("\n")
+        elif line_content.startswith(" right:"):
+            escaped = escape(line_content)
+            result_lines.append(f'<span class="text-success">{escaped}</span>')
+            if has_newline:
+                result_lines.append("\n")
         # Handle generic diffs
         elif line_content.startswith(("+", "Received:")):
             escaped = escape(line_content)

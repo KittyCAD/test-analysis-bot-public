@@ -89,3 +89,15 @@ def describe_highlight():
         expect(result).contains("danger")  # Expected
         expect(result).contains("Obtained: 16.100358703139904")
         expect(result).contains("Expected: 8.295468715405207 ± 1.0e-05")
+
+    def with_rust_assertion_left_right_failed(expect):
+        text = (
+            "assertion `left == right` failed\n"
+            '  left: "expected"\n'
+            ' right: "actual"\n'
+        )
+        result = highlight(text)
+        expect(result).contains("text-danger")
+        expect(result).contains("text-success")
+        expect(result).contains("left:")
+        expect(result).contains("right:")
