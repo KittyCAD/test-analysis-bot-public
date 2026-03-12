@@ -112,7 +112,7 @@ def describe_bulk_results():
 
     @pytest.fixture
     def payload():
-        junit_xml = Path(__file__).parent / "files" / "junit.xml"
+        junit_xml = Path(__file__).parent / "files" / "junit-nextest.xml"
         return {
             "project": "https://github.com/my-user/my-project",
             "suite": "unit",

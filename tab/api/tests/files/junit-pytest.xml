@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="34" time="92.895" timestamp="2026-03-12T11:21:31.592067-04:00" hostname="69-176-136-38.stellarbb.com"><testcase classname="tests.tests" name="test_kcl_execute_with_exception" time="0.144" /><testcase classname="tests.tests" name="test_kcl_execute" time="2.170" /><testcase classname="tests.tests" name="test_kcl_parse_with_exception" time="0.001" /><testcase classname="tests.tests" name="test_kcl_parse" time="0.002" /><testcase classname="tests.tests" name="test_kcl_default_units" time="0.003" /><testcase classname="tests.tests" name="test_kcl_default_units_fallback_default" time="0.001" /><testcase classname="tests.tests" name="test_kcl_parse_code" time="0.002" /><testcase classname="tests.tests" name="test_kcl_mock_execute_with_exception" time="0.001" /><testcase classname="tests.tests" name="test_kcl_mock_execute_with_engine_exception_should_pass" time="0.019" /><testcase classname="tests.tests" name="test_kcl_execute_with_engine_exception_should_fail" time="1.478" /><testcase classname="tests.tests" name="test_kcl_mock_execute" time="0.020" /><testcase classname="tests.tests" name="test_kcl_mock_execute_code" time="0.019" /><testcase classname="tests.tests" name="test_kcl_execute_code" time="2.539" /><testcase classname="tests.tests" name="test_kcl_execute_code_and_snapshot" time="2.369" /><testcase classname="tests.tests" name="test_kcl_execute_code_and_export" time="1.951" /><testcase classname="tests.tests" name="test_kcl_execute_dir_assembly" time="32.071" /><testcase classname="tests.tests" name="test_kcl_execute_and_snapshot" time="0.499"><failure message="Exception: KCL EngineHangup error&#10;&#10;  × engine hangup: Modeling command failed: websocket closed early&#10;   ╭─[1:1]&#10; 1 │ // Lego Brick&#10;   · ▲&#10;   · ╰── main&#10; 2 │ &#10;   ╰────">@requires_engine
+    @pytest.mark.asyncio
+    async def test_kcl_execute_and_snapshot():
+        # Read from a file.
+&gt;       image_bytes = await kcl.execute_and_snapshot(lego_file, kcl.ImageFormat.Jpeg)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Exception: KCL EngineHangup error
+E       
+E         × engine hangup: Modeling command failed: websocket closed early
+E          ╭─[1:1]
+E        1 │ // Lego Brick
+E          · ▲
+E          · ╰── main
+E        2 │ 
+E          ╰────
+
+tests/tests.py:230: Exception</failure></testcase><testcase classname="tests.tests" name="test_kcl_execute_and_snapshot_options" time="2.621" /><testcase classname="tests.tests" name="test_import_and_snapshots" time="1.686" /><testcase classname="tests.tests" name="test_import_and_snapshots_single" time="0.483"><failure message="Exception: engine hangup: KclErrorDetails { source_ranges: [SourceRange([0, 0, 0])], backtrace: [BacktraceItem { source_range: SourceRange([0, 0, 0]), fn_name: None }], message: &quot;Modeling command failed: websocket closed early&quot; }">@requires_engine
+    @pytest.mark.asyncio
+    async def test_import_and_snapshots_single():
+        # Read from a file.
+        step_options = kcl.StepImportOptions()
+        input_format = kcl.InputFormat3d.Step(step_options)
+        print("The cube_step_file is", cube_step_file)
+&gt;       image_bytes = await kcl.import_and_snapshot(
+            [cube_step_file], input_format, kcl.ImageFormat.Jpeg
+        )
+E       Exception: engine hangup: KclErrorDetails { source_ranges: [SourceRange([0, 0, 0])], backtrace: [BacktraceItem { source_range: SourceRange([0, 0, 0]), fn_name: None }], message: "Modeling command failed: websocket closed early" }
+
+tests/tests.py:297: Exception</failure></testcase><testcase classname="tests.tests" name="test_kcl_execute_and_snapshot_dir" time="32.836" /><testcase classname="tests.tests" name="test_kcl_execute_and_measure" time="2.576"><failure message="assert 0.9455721631200046 == 1.5936824133347174 ± 1.0e-05&#10;  &#10;  comparison failed&#10;  Obtained: 0.9455721631200046&#10;  Expected: 1.5936824133347174 ± 1.0e-05">@requires_engine
+    @pytest.mark.asyncio
+    async def test_kcl_execute_and_measure():
+        # Read from a file.
+        with open(lego_file, "r") as f:
+            code = str(f.read())
+            assert code is not None
+            assert len(code) &gt; 0
+    
+            # Send the request
+            request = kcl.PhysicalPropertiesRequest()
+            request.set_volume(kcl.UnitVolume.CubicCentimeters)
+            request.set_center_of_mass(kcl.UnitLength.Centimeters)
+            response = await kcl.execute_code_and_measure(code, request)
+            assert response is not None
+    
+            # Check the response is as expected.
+&gt;           assert response.get_volume() == pytest.approx(
+                1.5936824133347174, rel=0, abs=1e-5
+            )
+E           assert 0.9455721631200046 == 1.5936824133347174 ± 1.0e-05
+E             
+E             comparison failed
+E             Obtained: 0.9455721631200046
+E             Expected: 1.5936824133347174 ± 1.0e-05
+
+tests/tests.py:331: AssertionError</failure></testcase><testcase classname="tests.tests" name="test_kcl_execute_code_and_measure_bounding_box_cm" time="1.418" /><testcase classname="tests.tests" name="test_kcl_execute_code_and_measure_bounding_box_mm" time="1.326" /><testcase classname="tests.tests" name="test_kcl_execute_code_and_bounding_box" time="1.385" /><testcase classname="tests.tests" name="test_kcl_execute_and_bounding_box" time="1.604" /><testcase classname="tests.tests" name="test_kcl_execute_and_export" time="2.342" /><testcase classname="tests.tests" name="test_kcl_format" time="0.002" /><testcase classname="tests.tests" name="test_kcl_format_dir" time="0.006" /><testcase classname="tests.tests" name="test_kcl_lint" time="0.001" /><testcase classname="tests.tests" name="test_kcl_lint_fix" time="0.002" /><testcase classname="tests.tests" name="test_kcl_lint_fix_no_style" time="0.001" /><testcase classname="tests.tests" name="test_kcl_execute_code_and_export_with_bad_units" time="1.272" /><testcase classname="tests.tests" name="test_relevant_file_extensions" time="0.000" /></testsuite></testsuites>

@@ -49,19 +49,19 @@ def parse_junit_xml(
 
             if failure is not None:
                 status = Status.FAILED
-                message = failure.text
+                message = _normalize_message(failure.text)
             elif error is not None:
                 status = Status.ERROR
-                message = error.text
+                message = _normalize_message(error.text)
             elif skipped is not None:
                 status = Status.SKIPPED
-                message = skipped.text
+                message = _normalize_message(skipped.text)
             else:
                 status = Status.PASSED
                 message = None
 
             if system is not None:
-                message = message or system.text
+                message = message or _normalize_message(system.text)
 
             # Build test name
             name_components = []
@@ -247,3 +247,18 @@ def update_status(
                 raise e from None
         else:
             log.error(f"Unable to update status for {project.path} @ {sha[:7]}: {e}")
+
+
+def _normalize_message(message: str | None) -> str | None:
+    """Fix incorrect indentation on the first line."""
+    if not message:
+        return message
+    lines = message.split("\n")
+    if (
+        len(lines) >= 2
+        and not lines[0].startswith("    ")
+        and lines[1].strip()
+        and lines[1].startswith("    ")
+    ):
+        lines[0] = "    " + lines[0]
+    return "\n".join(lines)

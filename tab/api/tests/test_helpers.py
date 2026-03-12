@@ -14,7 +14,7 @@ def describe_parse_junit_xml():
 
     @pytest.fixture
     def content():
-        path = Path(__file__).parent / "files" / "junit.xml"
+        path = Path(__file__).parent / "files" / "junit-nextest.xml"
         return path.read_text()
 
     @pytest.mark.django_db
@@ -91,3 +91,20 @@ def describe_parse_junit_xml():
         expect(test.original_branch) == "other"
         expect(test.original_commit) == "abc123"
         expect(test.original_metadata) == {}
+
+    @pytest.mark.django_db
+    def it_fixes_pytest_indentation(expect):
+        path = Path(__file__).parent / "files" / "junit-pytest.xml"
+        content = path.read_text()
+
+        project = Project.objects.create(repository="https://github.com/foo/bar")
+        suite = Suite.objects.create(project=project)
+
+        results = parse_junit_xml(
+            content, project, suite, branch="main", commit="abc123", metadata={}
+        )
+
+        result = next(r for r in results if r.message)
+        expect(result.message).contains("    @requires_engine\n")
+        expect(result.message).contains("    @pytest.mark.asyncio\n")
+        expect(result.message).contains("    async def test_")
