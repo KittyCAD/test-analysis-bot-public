@@ -452,22 +452,19 @@ requests = ">=2.28,<3.0"
 
 [[package]]
 name = "crispy-bootstrap5"
-version = "2025.6"
+version = "2026.3"
 description = "Bootstrap5 template pack for django-crispy-forms"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "crispy_bootstrap5-2025.6-py3-none-any.whl", hash = "sha256:a343aa128b4383f35f00295b94de2b10862f2a4f24eda21fa6ead45234c07050"},
-    {file = "crispy_bootstrap5-2025.6.tar.gz", hash = "sha256:f1bde7cac074c650fc82f31777d4a4cfd0df2512c68bc4128f259c75d3daada4"},
+    {file = "crispy_bootstrap5-2026.3-py3-none-any.whl", hash = "sha256:e0fff85c0503e9aed610a0ee31368e2191d340657f813669491c288c1c2e2dfa"},
+    {file = "crispy_bootstrap5-2026.3.tar.gz", hash = "sha256:e7f5adb36acfbb456444c46e82c436931c796c539e9c620be4fa9dc9c9d6679c"},
 ]
 
 [package.dependencies]
 django = ">=4.2"
 django-crispy-forms = ">=2.3"
-
-[package.extras]
-test = ["pytest", "pytest-django"]
 
 [[package]]
 name = "cryptography"
