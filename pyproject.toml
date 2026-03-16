@@ -18,7 +18,7 @@ package-mode = false
 django = "^6.0.2"
 django-browser-reload = "^1.21"
 django-cors-headers = "*"
-django-crispy-forms = "^2.5"
+django-crispy-forms = "^2.6"
 crispy-bootstrap5 = "*" # styling for 'django-crispy-forms'
 django-debug-toolbar = "^6.2"
 django-tables2 = "^2.8.0"
@@ -29,7 +29,7 @@ django-ninja = "^1.5.3"
 # Storage
 dj-database-url = "*"
 psycopg2-binary = "^2.9.11"
-redis = "^7.2.1"
+redis = "^7.3.0"
 
 # Integrations
 pygithub = "^2.8.1"
