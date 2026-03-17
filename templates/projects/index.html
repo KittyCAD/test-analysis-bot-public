@@ -27,18 +27,15 @@
                     <div class="card-footer bg-white border-0 pt-0 pb-3 d-flex flex-wrap gap-2">
                         <a href="{% url 'projects:metrics' project.path %}"
                            class="btn btn-sm btn-outline-secondary">
-                            <i class="fa-solid fa-chart-line me-1"></i>
-                            View Dashboards
+                            <i class="fa-solid fa-chart-line me-1" aria-hidden="true"></i>View Dashboards
                         </a>
                         <a href="{% url 'projects:results' project.path %}"
                            class="btn btn-sm btn-outline-secondary">
-                            <i class="fa-solid fa-table-list me-1"></i>
-                            View Latest Results
+                            <i class="fa-solid fa-table-list me-1" aria-hidden="true"></i>View Latest Results
                         </a>
                         <a href="{% url 'projects:disabled-tests' project.path %}"
                            class="btn btn-sm btn-outline-secondary disabled-tests-btn">
-                            <i class="fa-solid fa-triangle-exclamation me-1"></i>
-                            View Disabled Tests
+                            <i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>View Disabled Tests
                         </a>
                     </div>
                 </div>

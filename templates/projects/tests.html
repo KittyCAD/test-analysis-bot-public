@@ -12,7 +12,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="mb-0">{{ project.name }}</h1>
             <div class="btn-group">
-                <a href="{% url 'projects:results' project.path %}"
+                <a href="{% if suite_id %}{% url 'projects:suite-results' project.path suite_id %}{% else %}{% url 'projects:results' project.path %}{% endif %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
                    class="btn btn-sm btn-outline-dark fs-7">View Latest Results</a>
                 <button type="button"
                         class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split fs-7"
@@ -24,7 +24,12 @@
                     <li>
                         <a class="dropdown-item"
                            style="font-size: 0.875rem"
-                           href="{% url 'projects:disabled-tests' project.path %}">View Disabled Tests</a>
+                           href="{% url 'projects:metrics' project.path %}"><i class="fa-solid fa-chart-line me-2" aria-hidden="true"></i>View Dashboards</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item"
+                           style="font-size: 0.875rem"
+                           href="{% url 'projects:disabled-tests' project.path %}"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>View Disabled Tests</a>
                     </li>
                 </ul>
             </div>

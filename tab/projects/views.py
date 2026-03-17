@@ -497,6 +497,28 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
                     "admin:projects_suite_change", args=[test.suite.pk]
                 )
 
+        test_results_base = reverse(
+            "projects:test-results",
+            kwargs={
+                "path": self.kwargs["path"],
+                "test_id": test.id,
+            },
+        )
+        params_all = self.request.GET.copy()
+        params_all["branch"] = "all"
+        context["view_all_branches_url"] = (
+            test_results_base + "?" + params_all.urlencode()
+        )
+
+        params_default = self.request.GET.copy()
+        params_default.pop("branch", None)
+        context["show_default_branch_url"] = (
+            f"{test_results_base}?{params_default.urlencode()}"
+            if params_default
+            else test_results_base
+        )
+        context["has_branch_query"] = "branch" in self.request.GET
+
         return context
 
     def get_initial(self):

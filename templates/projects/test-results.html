@@ -15,8 +15,10 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="mb-0">{{ project.name }}</h1>
             <div class="btn-group">
-                <a href="{% url 'projects:tests' project.path %}"
-                   class="btn btn-sm btn-outline-dark">View All Tests</a>
+                <a href="{% url 'projects:tests' project.path %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+                   class="btn btn-sm btn-outline-dark">
+                    <i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to Project
+                </a>
                 <button type="button"
                         class="btn btn-sm btn-outline-dark dropdown-toggle dropdown-toggle-split"
                         data-bs-toggle="dropdown"
@@ -25,20 +27,12 @@
                 </button>
                 <ul class="dropdown-menu">
                     <li>
-                        <a class="dropdown-item small"
-                           href="{% url 'projects:disabled-tests' project.path %}">View Disabled Tests</a>
+                        {% if has_branch_query %}
+                            <a class="dropdown-item small" href="{{ show_default_branch_url }}"><i class="fa-solid fa-code-branch me-2" aria-hidden="true"></i>Show Default Branch</a>
+                        {% else %}
+                            <a class="dropdown-item small" href="{{ view_all_branches_url }}"><i class="fa-solid fa-code-branch me-2" aria-hidden="true"></i>Show All Branches</a>
+                        {% endif %}
                     </li>
-                    {% if branch %}
-                        <li>
-                            <a class="dropdown-item small"
-                               href="{% url 'projects:results' project.path %}?branch={{ branch }}">View All Results</a>
-                        </li>
-                    {% else %}
-                        <li>
-                            <a class="dropdown-item small"
-                               href="{% url 'projects:results' project.path %}">View Latest Results</a>
-                        </li>
-                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -54,6 +48,7 @@
                     <ul class="dropdown-menu">
                         <li>
                             <a class="dropdown-item active">
+                                <i class="fa-solid fa-location-dot me-2" aria-hidden="true"></i>
                                 {% if parent_suite %}
                                     Child:
                                 {% else %}
@@ -64,13 +59,13 @@
                         {% if parent_test %}
                             <li>
                                 <a class="dropdown-item"
-                                   href="{% url 'projects:test-results' parent_test.project.path parent_test.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">Parent: {{ parent_test.project.name }}</a>
+                                   href="{% url 'projects:test-results' parent_test.project.path parent_test.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"><i class="fa-solid fa-turn-up me-2" aria-hidden="true"></i>Parent: {{ parent_test.project.name }}</a>
                             </li>
                         {% endif %}
                         {% for other_test in child_tests %}
                             <li>
                                 <a class="dropdown-item"
-                                   href="{% url 'projects:test-results' other_test.project.path other_test.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">Child: {{ other_test.project.name }}</a>
+                                   href="{% url 'projects:test-results' other_test.project.path other_test.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"><i class="fa-solid fa-turn-down me-2" aria-hidden="true"></i>Child: {{ other_test.project.name }}</a>
                             </li>
                         {% endfor %}
                     </ul>
