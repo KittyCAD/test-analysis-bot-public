@@ -3,6 +3,8 @@ from django.utils.safestring import mark_safe
 
 from markdown import markdown
 
+from tab.projects.models import Suite
+
 from .models import Alert, History, Subscription, Team
 
 
@@ -54,6 +56,14 @@ class TeamAdmin(admin.ModelAdmin):
 
 @admin.register(Subscription)
 class SubscriptionAdmin(admin.ModelAdmin):
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "suite":
+            kwargs["queryset"] = Suite.objects.select_related("project").order_by(
+                "project__repository", "name"
+            )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     search_fields = (
         "team__organization__name",
         "team__slack_channel_name",
