@@ -220,7 +220,7 @@ class Alert(models.Model):
         for subscription in self.subscriptions:
 
             if subscription.primary:
-                message = self.build(debug=debug)
+                message = self.build(debug=debug, url=None if force else self.url)
                 unfurl = False
             elif not forward:
                 log.debug(f"Skipped secondary alert for test: {self.test}")
