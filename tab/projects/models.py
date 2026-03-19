@@ -732,6 +732,12 @@ class Result(models.Model):
         return ""
 
     @property
+    def environment_url(self) -> str:
+        if url := self.metadata.get("url"):
+            return url
+        return ""
+
+    @property
     def new_failure(self) -> bool:
         if self.status in Status.merge_blocked() and self.originated_from_branch:
             return True
