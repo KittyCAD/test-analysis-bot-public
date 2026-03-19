@@ -9,6 +9,7 @@ import log
 
 from tab.projects.models import Project, Result
 
+from .constants import PLACEHOLDER_CHARACTER
 from .enums import Type
 
 if TYPE_CHECKING:
@@ -37,8 +38,16 @@ class EnvironmentManager(models.Manager):
                     project=project, name=Type.STAGING
                 )
         else:
+            placeholder_url = None
+            if url is None:
+                if environment := self.filter(
+                    project=project,
+                    name=Type.REVIEW,
+                    url__contains=PLACEHOLDER_CHARACTER,
+                ).first():  # type: ignore[assignment]
+                    placeholder_url = environment.url  # type: ignore[attr-defined]
             environment, created = self.get_or_create(  # type: ignore[assignment]
-                project=project, url=url, name=Type.REVIEW
+                project=project, url=url or placeholder_url, name=Type.REVIEW
             )
         if created:
             log.info(f"Created environment: {environment}")
