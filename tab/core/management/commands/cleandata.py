@@ -151,8 +151,7 @@ class Command(BaseCommand):
     def delete_stale_environments(self):
         cutoff = timezone.now() - timedelta(weeks=13)
         environments = Environment.objects.filter(
-            created_at__lt=cutoff,
-            name=Type.REVIEW,
+            name=Type.REVIEW, created_at__lt=cutoff
         ).exclude(
             # Preserve example environments with placeholders for identifiers
             url__contains="{"

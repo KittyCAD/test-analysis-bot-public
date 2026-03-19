@@ -130,14 +130,14 @@
                 Advanced Options
                 <div class="d-flex gap-2 float-end">
                     {% if branch %}
-                        <a href="?{% if search %}search={{ search }}&{% endif %}{% if platform %}platform={{ platform }}&{% endif %}{% if show != 'all' %}&show={{ show }}{% endif %}"
+                        <a href="?{% if search %}search={{ search }}&{% endif %}{% if platform %}platform={{ platform }}&{% endif %}"
                            class="btn btn-outline-danger align-baseline">
                             branch:{{ branch }}
                             <i class="fa-solid fa-xmark ms-1"></i>
                         </a>
                     {% endif %}
                     {% if platform %}
-                        <a href="?{% if search %}search={{ search }}&{% endif %}branch={{ branch }}{% if show != 'all' %}&show={{ show }}{% endif %}"
+                        <a href="?{% if search %}search={{ search }}&{% endif %}branch={{ branch }}"
                            class="btn btn-outline-danger align-baseline">
                             platform:{{ platform }}
                             <i class="fa-solid fa-xmark ms-1"></i>

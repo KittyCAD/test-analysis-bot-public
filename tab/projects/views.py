@@ -433,12 +433,9 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         test = get_object_or_404(Test, project=project, id=self.kwargs["test_id"])
 
         branch = self.request.GET.get("branch")
-        show = self.request.GET.get("show", "all")  # TODO: Expose filter in UI
         platform = self.request.GET.get("platform")
 
         queryset = Result.objects.filter_with_default_branches(test, branch)
-        if show == "fails":
-            queryset = queryset.exclude(status__in=Status.merge_allowed())
         if platform:
             queryset = queryset.filter(platform=platform)
 
@@ -481,7 +478,6 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         context["expand"] = expand
         context["branch"] = self.request.GET.get("branch")
         context["platform"] = self.request.GET.get("platform", "").strip()
-        context["show"] = self.request.GET.get("show", "all")
         context["history_data"] = test.history.get_data(test, weeks)
 
         for field in test._meta.get_fields():
