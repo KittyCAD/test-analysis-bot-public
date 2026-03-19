@@ -127,7 +127,14 @@ class ReleaseAdmin(admin.ModelAdmin):
 
     actions = [finalize, reset]
 
-    readonly_fields = ("current_health", "upstream_health", "downstream_health")
+    readonly_fields = (
+        "created_at",
+        "tested_at",
+        "finalized_at",
+        "current_health",
+        "upstream_health",
+        "downstream_health",
+    )
 
     @admin.display(description="Current Health")
     def current_health(self, release: Release):

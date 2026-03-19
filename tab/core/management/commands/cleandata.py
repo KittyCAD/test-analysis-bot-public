@@ -10,7 +10,7 @@ import log
 from tab.api.constants import TESTS_CACHE_KEY
 from tab.projects.models import Project, Result, Run, Test
 from tab.releases.constants import RESULTS_TIMEOUT
-from tab.releases.models import Release
+from tab.releases.models import Environment, Release
 
 CHUNK_SIZE = 1000
 
@@ -30,6 +30,8 @@ class Command(BaseCommand):
         start = timezone.now()
         log.info(f"Started job at {start.strftime('%Y-%m-%d %H:%M:%S')}")
         self.finalize_releases()
+        self.delete_stale_environments()
+        self.delete_stale_releases()
         for project in Project.objects.all():
             count = 0
             if project.test_stale_threshold:
@@ -144,3 +146,18 @@ class Command(BaseCommand):
         )
         for release in releases:
             release.finalize()
+
+    def delete_stale_environments(self):
+        cutoff = timezone.now() - timedelta(weeks=13)
+        environments = Environment.objects.filter(created_at__lt=cutoff).exclude(
+            # Preserve example environments with placeholders for identifiers
+            url__contains="{"
+        )
+        for environment in environments:
+            environment.delete()
+
+    def delete_stale_releases(self):
+        cutoff = timezone.now() - timedelta(weeks=26)
+        releases = Release.objects.filter(created_at__lt=cutoff)
+        for release in releases:
+            release.delete()
