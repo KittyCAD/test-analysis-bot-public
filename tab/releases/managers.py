@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 class EnvironmentManager(models.Manager):
-    def process(self, project: Project, results: list[Result]):
+    def process(self, project: Project, url: str | None, results: list[Result]):
         result = results[0]
 
         environment: Environment
@@ -38,7 +38,7 @@ class EnvironmentManager(models.Manager):
                 )
         else:
             environment, created = self.get_or_create(  # type: ignore[assignment]
-                project=project, name=Type.REVIEW
+                project=project, url=url, name=Type.REVIEW
             )
         if created:
             log.info(f"Created environment: {environment}")

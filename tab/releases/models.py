@@ -39,6 +39,7 @@ class Environment(models.Model):
         ordering = [
             Type.order_expression(),  # type: ignore[list-item]
             "project__repository",
+            "created_at",
         ]
 
     def __str__(self):

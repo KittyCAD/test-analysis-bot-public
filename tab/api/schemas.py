@@ -23,6 +23,7 @@ class ResultRequest(ModelSchema):
     project: str
     suite: str = DEFAULT_SUITE
     test: str
+    url: str | None = None
 
     class Meta:
         model = Result
@@ -60,6 +61,7 @@ class BulkResultRequest(Schema):
     suite: str = DEFAULT_SUITE
     branch: str
     commit: str
+    url: str | None = None
 
     class Config:
         model_fields = [

@@ -114,7 +114,7 @@ def results(request, payload: ResultRequest):
         metadata=metadata,
     )
     log.info(f"Created result: {result}")
-    Environment.objects.process(project, [result])
+    Environment.objects.process(project, payload.url, [result])
 
     Run.objects.track_step(
         suite=suite,
@@ -181,7 +181,7 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
             metadata,
             deferred=deferred,
         )
-        Environment.objects.process(project, results)
+        Environment.objects.process(project, payload.url, results)
         Run.objects.track_step(
             suite=suite,
             branch=payload.branch,

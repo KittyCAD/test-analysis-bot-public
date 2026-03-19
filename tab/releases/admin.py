@@ -29,6 +29,7 @@ class EnvironmentAdmin(admin.ModelAdmin):
         "project",
         "url",
         "_dependencies",
+        "created_at",
     )
     list_filter = (
         "name",
