@@ -221,7 +221,7 @@ class Alert(models.Model):
 
             if subscription.primary:
                 message = self.build(debug=debug, url=None if force else self.url)
-                unfurl = False
+                unfurl = bool(self.url) and not force
             elif not forward:
                 log.debug(f"Skipped secondary alert for test: {self.test}")
                 continue
