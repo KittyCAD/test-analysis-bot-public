@@ -433,14 +433,14 @@ toml = ["tomli ; python_full_version <= \"3.11.0a6\""]
 
 [[package]]
 name = "coveragespace"
-version = "6.1"
+version = "6.2"
 description = "A place to track your code coverage metrics."
 optional = false
-python-versions = "<4.0,>=3.8"
+python-versions = "<4.0,>=3.10"
 groups = ["dev"]
 files = [
-    {file = "coveragespace-6.1-py3-none-any.whl", hash = "sha256:ca6ccd5eb32eb6ce5fe78de6c052353b9fbb378a886fde0838480defe33406a8"},
-    {file = "coveragespace-6.1.tar.gz", hash = "sha256:049c0b7b629ad43d72692f0f99b9f8a97936ad596f7f27c1af61323fba90ebef"},
+    {file = "coveragespace-6.2-py3-none-any.whl", hash = "sha256:03ab565c34e39fd168f68be3f3acce50e3dbfdebc0dfc7f86e1c4032e0110796"},
+    {file = "coveragespace-6.2.tar.gz", hash = "sha256:9c587f55a620dc52eaf5997472069451cafbb56fdae56ca4965e6689163a0d1a"},
 ]
 
 [package.dependencies]
@@ -687,14 +687,14 @@ django = ">=4.2"
 
 [[package]]
 name = "django-ninja"
-version = "1.5.3"
+version = "1.6.0"
 description = "Django Ninja - Fast Django REST framework"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "django_ninja-1.5.3-py3-none-any.whl", hash = "sha256:0a6ead5b4e57ec1050b584eb6f36f105f256b8f4ac70d12e774d8b6dd91e2198"},
-    {file = "django_ninja-1.5.3.tar.gz", hash = "sha256:974803944965ad0566071633ffd4999a956f2ad1ecbed815c0de37c1c969592b"},
+    {file = "django_ninja-1.6.0-py3-none-any.whl", hash = "sha256:44c6e3f5f1b929cf51f645004715b36326ea32fddf1a94026c4917de8d230135"},
+    {file = "django_ninja-1.6.0.tar.gz", hash = "sha256:dd84230931f511503a251ac090200c65fd0be25a16ba2b9140073b814decc201"},
 ]
 
 [package.dependencies]
@@ -1957,14 +1957,14 @@ files = [
 
 [[package]]
 name = "slack-sdk"
-version = "3.40.1"
+version = "3.41.0"
 description = "The Slack API Platform SDK for Python"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "slack_sdk-3.40.1-py2.py3-none-any.whl", hash = "sha256:cd8902252979aa248092b0d77f3a9ea3cc605bc5d53663ad728e892e26e14a65"},
-    {file = "slack_sdk-3.40.1.tar.gz", hash = "sha256:a215333bc251bc90abf5f5110899497bf61a3b5184b6d9ee35d73ebf09ec3fd0"},
+    {file = "slack_sdk-3.41.0-py2.py3-none-any.whl", hash = "sha256:bb18dcdfff1413ec448e759cf807ec3324090993d8ab9111c74081623b692a89"},
+    {file = "slack_sdk-3.41.0.tar.gz", hash = "sha256:eb61eb12a65bebeca9cb5d36b3f799e836ed2be21b456d15df2627cfe34076ca"},
 ]
 
 [package.extras]
@@ -2236,4 +2236,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "9302d357eac6042df4156937a4c5da036777223b4ef93e3aa8f7476a11481710"
+content-hash = "43d0b357ce01c2bfc30529bb9cc6e50e0c4010ad78c0efbf320cbc322c635db7"

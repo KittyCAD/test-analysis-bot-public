@@ -24,7 +24,7 @@ django-debug-toolbar = "^6.2"
 django-tables2 = "^2.8.0"
 
 # API
-django-ninja = "^1.5.3"
+django-ninja = "^1.6.0"
 
 # Storage
 dj-database-url = "*"
@@ -33,7 +33,7 @@ redis = "^7.3.0"
 
 # Integrations
 pygithub = "^2.8.1"
-slack-sdk = "^3.40.1"
+slack-sdk = "^3.41.0"
 
 # Utilities
 django-extensions = "*"
@@ -69,7 +69,7 @@ pytest-randomly = "*"
 
 # Coverage
 pytest-cov = "*"
-coveragespace = "^6.1"
+coveragespace = "^6.2"
 
 # Utilities
 watchdog = "^6.0"
