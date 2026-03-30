@@ -687,14 +687,14 @@ django = ">=4.2"
 
 [[package]]
 name = "django-ninja"
-version = "1.6.0"
+version = "1.6.2"
 description = "Django Ninja - Fast Django REST framework"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "django_ninja-1.6.0-py3-none-any.whl", hash = "sha256:44c6e3f5f1b929cf51f645004715b36326ea32fddf1a94026c4917de8d230135"},
-    {file = "django_ninja-1.6.0.tar.gz", hash = "sha256:dd84230931f511503a251ac090200c65fd0be25a16ba2b9140073b814decc201"},
+    {file = "django_ninja-1.6.2-py3-none-any.whl", hash = "sha256:20095f5900bada22ea00cf1a58af50bdb285b2354c61a9d9b47d0dc89ac462d6"},
+    {file = "django_ninja-1.6.2.tar.gz", hash = "sha256:d56ae5aa4791068ef4ac9a66cfdf2fc11f507413ded35abb79c51d0d52ad6412"},
 ]
 
 [package.dependencies]
@@ -2237,4 +2237,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "c5abbd2ab88aad860e143aab17877cee1adb6b86b572be0fdca7b3f7f1e17251"
+content-hash = "d8d93fa926c1ca9423d9de3607db4c6f1bd985b827dea66390a395cc16a66b8d"

@@ -24,7 +24,7 @@ django-debug-toolbar = "^6.2"
 django-tables2 = "^2.8.0"
 
 # API
-django-ninja = "^1.6.0"
+django-ninja = "^1.6.2"
 
 # Storage
 dj-database-url = "*"
