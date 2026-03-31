@@ -5,7 +5,7 @@ from django.utils import timezone
 import log
 import pytest
 
-from ..constants import DEFAULT_SUITE, FAILURE_RATE_EPSILON
+from ..constants import DEFAULT_SUITE, FAILURE_RATE_EPSILON, RESTORATION_THRESHOLD
 from ..enums import Status
 from ..models import Project, Result, Suite, Test
 from . import EXAMPLE_TESTS, ExampleTest
@@ -107,7 +107,7 @@ def describe_test():
             test = Test.objects.create(
                 project=project,
                 name="my-test",
-                disabled_at=timezone.now(),
+                disabled_at=timezone.now() - RESTORATION_THRESHOLD,
                 disabled_user=admin_user,
                 failure_rate=0.25,
             )
@@ -117,6 +117,24 @@ def describe_test():
             test.save()
             expect(bool(test.disabled_at)) == False
             expect(test.disabled_user) == admin_user
+
+        @pytest.mark.django_db
+        def it_is_not_cleared_if_disabled_recently(
+            expect, admin_user, project: Project
+        ):
+            project.save()
+            test = Test.objects.create(
+                project=project,
+                name="my-test",
+                disabled_at=timezone.now() - timedelta(days=1),
+                disabled_user=admin_user,
+                failure_rate=0.25,
+            )
+            expect(bool(test.disabled_at)) == True
+
+            test.failure_rate = 0
+            test.save()
+            expect(bool(test.disabled_at)) == True
 
     def describe_enabled():
         @pytest.mark.django_db

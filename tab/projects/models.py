@@ -23,6 +23,7 @@ from .constants import (
     DEFAULT_SUITE,
     FAILURE_RATE_EPSILON,
     PENDING_THRESHOLD,
+    RESTORATION_THRESHOLD,
     get_default_branches,
 )
 from .enums import Platform, Status, Target
@@ -554,7 +555,11 @@ class Test(models.Model):
     def save(self, *args, **kwargs):
         if self.pk:
             self._update_last_result()
-        if 0 <= self.failure_rate < FAILURE_RATE_EPSILON and self.disabled_at:
+        if (
+            0 <= self.failure_rate < FAILURE_RATE_EPSILON
+            and self.disabled_at
+            and self.disabled_at <= timezone.now() - RESTORATION_THRESHOLD
+        ):
             log.info(f"Restoring test based on failure rate: {self}")
             self.disabled_at = None
             # TODO: Find a way to avoid this circular import
