@@ -80,7 +80,7 @@ def highlight(value):
         if line_content.lower().endswith("log:"):
             logs_started = True
 
-        # Handle pytest diffs
+        # Handle Pytest diffs
         if match := PYTEST_DIFF_PLUS.match(line_content):
             prefix = escape(match.group(1))
             colored_part = escape(match.group(2))
@@ -113,7 +113,7 @@ def highlight(value):
             )
             if has_newline:
                 result_lines.append("\n")
-        # Handle Rust assertion left/right
+        # Handle Rust diffs
         elif line_content.startswith("  left:"):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-danger">{escaped}</span>')
@@ -124,22 +124,24 @@ def highlight(value):
             result_lines.append(f'<span class="text-success">{escaped}</span>')
             if has_newline:
                 result_lines.append("\n")
-        # Handle generic diffs
-        elif line_content.startswith(("+", "Received:")):
+        # Handle Playwright diffs
+        elif line_content.startswith(("+", "Received:", "Received string:")):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-success">{escaped}</span>')
             if has_newline:
                 result_lines.append("\n")
-            if line_content.startswith("Received:"):
+            if line_content.startswith(("Received:", "Received string:")):
                 seen_received = True
-        elif line_content.startswith(("-", "Expected:")) and not logs_started:
+        elif (
+            line_content.startswith(("-", "Expected:", "Expected substring:"))
+            and not logs_started
+        ):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-danger">{escaped}</span>')
             if has_newline:
                 result_lines.append("\n")
-            if line_content.startswith("Expected:"):
+            if line_content.startswith(("Expected:", "Expected substring:")):
                 seen_expected = True
-        # Handle playwright diffs
         elif (
             seen_expected
             and not seen_received

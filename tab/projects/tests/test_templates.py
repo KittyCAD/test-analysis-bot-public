@@ -46,6 +46,17 @@ def describe_highlight():
         expect(result).contains("success")  # Received
         expect(result.count("text-success")) == 1  # only Received, not Timeout
 
+    def with_playwright_substring(expect):
+        text = (
+            "Locator: getByTestId('units-menu')\n"
+            'Expected substring: "yd"\n'
+            'Received string:    "Default units for current file mm"\n'
+            "Timeout: 5000ms\n"
+        )
+        result = highlight(text)
+        expect(result.count("text-danger")) == 1
+        expect(result.count("text-success")) == 1  # Received only, not Timeout
+
     def with_timeout_but_no_expected(expect):
         text = "Timeout: 5000ms"
         result = highlight(text)
