@@ -29,10 +29,10 @@ django-ninja = "^1.6.2"
 # Storage
 dj-database-url = "*"
 psycopg2-binary = "^2.9.11"
-redis = "^7.3.0"
+redis = "^7.4.0"
 
 # Integrations
-pygithub = "^2.8.1"
+pygithub = "^2.9.0"
 slack-sdk = "^3.41.0"
 
 # Utilities
@@ -43,7 +43,7 @@ minilog = "*"
 unidecode = "^1.4.0"
 
 # Deployment
-gunicorn = "^25.1.0"
+gunicorn = "^25.3.0"
 whitenoise = "^6.12.0"
 
 [tool.poetry.group.dev.dependencies]
