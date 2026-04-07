@@ -54,8 +54,8 @@ isort = "^8.0.0"
 djlint = "^1.36.4"
 
 # Linting
-mypy = "^1.19.1"
-django-stubs = { version = "^6.0.1", extras = ["compatible-mypy"] }
+mypy = "^1.20"
+django-stubs = { version = "^6.0.2", extras = ["compatible-mypy"] }
 types-markdown = "*"
 types-requests = "*"
 
