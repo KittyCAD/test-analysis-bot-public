@@ -126,7 +126,7 @@ test-all: install
 .PHONY: test-e2e
 test-e2e: install
 	mkdir -p test-results
-	cp tab/api/tests/files/junit-nextest.xml test-results/junit.xml
+	cp tab/api/tests/files/junit.xml test-results/junit.xml
 	@ echo
 
 	TAB_API_URL=$${TAB_API_URL:-http://localhost:8000} \
