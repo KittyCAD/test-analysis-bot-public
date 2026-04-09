@@ -34,6 +34,7 @@ class Message:
         value = f"{self._markdown_prefix}"
         label = self.label.replace("::", "∶∶")  # prevent URL interpolation
         label = label.replace("->", "→")  # prevent breaking link syntax
+        label = label.replace(">", "›")  # prevent breaking link syntax
         value += f"{self.text}: <{self.url}|{label}>"
         value += self._markdown_extra
         return value
