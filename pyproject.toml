@@ -20,7 +20,7 @@ django-browser-reload = "^1.21"
 django-cors-headers = "*"
 django-crispy-forms = "^2.6"
 crispy-bootstrap5 = "*" # styling for 'django-crispy-forms'
-django-debug-toolbar = "^6.2"
+django-debug-toolbar = "^6.3"
 django-tables2 = "^2.8.0"
 
 # API
