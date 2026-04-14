@@ -12,6 +12,8 @@ from django.utils import timezone
 import log
 
 from .constants import (
+    ACTIVE_BRANCHES_CACHE_KEY,
+    ACTIVE_BRANCHES_CACHE_TIMEOUT,
     ALL_BRANCHES,
     DURATION_CACHE_KEY,
     DURATION_CACHE_TIMEOUT,
@@ -102,6 +104,22 @@ class ResultManager(models.Manager):
         else:
             results = self.filter(test=test, branch__in=test.significant_branches)
         return results.select_related("suite", "test__project", "test__suite")
+
+    def get_active_branches(self, project: Project) -> list[str]:
+        """Get a cached list of active branches for a project."""
+        cache_key = f"{ACTIVE_BRANCHES_CACHE_KEY}:{project.pk}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return list(cached)
+
+        results = self.filter(test__project=project).distinct().order_by("branch")
+        if project.branch_inactive_threshold:
+            results = results.filter(
+                created_at__gte=timezone.now() - project.branch_inactive_threshold
+            )
+        branches = list(results.values_list("branch", flat=True))
+        cache.set(cache_key, branches, timeout=ACTIVE_BRANCHES_CACHE_TIMEOUT)
+        return branches
 
     def get_latest_commit(self, project: Project, branch: str) -> str | None:
         queryset = self.filter(test__project=project, branch=branch).order_by(

@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.core.cache import cache
 from django.utils import timezone
 
 import pytest
@@ -14,6 +15,75 @@ def project():
 
 
 def describe_result_manager():
+    def describe_get_active_branches():
+        @pytest.mark.django_db
+        def it_returns_distinct_branches_ordered_by_name(expect, project: Project):
+            test = Test.objects.create(project=project, name="t")
+            Result.objects.create(
+                test=test,
+                branch="main",
+                commit="a",
+                status=Status.PASSED,
+                final=True,
+            )
+            Result.objects.create(
+                test=test,
+                branch="feature",
+                commit="b",
+                status=Status.PASSED,
+                final=True,
+            )
+
+            branches = Result.objects.get_active_branches(project)
+
+            expect(branches) == ["feature", "main"]
+
+        @pytest.mark.django_db
+        def it_excludes_branches_older_than_branch_inactive_threshold(
+            expect, project: Project
+        ):
+            project.branch_inactive_threshold = timedelta(days=1)
+            project.save()
+            test = Test.objects.create(project=project, name="t")
+            old = timezone.now() - timedelta(days=10)
+            Result.objects.create(
+                test=test,
+                branch="stale",
+                commit="a",
+                status=Status.PASSED,
+                final=True,
+            )
+            Result.objects.filter(branch="stale").update(created_at=old)
+            Result.objects.create(
+                test=test,
+                branch="fresh",
+                commit="b",
+                status=Status.PASSED,
+                final=True,
+            )
+
+            branches = Result.objects.get_active_branches(project)
+
+            expect(branches) == ["fresh"]
+
+        @pytest.mark.django_db
+        def it_uses_cache_on_second_call(expect, project: Project, mocker):
+            cache.clear()
+            test = Test.objects.create(project=project, name="t")
+            Result.objects.create(
+                test=test,
+                branch="main",
+                commit="a",
+                status=Status.PASSED,
+                final=True,
+            )
+            filter_spy = mocker.spy(Result.objects, "filter")
+
+            Result.objects.get_active_branches(project)
+            Result.objects.get_active_branches(project)
+
+            expect(filter_spy.call_count) == 1
+
     def describe_get_health():
         @pytest.mark.django_db
         def it_returns_health_metrics(expect, project: Project):

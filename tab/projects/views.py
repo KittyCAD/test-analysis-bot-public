@@ -324,7 +324,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         context["project"] = project
         context["branch"] = branch
         context["merge_url"] = self._get_merge_url(project, branch)
-        context["branches"] = self._get_active_branches(project)
+        context["branches"] = Result.objects.get_active_branches(project)
         context["suites"] = project.suites.active()
         context["suite_id"] = self.kwargs.get("suite_id")
         context["search"] = self.request.GET.get("search", "").strip()
@@ -396,20 +396,6 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
             .first()
         )
         return result.merge_url if result else ""
-
-    def _get_active_branches(self, project: Project) -> list[str]:
-        results_by_branch = (
-            Result.objects.filter(
-                test__project=project,
-            )
-            .distinct()
-            .order_by("branch")
-        )
-        if project.branch_inactive_threshold:
-            results_by_branch = results_by_branch.filter(
-                created_at__gte=timezone.now() - project.branch_inactive_threshold
-            )
-        return list(results_by_branch.values_list("branch", flat=True))
 
 
 class ResultsRegexView(ResultsView):

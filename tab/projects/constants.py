@@ -20,6 +20,9 @@ RESTORATION_THRESHOLD = timedelta(days=3)  # minimum duration to keep tests disa
 DURATION_CACHE_KEY = "projects:duration"
 DURATION_CACHE_TIMEOUT = timedelta(minutes=1).total_seconds()
 
+ACTIVE_BRANCHES_CACHE_KEY = "projects:active_branches"
+ACTIVE_BRANCHES_CACHE_TIMEOUT = int(timedelta(hours=1).total_seconds())
+
 
 def get_default_branches():
     return ["main"]
