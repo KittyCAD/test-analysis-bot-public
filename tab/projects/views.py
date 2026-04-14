@@ -21,7 +21,8 @@ from tab.core.models import Organization
 from tab.metrics.constants import DELTA_THRESHOLD
 from tab.metrics.models import Alert
 
-from .constants import FAILURE_RATE_EPSILON
+from .constants import ALL_BRANCHES, FAILURE_RATE_EPSILON
+from .enums import Platform
 from .forms import BulkUpdateTestForm, UpdateTestForm
 from .helpers import get_disabled_test_metrics
 from .models import Project, Result, Run, Status, Test
@@ -506,14 +507,34 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             test_results_base + "?" + params_all.urlencode()
         )
 
-        params_default = self.request.GET.copy()
-        params_default.pop("branch", None)
-        context["show_default_branch_url"] = (
-            f"{test_results_base}?{params_default.urlencode()}"
-            if params_default
+        clear_branch_q = self.request.GET.copy()
+        clear_branch_q.pop("branch", None)
+        context["clear_branch_filter_url"] = (
+            f"{test_results_base}?{clear_branch_q.urlencode()}"
+            if clear_branch_q
             else test_results_base
         )
-        context["has_branch_query"] = "branch" in self.request.GET
+        clear_platform_q = self.request.GET.copy()
+        clear_platform_q.pop("platform", None)
+        context["clear_platform_filter_url"] = (
+            f"{test_results_base}?{clear_platform_q.urlencode()}"
+            if clear_platform_q
+            else test_results_base
+        )
+
+        platform_filter_links: list[tuple[str, str, str]] = []
+        for plat, label in Platform.choices:
+            p = self.request.GET.copy()
+            p["platform"] = plat
+            platform_filter_links.append(
+                (label, f"{test_results_base}?{p.urlencode()}", plat)
+            )
+        context["platform_filter_links"] = platform_filter_links
+        context["show_filter_results_menu"] = (
+            context["branch"] != ALL_BRANCHES
+            or bool(platform_filter_links)
+            or bool(context["platform"])
+        )
 
         return context
 
