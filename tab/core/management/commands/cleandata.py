@@ -44,6 +44,7 @@ class Command(BaseCommand):
                 project.cleaned_at = timezone.now()
                 project.save()
         self.update_bulk_tests()
+        self.fetch_active_branches()
         delta = timezone.now() - start
         log.info(f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}")
 
@@ -166,3 +167,7 @@ class Command(BaseCommand):
         releases = Release.objects.filter(created_at__lt=cutoff)
         for release in releases:
             release.delete()
+
+    def fetch_active_branches(self):
+        for project in Project.objects.all():
+            Result.objects.get_active_branches(project)
