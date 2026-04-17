@@ -10,11 +10,24 @@
     <div class="modal-dialog modal-xl wide-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Result Details</h5>
-                <button type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                <h5 class="modal-title me-auto">Result Details</h5>
+                <div class="d-flex align-items-center gap-3 flex-shrink-0 ms-2">
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            data-copy-prompt="result-prompt-{{ result.pk }}"
+                            disabled
+                            title="Copy as Markdown">
+                        <span aria-hidden="true">
+                            <i class="fa-regular fa-copy js-copy-prompt-idle"></i>
+                            <i class="fa-solid fa-check js-copy-prompt-done d-none"></i>
+                        </span>
+                        <span class="ms-1 d-none d-sm-inline">AI Prompt</span>
+                    </button>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
             </div>
             <div class="modal-body">
                 <div class="text-center py-5">

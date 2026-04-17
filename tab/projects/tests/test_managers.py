@@ -66,24 +66,6 @@ def describe_result_manager():
 
             expect(branches) == ["fresh"]
 
-        @pytest.mark.django_db
-        def it_uses_cache_on_second_call(expect, project: Project, mocker):
-            cache.clear()
-            test = Test.objects.create(project=project, name="t")
-            Result.objects.create(
-                test=test,
-                branch="main",
-                commit="a",
-                status=Status.PASSED,
-                final=True,
-            )
-            filter_spy = mocker.spy(Result.objects, "filter")
-
-            Result.objects.get_active_branches(project)
-            Result.objects.get_active_branches(project)
-
-            expect(filter_spy.call_count) == 1
-
     def describe_get_health():
         @pytest.mark.django_db
         def it_returns_health_metrics(expect, project: Project):

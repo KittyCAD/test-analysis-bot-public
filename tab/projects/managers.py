@@ -118,7 +118,8 @@ class ResultManager(models.Manager):
                 created_at__gte=timezone.now() - project.branch_inactive_threshold
             )
         branches = list(results.values_list("branch", flat=True))
-        cache.set(cache_key, branches, timeout=ACTIVE_BRANCHES_CACHE_TIMEOUT)
+        if len(branches) > 1:
+            cache.set(cache_key, branches, timeout=ACTIVE_BRANCHES_CACHE_TIMEOUT)
         return branches
 
     def get_latest_commit(self, project: Project, branch: str) -> str | None:

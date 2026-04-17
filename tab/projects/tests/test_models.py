@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 from django.utils import timezone
 
@@ -9,6 +9,7 @@ from ..constants import DEFAULT_SUITE, FAILURE_RATE_EPSILON, RESTORATION_THRESHO
 from ..enums import Status
 from ..models import Project, Result, Suite, Test
 from . import EXAMPLE_TESTS, ExampleTest
+from .constants import TEST_PROMPT
 
 
 def describe_project():
@@ -290,6 +291,31 @@ def describe_result():
             test = Test(project=project, name="test3", original_branch="main")
             result = Result(test=test, branch="main")
             expect(result.originated_from_branch) == False
+
+    def describe_prompt():
+        def it_matches_the_full_copy_text(expect):
+            disabled_at = datetime(2024, 6, 1, 12, 0, 0, tzinfo=UTC)
+            project = Project(repository="https://github.com/foo/bar")
+            test = Test(
+                project=project,
+                name="my-test",
+                failure_rate=1 / 3,
+                block_rate=0.5,
+                disabled_at=disabled_at,
+                disabled_reason="Waiting on infra.",
+                disabled_tracker="https://example.com/ticket/1",
+            )
+            logs = [{"step": "build", "rc": 1}]
+            result = Result(
+                test=test,
+                status=Status.FAILED,
+                message="AssertionError: expected 1 == 2",
+                branch="feature/x",
+                commit="deadbeef",
+                duration=12.3,
+                metadata={"logs": logs, "GITHUB_RUN_ID": "99"},
+            )
+            expect(result.prompt) == TEST_PROMPT
 
     def describe_run_url():
         def it_includes_run_id_and_pr_number(expect):

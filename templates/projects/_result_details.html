@@ -1,5 +1,9 @@
 {% load formatting_tags %}
 
+<textarea id="result-prompt-{{ result.pk }}"
+          class="d-none"
+          aria-hidden="true"
+          tabindex="-1">{{ result.prompt }}</textarea>
 {% if result.message %}<pre class="mb-0">{{ result.message|highlight }}</pre>{% endif %}
 {% if result.run_url %}
     <div class="mt-3">

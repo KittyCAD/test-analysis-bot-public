@@ -1,56 +1,87 @@
 // Base JavaScript functionality for the application
 
 document.addEventListener('DOMContentLoaded', function () {
+    function copyToClipboard(text) {
+        try {
+            const p = navigator.clipboard && navigator.clipboard.writeText(text);
+            if (p && typeof p.catch === 'function') {
+                void p.catch(function () {
+                    void 0;
+                });
+            }
+        } catch (ignored) {
+            void ignored;
+        }
+    }
 
-    // Copy button functionality
-    const copyButtons = document.querySelectorAll('.copy-btn');
-    copyButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            const text = this.getAttribute('data-clipboard-text');
-            navigator.clipboard.writeText(text).then(() => {
-                const originalIcon = this.innerHTML;
-                this.innerHTML = '<i class="fa-solid fa-check"></i>';
-                setTimeout(() => {
-                    this.innerHTML = originalIcon;
-                }, 1000);
-            });
-        });
+    document.addEventListener('click', function (e) {
+        const promptBtn = e.target.closest('[data-copy-prompt]');
+        if (promptBtn) {
+            if (promptBtn.disabled) {
+                return;
+            }
+            const ta = document.getElementById(
+                promptBtn.getAttribute('data-copy-prompt')
+            );
+            if (!ta || !ta.value) {
+                return;
+            }
+            e.preventDefault();
+            const idle = promptBtn.querySelector('.js-copy-prompt-idle');
+            const done = promptBtn.querySelector('.js-copy-prompt-done');
+            idle?.classList.add('d-none');
+            done?.classList.remove('d-none');
+            setTimeout(function () {
+                idle?.classList.remove('d-none');
+                done?.classList.add('d-none');
+            }, 1000);
+            copyToClipboard(ta.value);
+            return;
+        }
+
+        const lineBtn = e.target.closest('.copy-btn[data-clipboard-text]');
+        if (!lineBtn) {
+            return;
+        }
+        e.preventDefault();
+        const text = lineBtn.getAttribute('data-clipboard-text');
+        const icon = lineBtn.querySelector('i');
+        const prev = icon && icon.getAttribute('class');
+        if (icon && prev) {
+            icon.setAttribute('class', 'fa-solid fa-check');
+            setTimeout(function () {
+                icon.setAttribute('class', prev);
+            }, 1000);
+        }
+        copyToClipboard(text);
     });
 
-    // Lazy-load result details modal content
-    document.querySelectorAll('[id^="details-"]').forEach(modal => {
+    document.querySelectorAll('[id^="details-"]').forEach(function (modal) {
+        const copyAiBtn = modal.querySelector('[data-copy-prompt]');
+
         modal.addEventListener('show.bs.modal', function (event) {
             const modalBody = this.querySelector('.modal-body');
             if (modalBody.dataset.loaded === 'true') {
                 return;
             }
 
-            const button = event.relatedTarget;
-            const resultId = button ? button.getAttribute('data-result-id') : null;
+            const opener = event.relatedTarget;
+            const resultId = opener && opener.getAttribute('data-result-id');
+            if (!resultId) {
+                return;
+            }
 
-            fetch(`/projects/_result-details/${resultId}`)
-                .then(response => {
-                    return response.text();
+            fetch('/projects/_result-details/' + resultId)
+                .then(function (r) {
+                    return r.text();
                 })
-                .then(html => {
+                .then(function (html) {
                     modalBody.innerHTML = html;
                     modalBody.dataset.loaded = 'true';
-
-                    // Re-initialize copy buttons in the loaded content
-                    const newCopyButtons = modalBody.querySelectorAll('.copy-btn');
-                    newCopyButtons.forEach(button => {
-                        button.addEventListener('click', function () {
-                            const text = this.getAttribute('data-clipboard-text');
-                            navigator.clipboard.writeText(text).then(() => {
-                                const originalIcon = this.innerHTML;
-                                this.innerHTML = '<i class="fa-solid fa-check"></i>';
-                                setTimeout(() => {
-                                    this.innerHTML = originalIcon;
-                                }, 1000);
-                            });
-                        });
-                    });
-                })
+                    if (copyAiBtn) {
+                        copyAiBtn.disabled = false;
+                    }
+                });
         });
     });
 });
