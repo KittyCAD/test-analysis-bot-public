@@ -54,7 +54,9 @@ _This turns blocking failures into a non-blocking status to let PRs merge._
 
 ## Failure message
 
+```text
 AssertionError: expected 1 == 2
+```
 
 ## Rerun locally
 
