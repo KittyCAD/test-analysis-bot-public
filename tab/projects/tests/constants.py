@@ -1,47 +1,74 @@
 TEST_PROMPT = """
-The following is exported from the Test Analysis Bot.
-Use it to help reproduce, debug, or fix the failure.
-Ask the user for approval before running any commands (for example tests, installs, or builds).
+The following is exported from the Test Analysis Bot (TAB).
 
-## Summary
+Use this information to:
 
-- **Test:** my-test
-- **Project:** foo/bar
-- **Status:** Failed
-- **Duration:** 12.3s
-- **Final retry:** yes
-- **Branch:** feature/x
-- **Commit:** deadbeef
-- **Target:** —
-- **Platform:** —
-- **Markers:** disabled
-- **Failure rate:** 33.3%
-  _Total failure rate on significant branches including reruns_
-- **Block rate:** 50.0%
-  _Effective failure rate with reruns and ignored failures excluded_
+1. Classify the failure
+2. Assess whether it is a real regression, flaky, or infra-related
+3. Explain which fields most strongly support that conclusion
+4. Suggest the most likely causes
+5. Propose a minimal fix if appropriate
+6. Verify the fix or ask the user to do so
 
-## Manual disablement
+## Test identity
 
-This test is turned off in the Test Analysis Bot so it does not block merges while the disablement is active (separate from per-run markers).
+- Repository: my-org/my-repo
+- Name: my-suite › my-test
+- Markers: ["disabled"]
+- Date created: 2024-01-01T12:00:00+00:00
+- Added in branch: my-branch
+- Added in commit: abc123
 
-- **Since:** 2024-06-01T12:00:00+00:00
-- **Tracker:** https://example.com/ticket/1
+## Historical signals
 
-```text
-Waiting on infra.
-```
+- Failure rate: 33.3%
+- Block rate: 50.0%
+- Average duration (s): 4.2
+- New failure: true
 
-## Links
+_Total failure rate on significant branches including reruns_
+_Effective failure rate with reruns and ignored failures excluded_
+_Seconds duration from recent runs on significant branches_
 
-- **Branch:** https://github.com/foo/bar/tree/feature/x
-- **Commit:** https://github.com/foo/bar/commit/deadbeef
-- **Run:** https://github.com/foo/bar/actions/runs/99
+## Override behavior
 
-## Message
+- Disabled: true
+- Disabled since: 2024-06-01T12:00:00+00:00
+- Reason: Waiting on infra.
+- Tracker: https://example.com/ticket/1
+- Last updated by: user@example.com
 
-```text
+_TAB has a feature to suppress failures in known broken or flaky tests._
+_This turns blocking failures into a non-blocking status to let PRs merge._
+
+## Result details
+
+- Status: failed
+- Reported at: 2024-01-01T12:00:00+00:00
+- Duration (s): 12.3
+- Final rerun: true
+- Branch: my-branch
+- Commit: abc123
+- Target: Desktop
+- Platform: macOS
+
+## Failure message
+
 AssertionError: expected 1 == 2
+
+## Rerun locally
+
+```shell
+git fetch origin && git checkout my-branch && git reset --hard origin/my-branch
+
+
+# then
+
+
+make test-e2e-desktop E2E_GREP="my-suite.*my-test"
 ```
+
+_Do not delete uncommitted user changes without asking first._
 
 ## Additional logs
 

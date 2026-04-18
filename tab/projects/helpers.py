@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import TYPE_CHECKING
 
 from django.contrib.auth.models import User
@@ -89,103 +90,107 @@ def rerun_failed_jobs(
 
 
 def build_prompt(result: Result) -> str:
-    from .models import Test
-
+    test = result.test
     lines: list[str] = []
-    lines.append(
-        "The following is exported from the Test Analysis Bot.\n"
-        "Use it to help reproduce, debug, or fix the failure.\n"
-        "Ask the user for approval before running any commands (for example tests, installs, or builds)."
-    )
+    lines.append("The following is exported from the Test Analysis Bot (TAB).")
     lines.append("")
-    lines.append("## Summary")
+    lines.append("Use this information to:")
     lines.append("")
-    lines.append(f"- **Test:** {result.test_label}")
-    lines.append(f"- **Project:** {result.test.project.path}")
-    lines.append(f"- **Status:** {Status(result.status).label}")
-    lines.append(f"- **Duration:** {result.duration_humanized}")
-    lines.append(f"- **Final retry:** {'yes' if result.final else 'no'}")
-    if result.created_at:
-        lines.append(f"- **Reported at:** {result.created_at.isoformat()}")
-    lines.append(f"- **Branch:** {result.branch or '—'}")
-    lines.append(f"- **Commit:** {result.commit or '—'}")
+    lines.append("1. Classify the failure")
+    lines.append("2. Assess whether it is a real regression, flaky, or infra-related")
+    lines.append("3. Explain which fields most strongly support that conclusion")
+    lines.append("4. Suggest the most likely causes")
+    lines.append("5. Propose a minimal fix if appropriate")
+    lines.append("6. Verify the fix or ask the user to do so")
+    lines.append("")
+    lines.append("## Test identity")
+    lines.append("")
+    lines.append(f"- Repository: {test.project.path}")
+    lines.append(f"- Name: {result.test_label}")
+    lines.append(f"- Markers: {json.dumps(result.markers)}")
     lines.append(
-        f"- **Target:** {Target(result.target).label if result.target else '—'}"
+        "- Date created: " + (test.created_at.isoformat() if test.created_at else "—")
     )
+    lines.append(f"- Added in branch: {test.original_branch or '—'}")
+    lines.append(f"- Added in commit: {test.original_commit or '—'}")
+    lines.append("")
+    lines.append("## Historical signals")
+    lines.append("")
+    lines.append(f"- Failure rate: {test.failure_rate_humanized}")
+    lines.append(f"- Block rate: {test.block_rate_humanized}")
     lines.append(
-        f"- **Platform:** {Platform(result.platform).label if result.platform else '—'}"
+        f"- Average duration (s): "
+        f"{test.average_duration if test.average_duration is not None and test.average_duration >= 0 else '—'}"
     )
-    markers = ", ".join(result.markers) if result.markers else "—"
-    lines.append(f"- **Markers:** {markers}")
-    fr_field = Test._meta.get_field("failure_rate")
-    br_field = Test._meta.get_field("block_rate")
-    lines.append(f"- **Failure rate:** {result.test.failure_rate_humanized}")
-    lines.append(f"  _{fr_field.help_text}_")
-    lines.append(f"- **Block rate:** {result.test.block_rate_humanized}")
-    lines.append(f"  _{br_field.help_text}_")
-    if result.pk and getattr(result.test, "pk", None):
-        lines.append(f"- **Result page:** {result.url}")
-    if result.status == Status.DISABLED:
+    lines.append(f"- New failure: {str(result.new_failure).lower()}")
+    lines.append("")
+    lines.extend(
+        f"_{test._meta.get_field(name).help_text}_"  # type: ignore[union-attr]
+        for name in ("failure_rate", "block_rate", "average_duration")
+    )
+    if test.disabled_at:
+        lines.append("")
+        lines.append("## Override behavior")
+        lines.append("")
+        lines.append(f"- Disabled: {str(bool(test.disabled_at)).lower()}")
+        lines.append(f"- Disabled since: {test.disabled_at.isoformat()}")
+        if test.disabled_reason.strip():
+            lines.append(f"- Reason: {test.disabled_reason.strip()}")
+        else:
+            lines.append("- Reason: —")
+        lines.append(f"- Tracker: {test.disabled_tracker or '—'}")
+        updated_by = "—"
+        if user := getattr(test, "disabled_user", None):
+            updated_by = (
+                user.email if getattr(user, "email", None) else user.get_username()
+            )
+        lines.append(f"- Last updated by: {updated_by}")
+        lines.append("")
         lines.append(
-            "- **Ignored failure:** This run is recorded as an ignored failure because "
-            "the test carried `fixme` or `disabled` markers, so the outcome is treated "
-            "as intentionally non-blocking (pytest known-broken / quarantine pattern)."
+            "_TAB has a feature to suppress failures in known broken or flaky tests._"
         )
-    if result.test.disabled_at:
-        lines.append("")
-        lines.append("## Manual disablement")
-        lines.append("")
         lines.append(
-            "This test is turned off in the Test Analysis Bot so it does not block "
-            "merges while the disablement is active (separate from per-run markers)."
+            "_This turns blocking failures into a non-blocking status to let PRs merge._"
         )
-        lines.append("")
-        lines.append(f"- **Since:** {result.test.disabled_at.isoformat()}")
-        if (user := result.test.disabled_user) is not None:
-            who = user.email or user.get_username()
-            lines.append(f"- **By:** {who}")
-        if result.test.disabled_tracker:
-            lines.append(f"- **Tracker:** {result.test.disabled_tracker}")
-        if result.test.disabled_reason.strip():
-            lines.append("")
-            lines.append("```text")
-            lines.append(result.test.disabled_reason.rstrip())
-            lines.append("```")
     lines.append("")
-    lines.append("## Links")
+    lines.append("## Result details")
     lines.append("")
-    link_lines = [
-        ("Branch", result.branch_url),
-        ("Commit", result.commit_url),
-        ("Merge", result.merge_url),
-        ("Run", result.run_url),
-        ("Environment", result.environment_url),
-    ]
-    for label, url in link_lines:
-        if url:
-            lines.append(f"- **{label}:** {url}")
-    if all(not url for _, url in link_lines):
-        lines.append("_No links available._")
-    lines.append("")
+    lines.append(f"- Status: {Status(result.status).value}")
+    lines.append(
+        "- Reported at: "
+        + (result.created_at.isoformat() if result.created_at else "—")
+    )
+    lines.append(
+        f"- Duration (s): {result.duration if result.duration is not None else '—'}"
+    )
+    lines.append(f"- Final rerun: {str(result.final).lower()}")
+    lines.append(f"- Branch: {result.branch or '—'}")
+    lines.append(f"- Commit: {result.commit or '—'}")
+    lines.append(f"- Target: {Target(result.target).label if result.target else '—'}")
+    lines.append(
+        f"- Platform: {Platform(result.platform).label if result.platform else '—'}"
+    )
     if result.message:
-        lines.append("## Message")
         lines.append("")
-        lines.append("```text")
+        lines.append("## Failure message")
+        lines.append("")
         lines.append(result.message.rstrip())
-        lines.append("```")
-        lines.append("")
+    lines.append("")
+    lines.append("## Rerun locally")
+    lines.append("")
     if result.command:
-        lines.append("## Rerun locally")
-        lines.append("")
         lines.append("```shell")
         lines.append("\n".join(line for line, _ in result.command).strip())
         lines.append("```")
-        lines.append("")
+    else:
+        lines.append("[TODO: add this]")
+    lines.append("")
+    lines.append("_Do not delete uncommitted user changes without asking first._")
     if result.logs:
+        lines.append("")
         lines.append("## Additional logs")
         lines.append("")
         lines.append("```json")
         lines.append(result.logs_json)
         lines.append("```")
-        lines.append("")
     return "\n".join(lines).strip() + "\n"

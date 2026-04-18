@@ -1,12 +1,13 @@
 from datetime import UTC, datetime, timedelta
 
+from django.contrib.auth.models import User
 from django.utils import timezone
 
 import log
 import pytest
 
 from ..constants import DEFAULT_SUITE, FAILURE_RATE_EPSILON, RESTORATION_THRESHOLD
-from ..enums import Status
+from ..enums import Platform, Status, Target
 from ..models import Project, Result, Suite, Test
 from . import EXAMPLE_TESTS, ExampleTest
 from .constants import TEST_PROMPT
@@ -294,27 +295,49 @@ def describe_result():
 
     def describe_prompt():
         def it_matches_the_full_copy_text(expect):
+            baseline_at = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
             disabled_at = datetime(2024, 6, 1, 12, 0, 0, tzinfo=UTC)
-            project = Project(repository="https://github.com/foo/bar")
+            project = Project(repository="https://github.com/my-org/my-repo")
+            suite = Suite(
+                project=project,
+                name="my-suite",
+                local_command='make test-e2e-desktop E2E_GREP="my-suite.*{test.name}"',
+            )
+            disabled_user = User(username="tab_user", email="user@example.com")
             test = Test(
                 project=project,
+                suite=suite,
                 name="my-test",
+                original_branch="my-branch",
+                original_commit="abc123",
                 failure_rate=1 / 3,
                 block_rate=0.5,
+                average_duration=4.2,
                 disabled_at=disabled_at,
                 disabled_reason="Waiting on infra.",
                 disabled_tracker="https://example.com/ticket/1",
+                disabled_user=disabled_user,
             )
+            test.created_at = baseline_at
             logs = [{"step": "build", "rc": 1}]
             result = Result(
                 test=test,
+                suite=suite,
                 status=Status.FAILED,
                 message="AssertionError: expected 1 == 2",
-                branch="feature/x",
-                commit="deadbeef",
+                branch="my-branch",
+                commit="abc123",
                 duration=12.3,
-                metadata={"logs": logs, "GITHUB_RUN_ID": "99"},
+                target=Target.DESKTOP.value,
+                platform=Platform.MACOS.value,
+                metadata={
+                    "logs": logs,
+                    "GITHUB_RUN_ID": "99",
+                    "retry_count": 1,
+                    "tags": ["disabled"],
+                },
             )
+            result.created_at = baseline_at
             expect(result.prompt) == TEST_PROMPT
 
     def describe_run_url():
