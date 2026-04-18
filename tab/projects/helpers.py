@@ -187,6 +187,7 @@ def build_prompt(result: Result) -> str:
     else:
         lines.append("[TODO: add this]")
     lines.append("")
+    lines.append("_Use this to reproduce the failure and validate fixes._")
     lines.append("_Do not delete uncommitted user changes without asking first._")
     if result.logs:
         lines.append("")

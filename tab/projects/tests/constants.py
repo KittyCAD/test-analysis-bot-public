@@ -70,6 +70,7 @@ git fetch origin && git checkout my-branch && git reset --hard origin/my-branch
 make test-e2e-desktop E2E_GREP="my-suite.*my-test"
 ```
 
+_Use this to reproduce the failure and validate fixes._
 _Do not delete uncommitted user changes without asking first._
 
 ## Additional logs
