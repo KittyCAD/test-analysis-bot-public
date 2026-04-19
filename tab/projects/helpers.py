@@ -122,12 +122,11 @@ def build_prompt(result: Result) -> str:
         f"- Average duration (s): "
         f"{test.average_duration if test.average_duration is not None and test.average_duration >= 0 else '—'}"
     )
-    lines.append(f"- New failure: {str(result.new_failure).lower()}")
     lines.append("")
-    lines.extend(
-        f"_{test._meta.get_field(name).help_text}_"  # type: ignore[union-attr]
-        for name in ("failure_rate", "block_rate", "average_duration")
-    )
+    for name in ("failure_rate", "block_rate", "average_duration"):
+        field = test._meta.get_field(name)
+        label = str(field.verbose_name).capitalize()  # type: ignore[union-attr]
+        lines.append(f"_{label}: {field.help_text}_")  # type: ignore[union-attr]
     if test.disabled_at:
         lines.append("")
         lines.append("## Override behavior")
@@ -163,12 +162,16 @@ def build_prompt(result: Result) -> str:
     lines.append(
         f"- Duration (s): {result.duration if result.duration is not None else '—'}"
     )
-    lines.append(f"- Final rerun: {str(result.final).lower()}")
     lines.append(f"- Branch: {result.branch or '—'}")
     lines.append(f"- Commit: {result.commit or '—'}")
     lines.append(f"- Target: {Target(result.target).label if result.target else '—'}")
     lines.append(
         f"- Platform: {Platform(result.platform).label if result.platform else '—'}"
+    )
+    lines.append(f"- New failure: {str(result.new_failure).lower()}")
+    lines.append("")
+    lines.append(
+        "_New failure: History data indicates the test is only blocking this branch._"
     )
     if result.message:
         lines.append("")
@@ -188,7 +191,7 @@ def build_prompt(result: Result) -> str:
         lines.append("[TODO: add this]")
     lines.append("")
     lines.append("_Use this to reproduce the failure and validate fixes._")
-    lines.append("_Do not delete uncommitted user changes without asking first._")
+    lines.append("_Do not discard uncommitted changes without user approval._")
     if result.logs:
         lines.append("")
         lines.append("## Additional logs")
