@@ -310,8 +310,8 @@ def describe_result():
                 name="my-test",
                 original_branch="my-branch",
                 original_commit="abc123",
-                failure_rate=1 / 3,
-                block_rate=0.5,
+                failure_rate=0.099,
+                block_rate=0.088,
                 average_duration=4.2,
                 disabled_at=disabled_at,
                 disabled_reason="Waiting on infra.",
@@ -353,9 +353,23 @@ def describe_result():
 
     def describe_new_failure():
         def it_is_true_for_failure_on_rarely_blocking_test(expect):
-            test = Test(project=Project(), name="test", block_rate=0.005)
+            test = Test(
+                project=Project(),
+                name="test",
+                block_rate=0.005,
+            )
             result = Result(test=test, status=Status.FAILED, branch="my-branch")
             expect(result.new_failure) == True
+
+        def it_is_false_when_failure_rate_is_high(expect):
+            test = Test(
+                project=Project(),
+                name="test",
+                block_rate=0.005,
+                failure_rate=0.10,
+            )
+            result = Result(test=test, status=Status.FAILED, branch="my-branch")
+            expect(result.new_failure) == False
 
         def it_is_true_for_failure_new_to_branch(expect):
             project = Project(default_branches=["main"])

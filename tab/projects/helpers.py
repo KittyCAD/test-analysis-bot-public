@@ -118,10 +118,7 @@ def build_prompt(result: Result) -> str:
     lines.append("")
     lines.append(f"- Failure rate: {test.failure_rate_humanized}")
     lines.append(f"- Block rate: {test.block_rate_humanized}")
-    lines.append(
-        f"- Average duration (s): "
-        f"{test.average_duration if test.average_duration is not None and test.average_duration >= 0 else '—'}"
-    )
+    lines.append(f"- Average duration: {test.average_duration_humanized}")
     lines.append("")
     for name in ("failure_rate", "block_rate", "average_duration"):
         field = test._meta.get_field(name)
@@ -159,9 +156,7 @@ def build_prompt(result: Result) -> str:
         "- Reported at: "
         + (result.created_at.isoformat() if result.created_at else "—")
     )
-    lines.append(
-        f"- Duration (s): {result.duration if result.duration is not None else '—'}"
-    )
+    lines.append(f"- Duration: {result.duration_humanized}")
     lines.append(f"- Branch: {result.branch or '—'}")
     lines.append(f"- Commit: {result.commit or '—'}")
     lines.append(f"- Target: {Target(result.target).label if result.target else '—'}")

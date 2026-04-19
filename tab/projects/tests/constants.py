@@ -21,9 +21,9 @@ Use this information to:
 
 ## Historical signals
 
-- Failure rate: 33.3%
-- Block rate: 50.0%
-- Average duration (s): 4.2
+- Failure rate: 9.9%
+- Block rate: 8.8%
+- Average duration: 4.2s
 
 _Failure rate: Total failure rate on significant branches including reruns_
 _Block rate: Effective failure rate with reruns and ignored failures excluded_
@@ -44,7 +44,7 @@ _This turns blocking failures into a non-blocking status to let PRs merge._
 
 - Status: failed
 - Reported at: 2024-01-01T12:00:00+00:00
-- Duration (s): 12.3
+- Duration: 12.3s
 - Branch: my-branch
 - Commit: abc123
 - Target: Desktop

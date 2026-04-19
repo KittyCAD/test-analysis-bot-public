@@ -744,16 +744,24 @@ class Result(models.Model):
 
     @property
     def new_failure(self) -> bool:
-        if self.status in Status.merge_blocked() and self.originated_from_branch:
+        if self.status not in Status.merge_blocked():
+            return False
+        failure_threshold = (
+            self.suite.failure_rate_lower_threshold
+            if self.suite
+            else Suite._meta.get_field("failure_rate_lower_threshold").default
+        )
+        if self.test.failure_rate >= failure_threshold:
+            return False
+        if self.originated_from_branch:
             return True
-        threshold = (
+        block_threshold = (
             self.suite.block_rate_lower_threshold
             if self.suite
             else Suite._meta.get_field("block_rate_lower_threshold").default
         )
         return (
-            self.status in Status.merge_blocked()
-            and self.test.block_rate < threshold
+            self.test.block_rate < block_threshold
             and self.branch not in self.test.project.default_branches
         )
 
