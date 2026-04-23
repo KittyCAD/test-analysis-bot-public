@@ -78,6 +78,27 @@ def describe_highlight():
         result = highlight(text)
         expect(result).contains("danger")
 
+    def with_indented_snapshot_diff_minus(expect):
+        """Vitest/Jest snapshot failures indent unified diff lines with spaces."""
+        text = (
+            "Error: expect(string).toMatchSnapshot(expected) failed\n\n"
+            "  @@ -1,8 +1,7 @@\n"
+            "   [settings]\n"
+            "   modeling = { }\n"
+            "  -command_bar = { }\n"
+            "\n"
+            "  Snapshot: verify-named-view-gets-created.toml\n"
+        )
+        result = highlight(text)
+        expect(result).contains("text-danger")
+        expect(result).contains("-command_bar")
+
+    def with_indented_minus_without_hunk_header(expect):
+        """Do not treat indented '-…' as diff unless a @@ hunk appeared above."""
+        text = "Summary:\n  - bullet item\n  - another\n"
+        result = highlight(text)
+        expect(result).excludes("text-danger")
+
     def with_pytest_varying_whitespace(expect):
         text = "E       +\nE   -\nE\t+"
         result = highlight(text)

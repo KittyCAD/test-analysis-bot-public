@@ -9,6 +9,8 @@ from ..constants import (
     PYTEST_APPROX_OBTAINED,
     PYTEST_DIFF_MINUS,
     PYTEST_DIFF_PLUS,
+    UNIFIED_DIFF_MINUS,
+    UNIFIED_DIFF_PLUS,
 )
 from ..helpers import humanize_duration, insert_breaks
 from ..models import Test
@@ -73,12 +75,18 @@ def highlight(value):
     seen_expected = False
     seen_received = False
     logs_started = False
+    in_unified_diff = False
 
     for line in lines:
         has_newline = line.endswith("\n")
         line_content = line.rstrip("\n\r")
         if line_content.lower().endswith("log:"):
             logs_started = True
+
+        if line_content.lstrip().startswith("Snapshot:"):
+            in_unified_diff = False
+        elif "@@" in line_content:
+            in_unified_diff = True
 
         # Handle Pytest diffs
         if match := PYTEST_DIFF_PLUS.match(line_content):
@@ -106,6 +114,30 @@ def highlight(value):
             if has_newline:
                 result_lines.append("\n")
         elif match := PYTEST_APPROX_EXPECTED.match(line_content):
+            prefix = escape(match.group(1))
+            colored_part = escape(match.group(2))
+            result_lines.append(
+                f'{prefix}<span class="text-danger">{colored_part}</span>'
+            )
+            if has_newline:
+                result_lines.append("\n")
+        elif (
+            not logs_started
+            and in_unified_diff
+            and (match := UNIFIED_DIFF_PLUS.match(line_content))
+        ):
+            prefix = escape(match.group(1))
+            colored_part = escape(match.group(2))
+            result_lines.append(
+                f'{prefix}<span class="text-success">{colored_part}</span>'
+            )
+            if has_newline:
+                result_lines.append("\n")
+        elif (
+            not logs_started
+            and in_unified_diff
+            and (match := UNIFIED_DIFF_MINUS.match(line_content))
+        ):
             prefix = escape(match.group(1))
             colored_part = escape(match.group(2))
             result_lines.append(
