@@ -427,7 +427,7 @@
           "skipped"
         ]
       },
-      "created_at": "2025-01-01T12:01:00Z"
+      "created_at": "2099-01-01T12:01:00Z"
     }
   },
   {
@@ -475,7 +475,7 @@
           "@web"
         ]
       },
-      "created_at": "2025-02-20T12:01:00.000Z"
+      "created_at": "2099-01-01T12:01:00.000Z"
     }
   },
   {
@@ -510,7 +510,7 @@
       "duration": 41.0,
       "message": "Timeout waiting for selector",
       "metadata": {},
-      "created_at": "2025-02-20T11:00:00.000Z"
+      "created_at": "2099-01-01T11:00:00.000Z"
     }
   },
   {
@@ -528,7 +528,7 @@
       "duration": 104.0,
       "message": null,
       "metadata": {},
-      "created_at": "2025-02-21T10:00:00Z"
+      "created_at": "2099-01-01T10:00:00Z"
     }
   }
 ]

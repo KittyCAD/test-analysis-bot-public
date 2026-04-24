@@ -678,6 +678,7 @@ class _LeastReliableTestsMixin:
                 least_reliable,
                 created_at__lte=week_ago,
                 last_result__isnull=False,
+                last_result__created_at__gte=week_ago,
                 disabled_at__isnull=True,
             )
             .exclude(last_result__status=Status.DISABLED)
