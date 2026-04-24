@@ -6,6 +6,27 @@
     {{ project.name }}
 {% endblock title %}
 
+{% block extra_css %}
+    <style>
+        .table-least-reliable {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .table-least-reliable th:first-child,
+        .table-least-reliable td:first-child {
+            width: 52%;
+            white-space: normal;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        .table-least-reliable td:first-child a {
+            overflow-wrap: anywhere;
+        }
+    </style>
+{% endblock extra_css %}
+
 {% block content %}
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -49,7 +70,7 @@
             <div class="card-body">
                 {% if least_reliable_tests %}
                     <div class="table-responsive">
-                        <table class="table">
+                        <table class="table table-least-reliable w-100">
                             <thead>
                                 <tr>
                                     <th>Test</th>
@@ -61,7 +82,7 @@
                             <tbody>
                                 {% for test in least_reliable_tests %}
                                     <tr>
-                                        <td>
+                                        <td class="text-break">
                                             <a href="{% url 'projects:test-results' project.path test.id %}?weeks=3">{{ test }}</a>
                                         </td>
                                         <td class="text-center">{% colorize test "failure_rate" %}</td>
