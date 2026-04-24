@@ -1,11 +1,19 @@
 import json
 from datetime import timedelta
+from datetime import timezone as dt_timezone
 
+from django.conf import settings
+from django.urls import reverse
 from django.utils import timezone
 
 import pytest
 
-from ..helpers import build_metrics_json
+from ..constants import DEFAULT_SUITE
+from ..helpers import (
+    METRICS_JSON_RESULT_META,
+    METRICS_JSON_TEST_META,
+    build_metrics_json,
+)
 from ..models import Project, Result, Status, Suite, Test
 
 
@@ -22,13 +30,54 @@ def describe_build_metrics_json():
             duration=2.5,
         )
         payload = json.loads(build_metrics_json(project, [test]))
-        expect(payload["_meta"]).contains("Test Analysis Bot")
-        expect(payload["tests"][0]["_meta"]).contains("least-reliable")
-        expect(len(payload["tests"])) == 1
-        expect(len(payload["tests"][0]["results"])) == 1
-        expect(payload["tests"][0]["results"][0]["id"]) == created.pk
-        expect(payload["tests"][0]["results"][0]["branch"]) == "main"
-        expect(payload["tests"][0]["results"][0]["commit"]) == "deadbeef"
+        expect(payload["message"]).contains("Test Analysis Bot")
+        expect(payload["tests"][0]) == METRICS_JSON_TEST_META
+        expect(len(payload["tests"])) == 2
+        expect(len(payload["tests"][1]["results"])) == 2
+        expect(payload["tests"][1]["results"][0]) == METRICS_JSON_RESULT_META
+        expect(payload["tests"][1]["results"][1]["tab_id"]) == created.pk
+        expect(payload["tests"][1]["results"][1]["branch"]) == "main"
+        expect(payload["tests"][1]["results"][1]["commit"]) == "deadbeef"
+        expect(payload["tests"][1]["results"][1]["logs"]) == []
+
+    @pytest.mark.django_db
+    def it_includes_logs_on_results(expect, admin_user, project: Project):
+        test = project.tests.create(name="my-test", disabled_user=admin_user)
+        logs = [{"step": "pytest", "rc": 1}]
+        test.results.create(
+            branch="main",
+            commit="deadbeef",
+            status=Status.FAILED,
+            duration=1.0,
+            metadata={"logs": logs},
+        )
+        payload = json.loads(build_metrics_json(project, [test]))
+        expect(payload["tests"][1]["results"][1]["logs"]) == logs
+
+    @pytest.mark.django_db
+    def it_includes_created_at_on_project_and_tests(expect, admin_user, project):
+        test = project.tests.create(name="my-test", disabled_user=admin_user)
+
+        def fmt_utc(dt):
+            if dt and timezone.is_aware(dt):
+                dt = dt.astimezone(dt_timezone.utc)
+            return dt.strftime("%Y-%m-%dT%H:%M:%SZ") if dt else None
+
+        project.refresh_from_db()
+        test.refresh_from_db()
+        payload = json.loads(build_metrics_json(project, [test]))
+        expect(payload["project"]["created_at"]) == fmt_utc(project.created_at)
+        expect(payload["tests"][1]["created_at"]) == fmt_utc(test.created_at)
+
+    @pytest.mark.django_db
+    def it_includes_tab_id_and_tab_url_on_project(expect, admin_user, project):
+        test = project.tests.create(name="my-test", disabled_user=admin_user)
+        payload = json.loads(build_metrics_json(project, [test]))
+        expect(payload["project"]["tab_id"]) == project.pk
+        expect(
+            payload["project"]["tab_url"]
+            == settings.BASE_URL + reverse("projects:tests", args=[project.path])
+        )
 
     @pytest.mark.django_db
     def it_includes_latest_pass_and_latest_failure_when_both_exist(
@@ -55,7 +104,11 @@ def describe_build_metrics_json():
         )
 
         payload = json.loads(build_metrics_json(project, [test]))
-        statuses = {row["status"] for row in payload["tests"][0]["results"]}
+        statuses = {
+            row["status"]
+            for row in payload["tests"][1]["results"]
+            if isinstance(row, dict)
+        }
         expect(Status.FAILED.value in statuses)
         expect(Status.PASSED.value in statuses)
 
@@ -75,7 +128,7 @@ def describe_build_metrics_json():
             )
 
         payload = json.loads(build_metrics_json(project, [test]))
-        expect(len(payload["tests"][0]["results"])) == 10
+        expect(len(payload["tests"][1]["results"])) == 11
 
     @pytest.mark.django_db
     def it_serializes_empty_results_when_test_has_none(
@@ -83,7 +136,72 @@ def describe_build_metrics_json():
     ):
         test = project.tests.create(name="my-test", disabled_user=admin_user)
         payload = json.loads(build_metrics_json(project, [test]))
-        expect(payload["tests"][0]["results"]) == []
+        row = payload["tests"][1]
+        expect(row["results"]) == []
+        expect(row["markers"]) == []
+        expect(row["command"]) is None
+
+    @pytest.mark.django_db
+    def it_includes_markers_and_command_only_on_test(
+        expect, admin_user, project: Project
+    ):
+        suite = Suite.objects.create(
+            project=project,
+            name=DEFAULT_SUITE,
+            local_command="pytest {test.name}",
+        )
+        test = project.tests.create(
+            name="my-test", suite=suite, disabled_user=admin_user
+        )
+        test.results.create(
+            branch="main",
+            commit="deadbeef",
+            status=Status.PASSED,
+            duration=2.5,
+            suite=suite,
+            metadata={"annotations": ["slow"]},
+        )
+        test.refresh_from_db()
+        payload = json.loads(build_metrics_json(project, [test]))
+        row = payload["tests"][1]
+        res = row["results"][1]
+        expect(payload["tests"][0]) == METRICS_JSON_TEST_META
+        expect(row["results"][0]) == METRICS_JSON_RESULT_META
+        expect(row["markers"]) == ["slow"]
+        expect(row["command"]) == "pytest my-test"
+        expect("markers" in res) == False
+        expect("command" in res) == False
+
+    @pytest.mark.django_db
+    def it_includes_default_branch_under_project(expect, admin_user, project: Project):
+        project.default_branches = ["staging", "production"]
+        project.save(update_fields=["default_branches"])
+        test = project.tests.create(name="my-test", disabled_user=admin_user)
+        payload = json.loads(build_metrics_json(project, [test]))
+        expect(payload["project"]["default_branch"]) == "staging"
+
+    @pytest.mark.django_db
+    def it_includes_original_branch_and_commit(expect, admin_user, project: Project):
+        test = project.tests.create(
+            name="my-test",
+            disabled_user=admin_user,
+            original_branch="feature/x",
+            original_commit="abc123def",
+        )
+        payload = json.loads(build_metrics_json(project, [test]))
+        row = payload["tests"][1]
+        expect(row["original_branch"]) == "feature/x"
+        expect(row["original_commit"]) == "abc123def"
+
+    @pytest.mark.django_db
+    def it_serializes_empty_original_branch_and_commit_as_null(
+        expect, admin_user, project: Project
+    ):
+        test = project.tests.create(name="my-test", disabled_user=admin_user)
+        payload = json.loads(build_metrics_json(project, [test]))
+        row = payload["tests"][1]
+        expect(row["original_branch"]) == None
+        expect(row["original_commit"]) == None
 
 
 @pytest.fixture
@@ -350,7 +468,7 @@ def describe_metrics():
         expect(response["Content-Disposition"]).contains("attachment")
         expect(response["Content-Disposition"]).contains("tab-ai-data-foo-bar.json")
         body = response.content.decode("utf-8")
-        expect(body).contains('"repository": "foo/bar"')
+        expect(body).contains('"name": "foo › bar"')
 
     @pytest.mark.django_db
     def it_renders_metrics_raw_preview(
@@ -362,4 +480,4 @@ def describe_metrics():
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
         expect(html).contains("AI Data")
-        expect(html).contains("repository")
+        expect(html).contains("&quot;name&quot;: &quot;foo › bar&quot;")

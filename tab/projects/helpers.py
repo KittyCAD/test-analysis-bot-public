@@ -4,7 +4,9 @@ import json
 from datetime import timezone as dt_timezone
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.urls import reverse
 from django.utils import timezone as django_timezone
 
 import log
@@ -206,111 +208,129 @@ def build_result_prompt(result: Result) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
-def _metrics_json_results_for_test(test: Test) -> list:
-    """Select up to METRICS_JSON_RESULTS_LIMIT results for export.
-
-    Includes the most recent passing run (``status == passed``), if any, and the
-    most recent merge-blocked run (failure / error / timeout / unexpected pass),
-    if any, then fills remaining slots with the newest runs (deduplicated).
-    """
-    # Local import: `models` imports this module at load time.
-    from .models import Result
-
-    pass_result = (
-        test.results.filter(status=Status.PASSED).order_by("-created_at").first()
-    )
-    blocked_statuses = [s.value for s in Status.merge_blocked()]
-    fail_result = (
-        test.results.filter(status__in=blocked_statuses).order_by("-created_at").first()
-    )
-
-    chosen_ids: list[int] = []
-    seen: set[int] = set()
-
-    def add(r: Result | None) -> None:
-        if r is not None and r.pk not in seen:
-            seen.add(r.pk)
-            chosen_ids.append(r.pk)
-
-    add(pass_result)
-    add(fail_result)
-
-    if len(chosen_ids) < METRICS_JSON_RESULTS_LIMIT:
-        for r in test.results.order_by("-created_at")[:100]:
-            if len(chosen_ids) >= METRICS_JSON_RESULTS_LIMIT:
-                break
-            add(r)
-
-    if not chosen_ids:
-        return []
-
-    rows = list(test.results.filter(pk__in=chosen_ids))
-    by_pk = {r.pk: r for r in rows}
-    ordered = [by_pk[pk] for pk in chosen_ids if pk in by_pk]
-    ordered.sort(key=lambda r: r.created_at, reverse=True)
-    return ordered[:METRICS_JSON_RESULTS_LIMIT]
-
-
 def build_metrics_json(project: Project, tests: list[Test]) -> str:
-    # Local import: `models` imports this module at load time.
-    from .models import Result
+
+    def interpolated_command(test: Test) -> str | None:
+        if not test.suite:
+            return None
+        pattern = test.suite.local_command
+        if not pattern:
+            return ""
+        try:
+            return pattern.format(test=test)
+        except (KeyError, AttributeError) as e:
+            log.error(f"Invalid local command for {test.suite}: {repr(e)}")
+            return pattern
+
+    def dt_iso(dt):
+        if not dt:
+            return None
+        if django_timezone.is_aware(dt):
+            dt = dt.astimezone(dt_timezone.utc)
+        return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def result_row(r: Result) -> dict:
-        created = r.created_at
-        if created and django_timezone.is_aware(created):
-            created = created.astimezone(dt_timezone.utc)
-        created_str = created.strftime("%Y-%m-%dT%H:%M:%SZ") if created else None
-
         return {
-            "_meta": METRICS_JSON_RESULT_META,
-            "id": r.pk,
-            "status": r.status,
+            "tab_id": r.pk,
+            "tab_url": r.url,
+            "created_at": dt_iso(r.created_at),
             "branch": r.branch or None,
             "commit": r.commit or None,
             "target": r.target or None,
             "platform": r.platform or None,
-            "final": r.final,
+            "status": r.status,
             "duration": r.duration,
-            "created_at": created_str,
             "message": r.message or None,
-            "url": r.url,
-            "suite_id": r.suite_id,
-            "metadata": r.metadata or {},
+            "logs": r.logs,
         }
+
+    def recent_results(test: Test) -> list:
+
+        pass_result = (
+            test.results.filter(status=Status.PASSED).order_by("-created_at").first()
+        )
+        blocked_statuses = [s.value for s in Status.merge_blocked()]
+        fail_result = (
+            test.results.filter(status__in=blocked_statuses)
+            .order_by("-created_at")
+            .first()
+        )
+
+        chosen_ids: list[int] = []
+        seen: set[int] = set()
+
+        def add(r: Result | None) -> None:
+            if r is not None and r.pk not in seen:
+                seen.add(r.pk)
+                chosen_ids.append(r.pk)
+
+        add(pass_result)
+        add(fail_result)
+
+        if len(chosen_ids) < METRICS_JSON_RESULTS_LIMIT:
+            for r in test.results.order_by("-created_at")[:100]:
+                if len(chosen_ids) >= METRICS_JSON_RESULTS_LIMIT:
+                    break
+                add(r)
+
+        if not chosen_ids:
+            return []
+
+        rows = list(test.results.filter(pk__in=chosen_ids))
+        by_pk = {r.pk: r for r in rows}
+        ordered = [by_pk[pk] for pk in chosen_ids if pk in by_pk]
+        ordered.sort(key=lambda r: r.created_at, reverse=True)
+        return ordered[:METRICS_JSON_RESULTS_LIMIT]
 
     now = django_timezone.now()
     if django_timezone.is_aware(now):
         now = now.astimezone(dt_timezone.utc)
-    generated_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    exported_at = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    test_rows = []
-    for test in tests:
-        lr = test.last_result
-        selected = _metrics_json_results_for_test(test)
-        result_rows = [result_row(r) for r in selected]
-        test_rows.append(
-            {
-                "_meta": METRICS_JSON_TEST_META,
-                "test_id": test.pk,
-                "test_label": str(test),
-                "suite": test.suite.name if test.suite else None,
-                "failure_rate": None if test.failure_rate < 0 else test.failure_rate,
-                "block_rate": None if test.block_rate < 0 else test.block_rate,
-                "average_duration_seconds": (
-                    None if test.average_duration < 0 else test.average_duration
-                ),
-                "last_result_status": lr.status if lr else None,
-                "last_result_branch": lr.branch if lr else None,
-                "test_results_url": test.url,
-                "results": result_rows,
-            }
-        )
+    test_rows: list = []
+    if tests:
+        test_rows.append(METRICS_JSON_TEST_META)
+        for test in tests:
+            selected = recent_results(test)
+            result_rows = (
+                [METRICS_JSON_RESULT_META] + [result_row(r) for r in selected]
+                if selected
+                else []
+            )
+            test_rows.append(
+                {
+                    "tab_id": test.pk,
+                    "tab_url": test.url,
+                    "created_at": dt_iso(test.created_at),
+                    "name": test.name,
+                    "suite": test.suite.name if test.suite else None,
+                    "original_branch": test.original_branch or None,
+                    "original_commit": test.original_commit or None,
+                    "markers": test.markers,
+                    "command": interpolated_command(test),
+                    "failure_rate": (
+                        None if test.failure_rate < 0 else test.failure_rate
+                    ),
+                    "block_rate": None if test.block_rate < 0 else test.block_rate,
+                    "average_duration_seconds": (
+                        None if test.average_duration < 0 else test.average_duration
+                    ),
+                    "results": result_rows,
+                }
+            )
 
     payload = {
-        "_meta": METRICS_JSON_ROOT_META,
-        "repository": project.path,
-        "repository_url": project.repository,
-        "generated_at": generated_at,
+        "message": METRICS_JSON_ROOT_META,
+        "exported_at": exported_at,
+        "project": {
+            "tab_id": project.pk,
+            "tab_url": settings.BASE_URL
+            + reverse("projects:tests", args=[project.path]),
+            "created_at": dt_iso(project.created_at),
+            "name": project.name,
+            "repository_url": project.repository,
+            "default_branch": project.default_branch,
+        },
         "tests": test_rows,
     }
 
