@@ -15,7 +15,8 @@
 
         .table-least-reliable th:first-child,
         .table-least-reliable td:first-child {
-            width: 52%;
+            width: 55%;
+            min-width: 0;
             white-space: normal;
             word-break: break-word;
             overflow-wrap: anywhere;
@@ -23,6 +24,14 @@
 
         .table-least-reliable td:first-child a {
             overflow-wrap: anywhere;
+        }
+
+        .table-least-reliable th:nth-child(n + 2),
+        .table-least-reliable td:nth-child(n + 2) {
+            width: 15%;
+            white-space: nowrap;
+            padding-left: 0.4rem;
+            padding-right: 0.4rem;
         }
     </style>
 {% endblock extra_css %}
