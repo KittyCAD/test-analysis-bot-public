@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
+from django.views import View
 from django.views.generic import FormView, ListView, TemplateView
 
 import log
@@ -24,7 +25,7 @@ from tab.metrics.models import Alert
 from .constants import ALL_BRANCHES, FAILURE_RATE_EPSILON
 from .enums import Platform
 from .forms import BulkUpdateTestForm, UpdateTestForm
-from .helpers import get_disabled_test_metrics
+from .helpers import build_metrics_json, get_disabled_test_metrics
 from .models import Project, Result, Run, Status, Test
 from .tables import DisabledTestTable, ResultTable, TestResultTable, TestTable
 
@@ -663,7 +664,30 @@ class ResultDetailsView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class MetricsView(LoginRequiredMixin, TemplateView):
+class _LeastReliableTestsMixin:
+    def _least_reliable_tests(self, project: Project) -> list[Test]:
+        week_ago = timezone.now() - timedelta(days=7)
+        least_reliable = (
+            Q(failure_rate__gt=0.40, block_rate__gt=0)
+            | Q(block_rate__gt=0.05, failure_rate__gt=0.20)
+            | Q(failure_rate__gt=0.50)
+            | Q(average_duration__gt=90)
+        )
+        queryset = (
+            project.tests.filter(
+                least_reliable,
+                created_at__lte=week_ago,
+                last_result__isnull=False,
+                disabled_at__isnull=True,
+            )
+            .exclude(last_result__status=Status.DISABLED)
+            .select_related("suite")
+            .order_by("-failure_rate", "-average_duration")[:10]
+        )
+        return sorted(queryset, key=lambda t: str(t).lower())
+
+
+class MetricsView(_LeastReliableTestsMixin, LoginRequiredMixin, TemplateView):
     template_name = "projects/metrics.html"
 
     def get_context_data(self, **kwargs):
@@ -674,23 +698,8 @@ class MetricsView(LoginRequiredMixin, TemplateView):
         )
 
         context["project"] = project
-        week_ago = timezone.now() - timedelta(days=7)
-        least_reliable = (
-            Q(failure_rate__gt=0.40, block_rate__gt=0)
-            | Q(block_rate__gt=0.05, failure_rate__gt=0.20)
-            | Q(failure_rate__gt=0.50)
-        )
-        context["least_reliable_tests"] = (
-            project.tests.filter(
-                least_reliable,
-                created_at__lte=week_ago,
-                last_result__isnull=False,
-                disabled_at__isnull=True,
-            )
-            .exclude(last_result__status=Status.DISABLED)
-            .select_related("suite")
-            .order_by("-failure_rate")[:10]
-        )
+        tests_sorted = self._least_reliable_tests(project)
+        context["least_reliable_tests"] = tests_sorted
         context["disabled_test_metrics"] = get_disabled_test_metrics(project)
         if self.request.user.is_staff:
             context["admin_url"] = (
@@ -700,4 +709,34 @@ class MetricsView(LoginRequiredMixin, TemplateView):
                 + f"?project__repository={project.repository}"
             )
 
+        return context
+
+
+class MetricsDownloadView(_LeastReliableTestsMixin, LoginRequiredMixin, View):
+
+    def get(self, request, *args, **kwargs):
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        tests = self._least_reliable_tests(project)
+        body = build_metrics_json(project, tests)
+        stem = project.path.replace("/", "-").lower()
+        filename = f"tab-ai-data-{stem}.json"
+        response = HttpResponse(body, content_type="application/json; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
+class MetricsRawView(_LeastReliableTestsMixin, LoginRequiredMixin, TemplateView):
+
+    template_name = "projects/metrics_raw.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        context["project"] = project
+        tests = self._least_reliable_tests(project)
+        context["export_json"] = build_metrics_json(project, tests)
         return context

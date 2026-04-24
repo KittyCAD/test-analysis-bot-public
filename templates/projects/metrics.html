@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% load formatting_tags %}
+
 {% block title %}
     {{ project.name }}
 {% endblock title %}
@@ -35,8 +37,14 @@
         </div>
         <h2 class="mb-4">Test Metrics</h2>
         <div class="card mb-4">
-            <div class="card-header">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <h3 class="card-title mb-0">Least Reliable</h3>
+                <a href="{% url 'projects:metrics-download' project.path %}"
+                   class="btn btn-sm btn-outline-secondary"
+                   title="Download as JSON"
+                   aria-label="AI Data">
+                    <i class="fa-solid fa-download me-1" aria-hidden="true"></i>AI Data
+                </a>
             </div>
             <div class="card-body">
                 {% if least_reliable_tests %}
@@ -47,6 +55,7 @@
                                     <th>Test</th>
                                     <th class="text-center text-nowrap">Failure Rate</th>
                                     <th class="text-center text-nowrap">Block Rate</th>
+                                    <th class="text-center text-nowrap">Average Duration</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -55,8 +64,9 @@
                                         <td>
                                             <a href="{% url 'projects:test-results' project.path test.id %}?weeks=3">{{ test }}</a>
                                         </td>
-                                        <td class="text-center">{{ test.failure_rate_humanized }}</td>
-                                        <td class="text-center">{{ test.block_rate_humanized }}</td>
+                                        <td class="text-center">{% colorize test "failure_rate" %}</td>
+                                        <td class="text-center">{% colorize test "block_rate" %}</td>
+                                        <td class="text-center">{% colorize test "average_duration" %}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>

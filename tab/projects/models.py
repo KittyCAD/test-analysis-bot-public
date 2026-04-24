@@ -27,7 +27,7 @@ from .constants import (
     get_default_branches,
 )
 from .enums import Platform, Status, Target
-from .helpers import build_prompt, humanize_duration, rerun_failed_jobs
+from .helpers import build_result_prompt, humanize_duration, rerun_failed_jobs
 
 
 class Project(models.Model):
@@ -828,7 +828,7 @@ class Result(models.Model):
     @property
     def prompt(self) -> str:
         """Plain markdown blob for pasting into AI coding agents."""
-        return build_prompt(self)
+        return build_result_prompt(self)
 
     def normalize(self):
         """Pre-save logic to normalize payload values."""

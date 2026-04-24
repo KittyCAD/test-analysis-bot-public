@@ -106,9 +106,6 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.WARNING("Sample project already exists"))
 
-        for test in project.tests.all():
-            test.save()  # ensure last_result and enabled are updated
-
         test, created = Test.objects.get_or_create(
             project=project, name="sample test", original_branch="main"
         )
@@ -126,6 +123,7 @@ class Command(BaseCommand):
         start = end - timedelta(days=days)
 
         self._generate_results(test, num_results, start, end)
+        test.save()  # refresh last_result
         self._generate_history(test, days)
 
     def _generate_history(self, test, days):

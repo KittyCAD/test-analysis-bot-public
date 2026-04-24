@@ -51,6 +51,16 @@ urlpatterns = [
         name="results-regex",
     ),
     path(
+        "<path:path>/metrics/download.json",
+        views.MetricsDownloadView.as_view(),
+        name="metrics-download",
+    ),
+    path(
+        "<path:path>/metrics/raw",
+        views.MetricsRawView.as_view(),
+        name="metrics-raw",
+    ),
+    path(
         "<path:path>/metrics",
         views.MetricsView.as_view(),
         name="metrics",

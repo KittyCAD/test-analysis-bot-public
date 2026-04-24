@@ -1,8 +1,89 @@
+import json
+from datetime import timedelta
+
 from django.utils import timezone
 
 import pytest
 
+from ..helpers import build_metrics_json
 from ..models import Project, Result, Status, Suite, Test
+
+
+def describe_build_metrics_json():
+    @pytest.mark.django_db
+    def it_includes_recent_results_nested_under_each_test(
+        expect, admin_user, project: Project
+    ):
+        test = project.tests.create(name="my-test", disabled_user=admin_user)
+        created = test.results.create(
+            branch="main",
+            commit="deadbeef",
+            status=Status.PASSED,
+            duration=2.5,
+        )
+        payload = json.loads(build_metrics_json(project, [test]))
+        expect(payload["_meta"]).contains("Test Analysis Bot")
+        expect(payload["tests"][0]["_meta"]).contains("least-reliable")
+        expect(len(payload["tests"])) == 1
+        expect(len(payload["tests"][0]["results"])) == 1
+        expect(payload["tests"][0]["results"][0]["id"]) == created.pk
+        expect(payload["tests"][0]["results"][0]["branch"]) == "main"
+        expect(payload["tests"][0]["results"][0]["commit"]) == "deadbeef"
+
+    @pytest.mark.django_db
+    def it_includes_latest_pass_and_latest_failure_when_both_exist(
+        expect, admin_user, project: Project
+    ):
+        test = project.tests.create(name="my-test", disabled_user=admin_user)
+        fail = test.results.create(
+            branch="main",
+            commit="aaa",
+            status=Status.FAILED,
+            duration=1.0,
+        )
+        Result.objects.filter(pk=fail.pk).update(
+            created_at=timezone.now() - timedelta(days=2)
+        )
+        passed = test.results.create(
+            branch="main",
+            commit="bbb",
+            status=Status.PASSED,
+            duration=1.0,
+        )
+        Result.objects.filter(pk=passed.pk).update(
+            created_at=timezone.now() - timedelta(days=1)
+        )
+
+        payload = json.loads(build_metrics_json(project, [test]))
+        statuses = {row["status"] for row in payload["tests"][0]["results"]}
+        expect(Status.FAILED.value in statuses)
+        expect(Status.PASSED.value in statuses)
+
+    @pytest.mark.django_db
+    def it_caps_exported_results_at_ten(expect, admin_user, project: Project):
+        test = project.tests.create(name="my-test", disabled_user=admin_user)
+        base = timezone.now()
+        for i in range(15):
+            r = test.results.create(
+                branch="main",
+                commit=f"c{i}",
+                status=Status.PASSED,
+                duration=1.0,
+            )
+            Result.objects.filter(pk=r.pk).update(
+                created_at=base - timedelta(minutes=i)
+            )
+
+        payload = json.loads(build_metrics_json(project, [test]))
+        expect(len(payload["tests"][0]["results"])) == 10
+
+    @pytest.mark.django_db
+    def it_serializes_empty_results_when_test_has_none(
+        expect, admin_user, project: Project
+    ):
+        test = project.tests.create(name="my-test", disabled_user=admin_user)
+        payload = json.loads(build_metrics_json(project, [test]))
+        expect(payload["tests"][0]["results"]) == []
 
 
 @pytest.fixture
@@ -258,3 +339,27 @@ def describe_metrics():
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
         expect(html).contains(admin_user.email)
+
+    @pytest.mark.django_db
+    def it_downloads_ai_data_json(expect, admin_client, admin_user, project: Project):
+        project.tests.create(name="my-test", disabled_user=admin_user)
+
+        response = admin_client.get("/projects/foo/bar/metrics/download.json")
+        expect(response.status_code) == 200
+        expect(response["Content-Type"]).contains("application/json")
+        expect(response["Content-Disposition"]).contains("attachment")
+        expect(response["Content-Disposition"]).contains("tab-ai-data-foo-bar.json")
+        body = response.content.decode("utf-8")
+        expect(body).contains('"repository": "foo/bar"')
+
+    @pytest.mark.django_db
+    def it_renders_metrics_raw_preview(
+        expect, admin_client, admin_user, project: Project
+    ):
+        project.tests.create(name="my-test", disabled_user=admin_user)
+
+        response = admin_client.get("/projects/foo/bar/metrics/raw")
+        expect(response.status_code) == 200
+        html = response.content.decode("utf-8")
+        expect(html).contains("AI Data")
+        expect(html).contains("repository")
