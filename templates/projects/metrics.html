@@ -159,14 +159,7 @@
                 return;
             }
 
-            const icon = button.querySelector("i");
-
             function setLoadingState(isLoading) {
-                if (icon) {
-                    icon.classList.toggle("fa-download", !isLoading);
-                    icon.classList.toggle("fa-gear", isLoading);
-                    icon.classList.toggle("fa-spin", isLoading);
-                }
                 button.classList.toggle("disabled", isLoading);
                 button.setAttribute("aria-disabled", String(isLoading));
             }
