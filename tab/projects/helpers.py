@@ -24,8 +24,8 @@ if TYPE_CHECKING:
 METRICS_JSON_RESULTS_LIMIT = 10
 
 METRICS_JSON_ROOT_META = "The following is exported from the Test Analysis Bot (TAB)."
-METRICS_JSON_TEST_META = "These are the least-reliable and slowest tests in this project. Use this information to triage and suggest fixes."
-METRICS_JSON_RESULT_META = "These are recent results for this test including at least one pass and one fail, if available."
+METRICS_JSON_TEST_META = "These are the least-reliable and slowest tests in this project. Use this information to triage and suggest fixes. Durations are in seconds."
+METRICS_JSON_RESULT_META = "These are recent results for this test including at least one pass and one fail, if available. Durations are in seconds."
 
 
 def insert_breaks(text: str) -> str:
@@ -229,6 +229,15 @@ def build_metrics_json(project: Project, tests: list[Test]) -> str:
             dt = dt.astimezone(dt_timezone.utc)
         return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    def setup_duration(r: Result) -> float | None:
+        if suite := r.suite:
+            try:
+                run = suite.runs.get(branch=r.branch, commit=r.commit)
+            except suite.runs.model.DoesNotExist:
+                return None
+            return run.setup_duration if run.setup_duration > 0 else None
+        return None
+
     def result_row(r: Result) -> dict:
         return {
             "tab_id": r.pk,
@@ -239,7 +248,8 @@ def build_metrics_json(project: Project, tests: list[Test]) -> str:
             "target": r.target or None,
             "platform": r.platform or None,
             "status": r.status,
-            "duration": r.duration,
+            "setup_duration": setup_duration(r),
+            "test_duration": r.duration,
             "message": r.message or None,
             "logs": r.logs,
         }
@@ -312,7 +322,7 @@ def build_metrics_json(project: Project, tests: list[Test]) -> str:
                         None if test.failure_rate < 0 else test.failure_rate
                     ),
                     "block_rate": None if test.block_rate < 0 else test.block_rate,
-                    "average_duration_seconds": (
+                    "average_duration": (
                         None if test.average_duration < 0 else test.average_duration
                     ),
                     "results": result_rows,

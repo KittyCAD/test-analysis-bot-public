@@ -38,6 +38,7 @@ def describe_build_metrics_json():
         expect(payload["tests"][1]["results"][1]["tab_id"]) == created.pk
         expect(payload["tests"][1]["results"][1]["branch"]) == "main"
         expect(payload["tests"][1]["results"][1]["commit"]) == "deadbeef"
+        expect(payload["tests"][1]["results"][1]["test_duration"]) == 2.5
         expect(payload["tests"][1]["results"][1]["logs"]) == []
 
     @pytest.mark.django_db
@@ -53,6 +54,34 @@ def describe_build_metrics_json():
         )
         payload = json.loads(build_metrics_json(project, [test]))
         expect(payload["tests"][1]["results"][1]["logs"]) == logs
+
+    @pytest.mark.django_db
+    def it_includes_suite_setup_duration_on_results(
+        expect, admin_user, project: Project
+    ):
+        suite = Suite.objects.create(project=project, name=DEFAULT_SUITE)
+        test = project.tests.create(
+            name="my-test", suite=suite, disabled_user=admin_user
+        )
+        result = test.results.create(
+            suite=suite,
+            branch="main",
+            commit="deadbeef",
+            status=Status.PASSED,
+            duration=1.0,
+        )
+        started = timezone.now() - timedelta(seconds=8)
+        tests_started = started + timedelta(seconds=3)
+        project.runs.create(
+            suite=suite,
+            branch=result.branch,
+            commit=result.commit,
+            setup_started_at=started,
+            tests_started_at=tests_started,
+        )
+
+        payload = json.loads(build_metrics_json(project, [test]))
+        expect(payload["tests"][1]["results"][1]["setup_duration"]) == 3.0
 
     @pytest.mark.django_db
     def it_includes_created_at_on_project_and_tests(expect, admin_user, project):
