@@ -32,7 +32,7 @@ psycopg2-binary = "^2.9.11"
 redis = "^7.4.0"
 
 # Integrations
-pygithub = "^2.9.0"
+pygithub = "^2.9.1"
 slack-sdk = "^3.41.0"
 
 # Utilities
@@ -55,7 +55,7 @@ djlint = "^1.36.4"
 
 # Linting
 mypy = "^1.20"
-django-stubs = { version = "^6.0.2", extras = ["compatible-mypy"] }
+django-stubs = { version = "^6.0.3", extras = ["compatible-mypy"] }
 types-markdown = "*"
 types-requests = "*"
 
