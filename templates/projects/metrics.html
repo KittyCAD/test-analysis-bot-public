@@ -71,9 +71,9 @@
                 <h3 class="card-title mb-0">Least Reliable</h3>
                 <a id="ai-data-export-button"
                    href="{% url 'projects:metrics-download' project.path %}"
-                   class="btn btn-sm btn-outline-secondary"
+                   class="btn btn-sm btn-outline-secondary{% if not least_reliable_tests %} disabled pe-none{% endif %}"
                    title="Download as JSON"
-                   aria-label="AI Data">
+                   {% if not least_reliable_tests %}tabindex="-1"{% endif %}>
                     <i class="fa-solid fa-download me-1" aria-hidden="true"></i><span>AI Data</span>
                 </a>
             </div>
