@@ -21,7 +21,7 @@ django-cors-headers = "*"
 django-crispy-forms = "^2.6"
 crispy-bootstrap5 = "*" # styling for 'django-crispy-forms'
 django-debug-toolbar = "^6.3"
-django-tables2 = "^2.8.0"
+django-tables2 = "^3.0.0"
 
 # API
 django-ninja = "^1.6.2"
