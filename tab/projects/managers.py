@@ -62,6 +62,9 @@ class SuiteManager(models.Manager):
 
 
 class TestManager(models.Manager):
+    def filter_disabled(self, project: Project):
+        return self.filter(project=project, enabled=False, last_result__isnull=False)
+
     def get_parent_and_child_tests(self, test: Test) -> tuple[Test | None, list[Test]]:
         parent_suite = test.suite.parent if test.suite else None
         parent_test: Test | None = (

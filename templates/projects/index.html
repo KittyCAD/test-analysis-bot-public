@@ -33,10 +33,12 @@
                            class="btn btn-sm btn-outline-secondary">
                             <i class="fa-solid fa-table-list me-1" aria-hidden="true"></i>View Latest Results
                         </a>
-                        <a href="{% url 'projects:disabled-tests' project.path %}"
-                           class="btn btn-sm btn-outline-secondary disabled-tests-btn">
-                            <i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>View Disabled Tests
-                        </a>
+                        {% if project.has_disabled_tests %}
+                            <a href="{% url 'projects:disabled-tests' project.path %}"
+                               class="btn btn-sm btn-outline-secondary disabled-tests-btn">
+                                <i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>View Disabled Tests
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}

@@ -92,6 +92,10 @@ class Project(models.Model):
     def default_branch(self) -> str:
         return self.default_branches[0]
 
+    @property
+    def has_disabled_tests(self) -> bool:
+        return Test.objects.filter_disabled(self).exists()
+
     def save(self, *args, **kwargs):
         self._update_repository()
         super().save(*args, **kwargs)

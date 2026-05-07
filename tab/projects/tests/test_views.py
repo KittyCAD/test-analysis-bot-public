@@ -8,6 +8,8 @@ from django.utils import timezone
 
 import pytest
 
+from tab.core.models import Organization
+
 from ..constants import DEFAULT_SUITE
 from ..helpers import (
     METRICS_JSON_RESULT_META,
@@ -251,6 +253,38 @@ def disabled_test(project: Project):
     test.failure_rate = 0.25
     test.save()
     return test
+
+
+def describe_projects_index():
+    index_url = "/projects/"
+
+    @pytest.fixture
+    def organization():
+        return Organization.objects.create(
+            name="Test Org",
+            email_domain="example.com",
+            repository_index="https://github.com/foo",
+        )
+
+    @pytest.mark.django_db
+    def it_hides_disabled_tests_button_when_no_disabled_tests(
+        expect, admin_client, organization, project: Project
+    ):
+        response = admin_client.get(index_url)
+        html = response.content.decode("utf-8")
+        expect(response.status_code) == 200
+        expect(html).excludes("disabled-tests-btn")
+        expect(html).excludes("View Disabled Tests")
+
+    @pytest.mark.django_db
+    def it_shows_disabled_tests_button_when_disabled_tests_exist(
+        expect, admin_client, organization, disabled_test: Test
+    ):
+        response = admin_client.get(index_url)
+        html = response.content.decode("utf-8")
+        expect(response.status_code) == 200
+        expect(html).contains("disabled-tests-btn")
+        expect(html).contains("View Disabled Tests")
 
 
 def describe_projects():
