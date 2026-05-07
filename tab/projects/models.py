@@ -94,7 +94,7 @@ class Project(models.Model):
 
     @property
     def has_disabled_tests(self) -> bool:
-        return Test.objects.filter_disabled(self).exists()
+        return self.tests.filter(disabled_at__isnull=False).exists()
 
     def save(self, *args, **kwargs):
         self._update_repository()
