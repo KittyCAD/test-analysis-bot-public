@@ -94,7 +94,10 @@ class Project(models.Model):
 
     @property
     def has_disabled_tests(self) -> bool:
-        return self.tests.filter(disabled_at__isnull=False).exists()
+        cutoff = timezone.now() - timedelta(days=7)
+        return self.tests.filter(
+            disabled_at__isnull=False, updated_at__gte=cutoff
+        ).exists()
 
     def save(self, *args, **kwargs):
         self._update_repository()
