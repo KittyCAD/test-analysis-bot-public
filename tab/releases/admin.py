@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 
 from tab.projects.models import Result
 
+from .constants import PLACEHOLDER_CHARACTER
 from .models import Environment, Release
 
 
@@ -68,6 +69,7 @@ class ReleaseAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "environment",
+        "_url",
         "_branch",
         "_commit",
         "created_at",
@@ -83,6 +85,15 @@ class ReleaseAdmin(admin.ModelAdmin):
         "finalized_at",
         "environment__project__repository",
     )
+
+    @admin.display(description="URL")
+    def _url(self, release: Release):
+        url = release.environment.url
+        if not url:
+            return
+        if PLACEHOLDER_CHARACTER in url:
+            return url
+        return mark_safe(f'<a href="{url}" target="_blank">{url}</a>')
 
     @admin.display(description="Branch")
     def _branch(self, release: Release):

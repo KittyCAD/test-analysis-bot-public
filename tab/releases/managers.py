@@ -38,17 +38,45 @@ class EnvironmentManager(models.Manager):
                     project=project, name=Type.STAGING
                 )
         else:
-            placeholder_url = None
-            if url is None:
+            from .models import Release
+
+            existing_release = (
+                Release.objects.filter(
+                    environment__project=project,
+                    environment__name=Type.REVIEW,
+                    branch=result.branch,
+                    commit=result.commit,
+                )
+                .select_related("environment")
+                .order_by("created_at")
+                .first()
+            )
+
+            if url:
+                environment, created = self.get_or_create(  # type: ignore[assignment]
+                    project=project, url=url, name=Type.REVIEW
+                )
+                if (
+                    existing_release
+                    and existing_release.environment_id != environment.id
+                ):
+                    existing_release.environment = environment
+                    existing_release.save(update_fields=["environment"])
+            elif existing_release:
+                environment = existing_release.environment
+                created = False
+            else:
+                placeholder_url = None
                 if environment := self.filter(
                     project=project,
                     name=Type.REVIEW,
                     url__contains=PLACEHOLDER_CHARACTER,
                 ).first():  # type: ignore[assignment]
                     placeholder_url = environment.url  # type: ignore[attr-defined]
-            environment, created = self.get_or_create(  # type: ignore[assignment]
-                project=project, url=url or placeholder_url, name=Type.REVIEW
-            )
+                environment, created = self.get_or_create(  # type: ignore[assignment]
+                    project=project, url=placeholder_url, name=Type.REVIEW
+                )
+
         if created:
             log.info(f"Created environment: {environment}")
         else:
