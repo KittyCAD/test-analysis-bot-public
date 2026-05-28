@@ -28,7 +28,7 @@ class EnvironmentAdmin(admin.ModelAdmin):
         "id",
         "name",
         "project",
-        "url",
+        "_url",
         "_dependencies",
         "created_at",
     )
@@ -38,6 +38,15 @@ class EnvironmentAdmin(admin.ModelAdmin):
         "updated_at",
         "project__repository",
     )
+
+    @admin.display(description="URL")
+    def _url(self, environment: Environment):
+        url = environment.url
+        if not url:
+            return
+        if PLACEHOLDER_CHARACTER in url:
+            return url
+        return mark_safe(f'<a href="{url}" target="_blank">{url}</a>')
 
     @admin.display(description="Dependencies")
     def _dependencies(self, environment: Environment):
@@ -69,9 +78,9 @@ class ReleaseAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "environment",
-        "_url",
         "_branch",
         "_commit",
+        "_url",
         "created_at",
         "_dependencies",
         "tested_at",
