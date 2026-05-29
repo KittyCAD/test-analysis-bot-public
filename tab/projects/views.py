@@ -267,6 +267,14 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
     template_name = "projects/results.html"
     search_labels = ["platform", "tag"]
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.GET.get("branch") == ALL_BRANCHES:
+            params = request.GET.copy()
+            params.pop("branch", None)
+            path = f"{request.path}?{params.urlencode()}".strip("?")
+            return redirect(path)
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")

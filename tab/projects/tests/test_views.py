@@ -477,6 +477,11 @@ def describe_results():
         expect(response.status_code) == 302
         expect(response.url) == f"{url}?search=foobar&tag=fixme"
 
+    def it_redirects_branch_all_to_default(expect, admin_client):
+        response = admin_client.get(f"{url}?branch=all&show=fails")
+        expect(response.status_code) == 302
+        expect(response.url) == f"{url}?show=fails"
+
     def describe_regex():
         url = "/projects/foo/bar/results/regex"
 
