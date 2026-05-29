@@ -6,7 +6,7 @@ description = "Keep tabs on unreliable tests."
 readme = "README.md"
 license = "MIT"
 
-requires-python = "^3.13"
+requires-python = "^3.14"
 
 [tool.poetry]
 
@@ -25,6 +25,7 @@ django-tables2 = "^3.0.0"
 
 # API
 django-ninja = "^1.6.2"
+pydantic = "^2.12.5"
 
 # Storage
 dj-database-url = "*"
