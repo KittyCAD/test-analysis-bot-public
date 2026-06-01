@@ -79,7 +79,9 @@ class Team(models.Model):
         Organization, on_delete=models.CASCADE, related_name="teams"
     )
     slack_channel_name = models.CharField(max_length=100)
-    slack_channel_id = models.CharField(max_length=100, blank=True)
+    slack_channel_id = models.CharField(
+        max_length=100, blank=True, verbose_name="Slack Channel ID"
+    )
 
     alerted_at = models.DateTimeField(null=True, blank=True)
 
@@ -223,7 +225,7 @@ class Alert(models.Model):
                 message = self.build(debug=debug, url=None if force else self.url)
                 unfurl = bool(self.url) and not force
             elif not forward:
-                log.debug(f"Skipped secondary alert for test: {self.test}")
+                log.info(f"Skipped secondary alert for test: {self.test}")
                 continue
             elif self.url:
                 message = self.build(debug=debug, url=self.url)
