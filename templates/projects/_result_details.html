@@ -21,7 +21,9 @@
 {% endif %}
 {% if result.command %}
     <div class="mt-3">
-        {% if result.logs %}<h5 class="text-muted mb-0">Rerun Locally</h5>{% endif %}
+        {% if result.logs %}
+            <h5 class="text-muted mb-0">Rerun Locally</h5>
+        {% endif %}
         <div class="bg-dark text-light rounded mt-3 p-3 command">
             {% for line, copyable in result.command %}
                 <div class="d-flex align-items-center mb-1">
@@ -64,13 +66,17 @@
                 <table class="table table-bordered table-sm border-light">
                     <thead class="table-secondary sticky-top">
                         <tr>
-                            {% for header in table_data.headers %}<th>{{ header|title }}</th>{% endfor %}
+                            {% for header in table_data.headers %}
+                                <th>{{ header|title }}</th>
+                            {% endfor %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for log_row in table_data.rows %}
                             <tr>
-                                {% for value in log_row %}<td class="font-monospace small">{{ value }}</td>{% endfor %}
+                                {% for value in log_row %}
+                                    <td class="font-monospace small">{{ value }}</td>
+                                {% endfor %}
                             </tr>
                         {% endfor %}
                     </tbody>
