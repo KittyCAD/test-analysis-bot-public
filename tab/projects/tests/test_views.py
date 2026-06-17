@@ -19,11 +19,38 @@ from ..helpers import (
 from ..models import Project, Result, Status, Suite, Test
 
 
-def describe_build_metrics_json():
+@pytest.fixture
+def organization():
+    return Organization.objects.create(
+        name="Test Org",
+        email_domain="example.com",
+        repository_index="https://github.com/foo",
+    )
+
+
+@pytest.fixture
+def project():
+    return Project.objects.create(repository="https://github.com/foo/bar")
+
+
+@pytest.fixture
+def disabled_test(project: Project):
+    test = Test.objects.create(project=project, name="test")
+    test.results.create(
+        branch="main",
+        commit="abc123",
+        status=Status.PASSED,
+        duration=1.0,
+    )
+    test.disabled_at = timezone.now()
+    test.failure_rate = 0.25
+    test.save()
+    return test
+
+
+def describe_build_metrics_json(expect, admin_user, project: Project):
     @pytest.mark.django_db
-    def it_includes_recent_results_nested_under_each_test(
-        expect, admin_user, project: Project
-    ):
+    def it_includes_recent_results_nested_under_each_test():
         test = project.tests.create(name="my-test", disabled_user=admin_user)
         created = test.results.create(
             branch="main",
@@ -44,7 +71,7 @@ def describe_build_metrics_json():
         expect(payload["tests"][1]["results"][1]["logs"]) == []
 
     @pytest.mark.django_db
-    def it_includes_logs_on_results(expect, admin_user, project: Project):
+    def it_includes_logs_on_results():
         test = project.tests.create(name="my-test", disabled_user=admin_user)
         logs = [{"step": "pytest", "rc": 1}]
         test.results.create(
@@ -58,9 +85,7 @@ def describe_build_metrics_json():
         expect(payload["tests"][1]["results"][1]["logs"]) == logs
 
     @pytest.mark.django_db
-    def it_includes_suite_setup_duration_on_results(
-        expect, admin_user, project: Project
-    ):
+    def it_includes_suite_setup_duration_on_results():
         suite = Suite.objects.create(project=project, name=DEFAULT_SUITE)
         test = project.tests.create(
             name="my-test", suite=suite, disabled_user=admin_user
@@ -86,7 +111,7 @@ def describe_build_metrics_json():
         expect(payload["tests"][1]["results"][1]["setup_duration"]) == 3.0
 
     @pytest.mark.django_db
-    def it_includes_created_at_on_project_and_tests(expect, admin_user, project):
+    def it_includes_created_at_on_project_and_tests():
         test = project.tests.create(name="my-test", disabled_user=admin_user)
 
         def fmt_utc(dt):
@@ -101,7 +126,7 @@ def describe_build_metrics_json():
         expect(payload["tests"][1]["created_at"]) == fmt_utc(test.created_at)
 
     @pytest.mark.django_db
-    def it_includes_tab_id_and_tab_url_on_project(expect, admin_user, project):
+    def it_includes_tab_id_and_tab_url_on_project():
         test = project.tests.create(name="my-test", disabled_user=admin_user)
         payload = json.loads(build_metrics_json(project, [test]))
         expect(payload["project"]["tab_id"]) == project.pk
@@ -111,9 +136,7 @@ def describe_build_metrics_json():
         )
 
     @pytest.mark.django_db
-    def it_includes_latest_pass_and_latest_failure_when_both_exist(
-        expect, admin_user, project: Project
-    ):
+    def it_includes_latest_pass_and_latest_failure_when_both_exist():
         test = project.tests.create(name="my-test", disabled_user=admin_user)
         fail = test.results.create(
             branch="main",
@@ -144,7 +167,7 @@ def describe_build_metrics_json():
         expect(Status.PASSED.value in statuses)
 
     @pytest.mark.django_db
-    def it_caps_exported_results_at_ten(expect, admin_user, project: Project):
+    def it_caps_exported_results_at_ten():
         test = project.tests.create(name="my-test", disabled_user=admin_user)
         base = timezone.now()
         for i in range(15):
@@ -162,9 +185,7 @@ def describe_build_metrics_json():
         expect(len(payload["tests"][1]["results"])) == 11
 
     @pytest.mark.django_db
-    def it_serializes_empty_results_when_test_has_none(
-        expect, admin_user, project: Project
-    ):
+    def it_serializes_empty_results_when_test_has_none():
         test = project.tests.create(name="my-test", disabled_user=admin_user)
         payload = json.loads(build_metrics_json(project, [test]))
         row = payload["tests"][1]
@@ -173,9 +194,7 @@ def describe_build_metrics_json():
         expect(row["command"]) is None
 
     @pytest.mark.django_db
-    def it_includes_markers_and_command_only_on_test(
-        expect, admin_user, project: Project
-    ):
+    def it_includes_markers_and_command_only_on_test():
         suite = Suite.objects.create(
             project=project,
             name=DEFAULT_SUITE,
@@ -204,7 +223,7 @@ def describe_build_metrics_json():
         expect("command" in res) == False
 
     @pytest.mark.django_db
-    def it_includes_default_branch_under_project(expect, admin_user, project: Project):
+    def it_includes_default_branch_under_project():
         project.default_branches = ["staging", "production"]
         project.save(update_fields=["default_branches"])
         test = project.tests.create(name="my-test", disabled_user=admin_user)
@@ -212,7 +231,7 @@ def describe_build_metrics_json():
         expect(payload["project"]["default_branch"]) == "staging"
 
     @pytest.mark.django_db
-    def it_includes_original_branch_and_commit(expect, admin_user, project: Project):
+    def it_includes_original_branch_and_commit():
         test = project.tests.create(
             name="my-test",
             disabled_user=admin_user,
@@ -225,9 +244,7 @@ def describe_build_metrics_json():
         expect(row["original_commit"]) == "abc123def"
 
     @pytest.mark.django_db
-    def it_serializes_empty_original_branch_and_commit_as_null(
-        expect, admin_user, project: Project
-    ):
+    def it_serializes_empty_original_branch_and_commit_as_null():
         test = project.tests.create(name="my-test", disabled_user=admin_user)
         payload = json.loads(build_metrics_json(project, [test]))
         row = payload["tests"][1]
@@ -235,41 +252,11 @@ def describe_build_metrics_json():
         expect(row["original_commit"]) == None
 
 
-@pytest.fixture
-def project():
-    return Project.objects.create(repository="https://github.com/foo/bar")
-
-
-@pytest.fixture
-def disabled_test(project: Project):
-    test = Test.objects.create(project=project, name="test")
-    test.results.create(
-        branch="main",
-        commit="abc123",
-        status=Status.PASSED,
-        duration=1.0,
-    )
-    test.disabled_at = timezone.now()
-    test.failure_rate = 0.25
-    test.save()
-    return test
-
-
-def describe_projects_index():
+def describe_projects_index(expect, admin_client, organization: Organization):
     index_url = "/projects/"
 
-    @pytest.fixture
-    def organization():
-        return Organization.objects.create(
-            name="Test Org",
-            email_domain="example.com",
-            repository_index="https://github.com/foo",
-        )
-
     @pytest.mark.django_db
-    def it_hides_disabled_tests_button_when_no_disabled_tests(
-        expect, admin_client, organization, project: Project
-    ):
+    def it_hides_disabled_tests_button_when_no_disabled_tests(project: Project):
         response = admin_client.get(index_url)
         html = response.content.decode("utf-8")
         expect(response.status_code) == 200
@@ -277,9 +264,7 @@ def describe_projects_index():
         expect(html).excludes("View Disabled Tests")
 
     @pytest.mark.django_db
-    def it_shows_disabled_tests_button_when_disabled_tests_exist(
-        expect, admin_client, organization, disabled_test: Test
-    ):
+    def it_shows_disabled_tests_button_when_disabled_tests_exist(disabled_test: Test):
         response = admin_client.get(index_url)
         html = response.content.decode("utf-8")
         expect(response.status_code) == 200
@@ -287,11 +272,11 @@ def describe_projects_index():
         expect(html).contains("View Disabled Tests")
 
 
-def describe_projects():
+def describe_projects(expect):
     url = "/projects/foo/bar"
 
     @pytest.mark.django_db
-    def it_renders_the_projects_page(expect, admin_client, project: Project):
+    def it_renders_the_projects_page(admin_client, project: Project):
         response = admin_client.get(url)
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
@@ -299,26 +284,24 @@ def describe_projects():
         expect(html).contains("0 tests")
 
 
-def describe_tests():
+def describe_tests(expect):
     url = "/projects/foo/bar/tests"
 
-    def it_redirects_tag_search_to_query_param(expect, admin_client):
+    def it_redirects_tag_search_to_query_param(admin_client):
         response = admin_client.get(f"{url}?search=foobar tag:@FIXME")
         expect(response.status_code) == 302
         expect(response.url) == f"{url}?search=foobar&tag=fixme"
 
-    def describe_details():
+    def describe_details(expect, admin_client, disabled_test: Test):
         url = "/projects/foo/bar/tests/{pk}"
 
         @pytest.mark.django_db
-        def it_renders_the_test_details_page(expect, admin_client, disabled_test: Test):
+        def it_renders_the_test_details_page():
             response = admin_client.get(url.format(pk=disabled_test.pk))
             expect(response.status_code) == 200
 
         @pytest.mark.django_db
-        def it_updates_override_behavior(
-            expect, mocker, admin_client, admin_user, disabled_test: Test
-        ):
+        def it_updates_override_behavior(mocker, admin_user):
             mocker.patch("tab.projects.views.Alert")  # silence thread warnings
 
             # Create a test in a parent suite
@@ -412,24 +395,22 @@ def describe_tests():
             expect(child_test.disabled_reason) == "bar"  # preserves message
             expect(child_test.disabled_user) == admin_user
 
-    def describe_disabled():
+    def describe_disabled(expect):
         url = "/projects/foo/bar/tests/disabled"
 
         @pytest.mark.django_db
-        def it_renders_the_disabled_tests_page(
-            expect, admin_client, disabled_test: Test
-        ):
+        def it_renders_the_disabled_tests_page(admin_client, disabled_test: Test):
             response = admin_client.get(url)
             expect(response.status_code) == 200
             html = response.content.decode("utf-8")
             expect(html).contains("1 Disabled Test")
 
-        def describe_regex():
+        def describe_regex(expect):
             url = "/projects/foo/bar/tests/disabled/regex"
 
             @pytest.mark.django_db
             def it_joins_the_regex_for_each_test(
-                expect, client, project: Project, disabled_test: Test
+                client, project: Project, disabled_test: Test
             ):
                 for name in ["test [abc]", "test's name"]:
                     test = Test.objects.create(project=project, name=name)
@@ -449,11 +430,11 @@ def describe_tests():
                 expect(text) == r"'test|test \[abc\]|test'\''s name'"
 
 
-def describe_results():
+def describe_results(expect, admin_client):
     url = "/projects/foo/bar/results"
 
     @pytest.mark.django_db
-    def it_renders_the_results_page(expect, admin_client, project: Project):
+    def it_renders_the_results_page(project: Project):
         Result.objects.create(
             test=Test.objects.create(project=project, name="test"),
             branch="main",
@@ -467,28 +448,26 @@ def describe_results():
         html = response.content.decode("utf-8")
         expect(html).contains("(1 result)")
 
-    def it_redirects_platform_search_to_query_param(expect, admin_client):
+    def it_redirects_platform_search_to_query_param():
         response = admin_client.get(f"{url}?search=foo PLATFORM:Windows bar")
         expect(response.status_code) == 302
         expect(response.url) == f"{url}?search=foo+bar&platform=windows"
 
-    def it_redirects_tag_search_to_query_param(expect, admin_client):
+    def it_redirects_tag_search_to_query_param():
         response = admin_client.get(f"{url}?search=foobar tag:@FIXME")
         expect(response.status_code) == 302
         expect(response.url) == f"{url}?search=foobar&tag=fixme"
 
-    def it_redirects_branch_all_to_default(expect, admin_client):
+    def it_redirects_branch_all_to_default():
         response = admin_client.get(f"{url}?branch=all&show=fails")
         expect(response.status_code) == 302
         expect(response.url) == f"{url}?show=fails"
 
-    def describe_regex():
+    def describe_regex(expect):
         url = "/projects/foo/bar/results/regex"
 
         @pytest.mark.django_db
-        def it_joins_the_regex_for_each_results_test(
-            expect, admin_client, project: Project
-        ):
+        def it_joins_the_regex_for_each_results_test(project: Project):
             test1 = Test.objects.create(project=project, name="failing test")
             test1.results.create(
                 branch="main",
@@ -514,11 +493,11 @@ def describe_results():
             expect(html) == r"'errored test|failing test'"
 
 
-def describe_metrics():
+def describe_metrics(expect, admin_client, admin_user, project: Project):
     url = "/projects/foo/bar/metrics"
 
     @pytest.mark.django_db
-    def it_renders_the_metrics_page(expect, admin_client, admin_user, project: Project):
+    def it_renders_the_metrics_page():
         project.tests.create(name="my-test", disabled_user=admin_user)
 
         response = admin_client.get(url)
@@ -527,7 +506,7 @@ def describe_metrics():
         expect(html).contains(admin_user.email)
 
     @pytest.mark.django_db
-    def it_downloads_ai_data_json(expect, admin_client, admin_user, project: Project):
+    def it_downloads_ai_data_json():
         project.tests.create(name="my-test", disabled_user=admin_user)
 
         response = admin_client.get("/projects/foo/bar/metrics/download.json")
@@ -539,9 +518,7 @@ def describe_metrics():
         expect(body).contains('"name": "foo › bar"')
 
     @pytest.mark.django_db
-    def it_renders_metrics_raw_preview(
-        expect, admin_client, admin_user, project: Project
-    ):
+    def it_renders_metrics_raw_preview():
         project.tests.create(name="my-test", disabled_user=admin_user)
 
         response = admin_client.get("/projects/foo/bar/metrics/raw")

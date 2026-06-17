@@ -3,7 +3,7 @@ import pytest
 from ..types import Message
 
 
-def describe_message():
+def describe_message(expect):
     @pytest.fixture
     def message():
         return Message(
@@ -12,38 +12,38 @@ def describe_message():
             url="https://example.com",
         )
 
-    def it_formats_as_text(expect, message: Message):
+    def it_formats_as_text(message: Message):
         expect(str(message)) == (
             "Failures increased by 10% today: "
             "my_namespace::my project › section > my test -> my case"
         )
 
-    def it_formats_as_html(expect, message: Message):
+    def it_formats_as_html(message: Message):
         expect(message.html) == (
             "Failures increased by 10% today: "
             "<a href='https://example.com' target='_blank'>my_namespace::my project › section > my test -> my case</a>"
         )
 
-    def it_formats_as_markdown(expect, message: Message):
+    def it_formats_as_markdown(message: Message):
         expect(message.markdown) == (
             "Failures increased by 10% today: "
             "[my_namespace::my project › section > my test -> my case](https://example.com)"
         )
 
-    def it_formats_as_mrkdwn(expect, message: Message):
+    def it_formats_as_mrkdwn(message: Message):
         expect(message.mrkdwn) == (
             "Failures increased by 10% today: "
             "<https://example.com|my_namespace∶∶my project › section › my test → my case>"
         )
 
-    def it_formats_as_mrkdwn_with_test_prefix(expect, message: Message):
+    def it_formats_as_mrkdwn_with_test_prefix(message: Message):
         message.debug = True
         expect(message.mrkdwn) == (
             "`SAMPLE ALERT` Failures increased by 10% today: "
             "<https://example.com|my_namespace∶∶my project › section › my test → my case>"
         )
 
-    def it_truncates_extra(expect, message: Message):
+    def it_truncates_extra(message: Message):
         message.extra = "\n".join(
             [
                 "1 " + "x" * 99,
@@ -75,7 +75,7 @@ def describe_message():
             )
         )
 
-    def it_truncates_extra_with_short_last_line(expect, message: Message):
+    def it_truncates_extra_with_short_last_line(message: Message):
         message.extra = "\n".join(
             [
                 "1 xxxxxxxxx",
@@ -107,6 +107,6 @@ def describe_message():
             )
         )
 
-    def it_keeps_extra_if_a_single_line(expect, message: Message):
+    def it_keeps_extra_if_a_single_line(message: Message):
         message.extra = "Jane Doe: This test was disabled because of this long explanation that we don't want to truncate at all."
         expect(message.markdown).excludes("…")

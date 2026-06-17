@@ -14,10 +14,10 @@ def project():
     return Project.objects.create(repository="https://github.com/foo/bar")
 
 
-def describe_result_manager():
-    def describe_get_active_branches():
+def describe_result_manager(expect, project: Project):
+    def describe_get_active_branches(expect):
         @pytest.mark.django_db
-        def it_returns_distinct_branches_ordered_by_name(expect, project: Project):
+        def it_returns_distinct_branches_ordered_by_name():
             test = Test.objects.create(project=project, name="t")
             Result.objects.create(
                 test=test,
@@ -39,9 +39,7 @@ def describe_result_manager():
             expect(branches) == ["feature", "main"]
 
         @pytest.mark.django_db
-        def it_excludes_branches_older_than_branch_inactive_threshold(
-            expect, project: Project
-        ):
+        def it_excludes_branches_older_than_branch_inactive_threshold():
             project.branch_inactive_threshold = timedelta(days=1)
             project.save()
             test = Test.objects.create(project=project, name="t")
@@ -66,9 +64,9 @@ def describe_result_manager():
 
             expect(branches) == ["fresh"]
 
-    def describe_get_health():
+    def describe_get_health(expect):
         @pytest.mark.django_db
-        def it_returns_health_metrics(expect, project: Project):
+        def it_returns_health_metrics():
             test1 = Test.objects.create(project=project, name="test1")
             Result.objects.create(
                 test=test1,
@@ -93,7 +91,7 @@ def describe_result_manager():
             expect(health.description) == "1 of 2 passing"
 
         @pytest.mark.django_db
-        def it_only_counts_final_results(expect, project: Project):
+        def it_only_counts_final_results():
             test = Test.objects.create(project=project, name="test")
             Result.objects.create(
                 test=test,
@@ -117,7 +115,7 @@ def describe_result_manager():
             expect(health.description) == "1 of 1 passing"
 
         @pytest.mark.django_db
-        def it_identifies_new_failures(expect, project: Project):
+        def it_identifies_new_failures():
             # Create tests and results for the default branch
             for i in range(3):
                 test = Test.objects.create(
@@ -154,14 +152,14 @@ def describe_result_manager():
             expect(health.description) == "2 of 3 passing, 1 new failure"
 
 
-def describe_run_manager():
+def describe_run_manager(expect):
     @pytest.fixture
     def suite(project: Project):
         return Suite.objects.create(project=project, name="test-suite")
 
-    def describe_track_step():
+    def describe_track_step(expect, suite: Suite):
         @pytest.mark.django_db
-        def with_full_lifecycle(expect, suite: Suite):
+        def with_full_lifecycle():
             # Setup step: creates run
             run: Run
             run, created = Run.objects.track_step(  # type: ignore[assignment]
@@ -218,7 +216,7 @@ def describe_run_manager():
             expect(run.tests_finished_at).is_not(None)
 
         @pytest.mark.django_db
-        def with_finish_step_adjusts_teardown_if_in_past(expect, suite: Suite):
+        def with_finish_step_adjusts_teardown_if_in_past():
             now = timezone.now()
             tests_started = now - timedelta(minutes=5)
             tests_finished = now - timedelta(minutes=2)
@@ -250,7 +248,7 @@ def describe_run_manager():
             expect(run.teardown_finished_at) == expected_teardown
 
         @pytest.mark.django_db
-        def with_finish_step_overwrites_if_not_expired(expect, suite: Suite):
+        def with_finish_step_overwrites_if_not_expired():
             original_time = timezone.now() - timedelta(minutes=1)
             Run.objects.create(
                 project=suite.project,
@@ -273,7 +271,7 @@ def describe_run_manager():
             expect(run.tests_finished_at) > original_time
 
         @pytest.mark.django_db
-        def with_finish_step_does_not_overwrite_if_expired(expect, suite: Suite):
+        def with_finish_step_does_not_overwrite_if_expired():
             threshold = PENDING_THRESHOLD * 2
             expired_time = timezone.now() - threshold - timedelta(minutes=1)
             Run.objects.create(
@@ -297,7 +295,7 @@ def describe_run_manager():
             expect(run.tests_finished_at) == expired_time
 
         @pytest.mark.django_db
-        def with_teardown_step_sets_tests_finished_if_missing(expect, suite: Suite):
+        def with_teardown_step_sets_tests_finished_if_missing():
             Run.objects.create(
                 project=suite.project,
                 suite=suite,
@@ -318,7 +316,7 @@ def describe_run_manager():
             expect(run.tests_finished_at).is_not(None)
 
         @pytest.mark.django_db
-        def with_teardown_step_overwrites_if_not_expired(expect, suite: Suite):
+        def with_teardown_step_overwrites_if_not_expired():
             original_time = timezone.now() - timedelta(minutes=1)
             Run.objects.create(
                 project=suite.project,
@@ -341,7 +339,7 @@ def describe_run_manager():
             expect(run.teardown_finished_at) > original_time
 
         @pytest.mark.django_db
-        def with_teardown_step_does_not_overwrite_if_expired(expect, suite: Suite):
+        def with_teardown_step_does_not_overwrite_if_expired():
             threshold = PENDING_THRESHOLD * 2
             expired_time = timezone.now() - threshold - timedelta(minutes=1)
             Run.objects.create(

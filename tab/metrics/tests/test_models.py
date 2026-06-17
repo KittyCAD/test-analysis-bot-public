@@ -12,16 +12,16 @@ from tab.projects.models import Project, Result, Suite, Test
 from ..models import Alert, History, Subscription, Team
 
 
-def describe_history():
+def describe_history(expect):
 
-    def describe_evaluate():
-        def it_skips_alert_if_the_test_is_disabled(expect):
+    def describe_evaluate(expect):
+        def it_skips_alert_if_the_test_is_disabled():
             test = Test(enabled=False)
             history = History(test=test)
             expect(history.evaluate()) == False
 
         @pytest.mark.django_db
-        def it_alerts_when_above_the_threshold(expect):
+        def it_alerts_when_above_the_threshold():
 
             project = Project.objects.create(repository="https://github.com/foo/bar")
             test = Test.objects.create(project=project, name="my-test")
@@ -86,7 +86,7 @@ def describe_history():
             expect(history.evaluate()) == True
 
 
-def describe_alert():
+def describe_alert(expect):
 
     @pytest.fixture
     def organization():
@@ -104,9 +104,9 @@ def describe_alert():
         )
         return Alert.objects.create(test=test, history=history)
 
-    def describe_teams():
+    def describe_teams(expect, organization, alert):
         @pytest.mark.django_db
-        def it_sorts_by_primary(expect, organization: Organization, alert: Alert):
+        def it_sorts_by_primary():
             assert alert.history and alert.history.test
             project = alert.history.test.project
             t1 = Team.objects.create(
@@ -121,9 +121,7 @@ def describe_alert():
             expect(alert.subscriptions) == [s1, s2]
 
         @pytest.mark.django_db
-        def it_matches_by_suite_and_test(
-            expect, organization: Organization, alert: Alert
-        ):
+        def it_matches_by_suite_and_test():
             assert alert.history and alert.history.test
             project = alert.history.test.project
             suite = alert.history.test.suite

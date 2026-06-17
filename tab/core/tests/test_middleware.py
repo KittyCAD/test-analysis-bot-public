@@ -12,7 +12,7 @@ from tab.core.middleware import (
 )
 
 
-def describe_exception_logging_middleware():
+def describe_exception_logging_middleware(expect):
     @pytest.fixture
     def middleware():
         return ExceptionLoggingMiddleware(get_response=Mock())
@@ -24,7 +24,7 @@ def describe_exception_logging_middleware():
         req.path = "/test-path/"
         return req
 
-    def it_logs_exceptions(expect, mocker, middleware, http_request):
+    def it_logs_exceptions(mocker, middleware, http_request):
         mock_logger = mocker.patch("tab.core.middleware.log")
         exception = ValueError("Test error")
 
@@ -44,7 +44,7 @@ def describe_exception_logging_middleware():
         expect(log_message).contains("Test error")
         expect(result).is_(None)
 
-    def it_includes_stack_trace_in_log(expect, mocker, middleware, http_request):
+    def it_includes_stack_trace_in_log(mocker, middleware, http_request):
         mock_logger = mocker.patch("tab.core.middleware.log")
         exception = RuntimeError("Runtime error")
 
@@ -60,7 +60,7 @@ def describe_exception_logging_middleware():
         expect(log_message).contains("RuntimeError")
 
 
-def describe_domain_redirect_middleware():
+def describe_domain_redirect_middleware(expect):
     @pytest.fixture
     def middleware():
         return DomainRedirectMiddleware(get_response=Mock())
@@ -74,9 +74,7 @@ def describe_domain_redirect_middleware():
         r.get_full_path = Mock(return_value="/test-path/")  # type: ignore[method-assign]
         return r
 
-    def it_redirects_from_legacy_domain(
-        expect, mocker, middleware, http_request, settings
-    ):
+    def it_redirects_from_legacy_domain(mocker, middleware, http_request, settings):
         settings.ALLOWED_HOSTS = [
             "localhost",
             "test-analysis-bot.example.com",
@@ -108,7 +106,7 @@ def _extract_og_tags(html: str) -> dict[str, str]:
     return tags
 
 
-def describe_crawler_preview_middleware():
+def describe_crawler_preview_middleware(expect):
     @pytest.fixture
     def middleware():
         return CrawlerPreviewMiddleware(get_response=Mock())
@@ -215,7 +213,6 @@ def describe_crawler_preview_middleware():
         ],
     )
     def it_generates_og_tags(
-        expect,
         middleware,
         http_request,
         test_data,

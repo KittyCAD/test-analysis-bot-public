@@ -3,9 +3,9 @@ import pytest
 from ..enums import Platform, Status, Target
 
 
-def describe_status():
-    def describe_normalize():
-        def it_detects_expected_failures(expect):
+def describe_status(expect):
+    def describe_normalize(expect):
+        def it_detects_expected_failures():
             expect(
                 Status.normalize(
                     "failed",
@@ -16,7 +16,7 @@ def describe_status():
                 )
             ) == "xfailed"
 
-        def it_detects_unexpected_passes(expect):
+        def it_detects_unexpected_passes():
             expect(
                 Status.normalize(
                     "passed",
@@ -28,7 +28,7 @@ def describe_status():
             ) == "xpassed"
 
         @pytest.mark.parametrize("marker", ["fixme", "disabled"])
-        def it_detects_disabled_tests(expect, marker):
+        def it_detects_disabled_tests(marker):
             options: dict = dict(
                 markers=[marker],
                 message="",
@@ -41,7 +41,7 @@ def describe_status():
             expect(Status.normalize("skipped", **options)) == "disabled"
             expect(Status.normalize("passed", **options)) == "passed"
 
-        def it_detects_setup_errors(expect):
+        def it_detects_setup_errors():
             expect(
                 Status.normalize(
                     "failed",
@@ -52,7 +52,7 @@ def describe_status():
                 )
             ) == "error"
 
-        def it_detects_skipped_tests(expect):
+        def it_detects_skipped_tests():
             expect(
                 Status.normalize(
                     "passed",
@@ -64,8 +64,8 @@ def describe_status():
             ) == "skipped"
 
 
-def describe_target():
-    def it_normalizes_values(expect):
+def describe_target(expect):
+    def it_normalizes_values():
         expect(Target.normalize("browser")) == "web"
         expect(Target.normalize("web")) == "web"
         expect(Target.normalize("Website")) == "web"
@@ -73,8 +73,8 @@ def describe_target():
         expect(Target.normalize("Electron")) == "desktop"
 
 
-def describe_platform():
-    def it_normalizes_values(expect):
+def describe_platform(expect):
+    def it_normalizes_values():
         expect(Platform.normalize("macOS")) == "macos"
         expect(Platform.normalize("darwin")) == "macos"
         expect(Platform.normalize("Windows")) == "windows"

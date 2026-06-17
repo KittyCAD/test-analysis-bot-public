@@ -63,8 +63,8 @@ types-requests = "*"
 # Testing
 pytest = "^9.0.3"
 pytest-django = "*"
-pytest-describe = "*"
-pytest-expecter = "*"
+pytest-describe = "^3.2"
+pytest-expecter = "^3.1"
 pytest-mock = "*"
 pytest-randomly = "*"
 

@@ -5,7 +5,7 @@ from tab.releases.enums import Type
 from tab.releases.models import Environment, Release
 
 
-def describe_process():
+def describe_process(expect):
 
     @pytest.fixture
     def project():
@@ -36,7 +36,7 @@ def describe_process():
 
     @pytest.mark.django_db
     def it_reuses_release_when_concrete_url_follows_placeholder(
-        expect, project, placeholder_environment, result
+        project, placeholder_environment, result
     ):
         Environment.objects.process(project, None, [result])
 
@@ -64,9 +64,7 @@ def describe_process():
         expect(Environment.objects.filter(name=Type.REVIEW).count()) == 2
 
     @pytest.mark.django_db
-    def it_creates_release_on_concrete_url_when_none_exists_yet(
-        expect, project, result
-    ):
+    def it_creates_release_on_concrete_url_when_none_exists_yet(project, result):
         Environment.objects.process(
             project,
             "https://modeling-foobar.vercel.dev.zoo.dev",

@@ -7,12 +7,12 @@ import pytest
 from tab.core.logging import JSONFormatter
 
 
-def describe_json_formatter():
+def describe_json_formatter(expect):
     @pytest.fixture
     def formatter():
         return JSONFormatter()
 
-    def it_formats_simple_messages_as_json(expect, formatter):
+    def it_formats_simple_messages_as_json(formatter):
         record = logging.LogRecord(
             name="test.logger",
             level=logging.ERROR,
@@ -31,7 +31,7 @@ def describe_json_formatter():
         expect(log_data["message"]) == "Simple error message"
         expect(log_data["logger"]) == "test.logger"
 
-    def it_includes_exception_info_in_separate_field(expect, formatter):
+    def it_includes_exception_info_in_separate_field(formatter):
         try:
             raise ValueError("Test exception")
         except ValueError:
@@ -59,7 +59,7 @@ def describe_json_formatter():
         expect("traceback" in log_data["exception"]).is_(True)
         expect(isinstance(log_data["exception"]["traceback"], list)).is_(True)
 
-    def it_outputs_single_line_json(expect, formatter):
+    def it_outputs_single_line_json(formatter):
         try:
             raise RuntimeError("Multi-line\nerror\nmessage")
         except RuntimeError:
@@ -83,7 +83,7 @@ def describe_json_formatter():
         log_data = json.loads(formatted)
         expect(log_data).isinstance(dict)
 
-    def it_includes_location_info(expect, formatter):
+    def it_includes_location_info(formatter):
         record = logging.LogRecord(
             name="test.logger",
             level=logging.INFO,

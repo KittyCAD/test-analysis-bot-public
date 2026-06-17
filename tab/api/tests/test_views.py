@@ -37,7 +37,7 @@ def post_form(client, url: str, data: dict):
     return response
 
 
-def describe_results():
+def describe_results(expect, client):
 
     url = "/api/results"
 
@@ -53,7 +53,7 @@ def describe_results():
         }
 
     @pytest.mark.django_db
-    def it_creates_projects_and_tests_automatically(expect, client, payload):
+    def it_creates_projects_and_tests_automatically(payload):
         response = post_json(client, url, payload)
 
         expect(response.status_code) == 201
@@ -72,7 +72,7 @@ def describe_results():
             "my-user/my-project",
         ],
     )
-    def it_rejects_invalid_repositories(expect, client, payload, project):
+    def it_rejects_invalid_repositories(payload, project):
         payload["project"] = project
         response = post_json(client, url, payload)
 
@@ -82,7 +82,7 @@ def describe_results():
         }
 
     @pytest.mark.django_db
-    def it_updates_existing_test(expect, client, payload):
+    def it_updates_existing_test(payload):
         payload2 = payload.copy()
         payload2["branch"] = ""
         payload2["commit"] = ""
@@ -107,7 +107,7 @@ def describe_results():
         expect(test.original_commit) == "abc123"
 
 
-def describe_bulk_results():
+def describe_bulk_results(expect, client):
     url = "/api/results/bulk"
 
     @pytest.fixture
@@ -123,7 +123,7 @@ def describe_bulk_results():
         }
 
     @pytest.mark.django_db
-    def it_creates_tests_from_junit_xml(expect, client, payload):
+    def it_creates_tests_from_junit_xml(payload):
         response = post_form(client, url, payload)
         expect(response.json()) == {
             "suite": "my-user > my-project > unit",
@@ -142,7 +142,7 @@ def describe_bulk_results():
         expect(result.metadata) == {"EXTRA": "foobar", "suite": "unit"}
 
     @pytest.mark.django_db
-    def it_requires_tests_as_file_upload(expect, client, payload):
+    def it_requires_tests_as_file_upload(payload):
         del payload["tests"]
         response = post_form(client, url, payload)
         expect(response.status_code) == 422
@@ -151,7 +151,7 @@ def describe_bulk_results():
         }
 
 
-def describe_share():
+def describe_share(expect, client):
 
     url = "/api/share"
 
@@ -164,7 +164,7 @@ def describe_share():
         }
 
     @pytest.mark.django_db
-    def it_updates_status(expect, client, payload, mocker):
+    def it_updates_status(payload, mocker):
         mock_github = mocker.patch("tab.core.models.Github")
         mock_repo = mock_github.return_value.get_repo.return_value
         mock_commit = mock_repo.get_commit.return_value
@@ -202,7 +202,7 @@ def describe_share():
         ],
     )
     @pytest.mark.django_db
-    def it_rejects_invalid_repositories(expect, client, payload, project):
+    def it_rejects_invalid_repositories(payload, project):
         Organization.objects.create(name="MyOrganization", key="fake-api-key")
 
         payload["project"] = project
@@ -214,7 +214,7 @@ def describe_share():
         }
 
 
-def describe_track():
+def describe_track(expect):
     url = "/api/track"
 
     @pytest.fixture
@@ -228,7 +228,7 @@ def describe_track():
         }
 
     @pytest.mark.django_db
-    def it_requires_suite_to_exist(expect, client, payload):
+    def it_requires_suite_to_exist(client, payload):
         response = post_form(client, url, payload)
         expect(response.status_code) == 404
         expect(response.json()) == {

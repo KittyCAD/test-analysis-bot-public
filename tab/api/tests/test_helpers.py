@@ -10,7 +10,7 @@ from ..constants import TESTS_CACHE_KEY
 from ..helpers import parse_junit_xml
 
 
-def describe_parse_junit_xml():
+def describe_parse_junit_xml(expect):
 
     @pytest.fixture
     def content():
@@ -18,7 +18,7 @@ def describe_parse_junit_xml():
         return path.read_text()
 
     @pytest.mark.django_db
-    def it_recomputes_metrics_from_each_result(expect, content):
+    def it_recomputes_metrics_from_each_result(content):
         cache.delete(TESTS_CACHE_KEY)
         project = Project.objects.create(repository="https://github.com/foo/bar")
         suite = Suite.objects.create(project=project)
@@ -32,7 +32,7 @@ def describe_parse_junit_xml():
         expect(cache.get(TESTS_CACHE_KEY)) == None
 
     @pytest.mark.django_db
-    def it_caches_test_ids_for_post_processing_when_deferred(expect, content):
+    def it_caches_test_ids_for_post_processing_when_deferred(content):
         cache.delete(TESTS_CACHE_KEY)
         project = Project.objects.create(repository="https://github.com/foo/bar")
         suite = Suite.objects.create(project=project)
@@ -53,7 +53,7 @@ def describe_parse_junit_xml():
 
     @pytest.mark.django_db
     @pytest.mark.parametrize("deferred", [False, True])
-    def it_updates_test_suite_when_changed(expect, content, deferred):
+    def it_updates_test_suite_when_changed(content, deferred):
         project = Project.objects.create(repository="https://github.com/foo/bar")
         suite1 = Suite.objects.create(project=project, name="suite1")
         suite2 = Suite.objects.create(project=project, name="suite2")
@@ -93,7 +93,7 @@ def describe_parse_junit_xml():
         expect(test.original_metadata) == {}
 
     @pytest.mark.django_db
-    def it_fixes_pytest_indentation(expect):
+    def it_fixes_pytest_indentation():
         path = Path(__file__).parent / "files" / "junit-pytest.xml"
         content = path.read_text()
 
