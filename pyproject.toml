@@ -61,7 +61,7 @@ types-markdown = "*"
 types-requests = "*"
 
 # Testing
-pytest = "^9.0.3"
+pytest = "^9.1.0"
 pytest-django = "*"
 pytest-describe = "^3.2"
 pytest-expecter = "^3.1"
