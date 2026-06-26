@@ -422,6 +422,59 @@ def describe_result(expect):
             # Expect only one final result
             expect(test.results.filter(final=True).count()) == 1
 
+        @pytest.mark.django_db
+        def it_demotes_bulk_created_duplicates_with_identical_timestamps():
+            project = Project.objects.create(repository="https://github.com/foo/bar")
+            test = project.tests.create(name="my-test")
+            now = timezone.now()
+            results = Result.objects.bulk_create(
+                [
+                    Result(
+                        test=test,
+                        status=Status.PASSED,
+                        branch="main",
+                        commit="a1",
+                        final=True,
+                        created_at=now,
+                    ),
+                    Result(
+                        test=test,
+                        status=Status.PASSED,
+                        branch="main",
+                        commit="a1",
+                        final=True,
+                        created_at=now,
+                    ),
+                ]
+            )
+
+            results[-1].finalize()
+
+            expect(test.results.filter(final=True).count()) == 1
+
+        @pytest.mark.django_db
+        def it_keeps_separate_results_per_target():
+            project = Project.objects.create(repository="https://github.com/foo/bar")
+            test = project.tests.create(name="my-test")
+            Result.objects.create(
+                test=test,
+                status=Status.PASSED,
+                branch="main",
+                commit="a1",
+                target=Target.WEB.value,
+                final=True,
+            )
+            Result.objects.create(
+                test=test,
+                status=Status.PASSED,
+                branch="main",
+                commit="a1",
+                target=Target.DESKTOP.value,
+                final=True,
+            )
+
+            expect(test.results.filter(final=True).count()) == 2
+
     def describe_save(expect):
         @pytest.mark.django_db
         def it_cleans_message():

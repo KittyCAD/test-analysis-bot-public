@@ -864,8 +864,8 @@ class Result(models.Model):
                 target=self.target,
                 platform=self.platform,
                 final=True,
-                created_at__lt=self.created_at,
-            ).exclude(id=self.id).update(final=False)
+                id__lt=self.id,
+            ).update(final=False)
 
     def save(self, *args, **kwargs):
         self.normalize()

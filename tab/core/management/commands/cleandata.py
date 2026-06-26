@@ -136,10 +136,11 @@ class Command(BaseCommand):
                 test.save()
                 for result in (
                     test.results.filter(
-                        created_at__gte=timezone.now() - timedelta(hours=1)
+                        created_at__gte=timezone.now() - timedelta(hours=1),
+                        final=True,
                     )
-                    .order_by("branch", "-created_at")
-                    .distinct("branch")
+                    .order_by("commit", "target", "platform", "branch", "-id")
+                    .distinct("commit", "target", "platform", "branch")
                 ):
                     result.finalize()
 
