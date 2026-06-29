@@ -41,6 +41,13 @@ class Environment(models.Model):
             "project__repository",
             "created_at",
         ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "url", "name"],
+                condition=models.Q(url__isnull=False),
+                name="unique_environment_project_url_name",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.get_name_display()}: {self.project}"
