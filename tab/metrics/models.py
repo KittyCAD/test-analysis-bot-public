@@ -16,11 +16,11 @@ from .constants import (
     DELTA_THRESHOLD,
 )
 from .helpers import send_slack_message
-from .managers import HistoryManager
+from .managers import SuiteHistoryManager, TestHistoryManager
 from .types import Message
 
 
-class History(models.Model):
+class TestHistory(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="history")
     result = models.ForeignKey(
         Result, null=True, blank=True, on_delete=models.SET_NULL, related_name="history"
@@ -31,12 +31,12 @@ class History(models.Model):
     average_duration = models.FloatField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
-    objects: HistoryManager = HistoryManager()
+    objects: TestHistoryManager = TestHistoryManager()
 
     class Meta:
         ordering = ["-timestamp"]
         indexes = [models.Index(fields=["test", "timestamp"])]
-        verbose_name_plural = "Histories"
+        verbose_name_plural = "Test histories"
 
     def __str__(self):
         return f"{self.test.project.name} @ {self.timestamp.date()}"
@@ -72,6 +72,30 @@ class History(models.Model):
         cache.set(key, True, timeout=ALERT_CACHE_TIMEOUT)
         alert.send()
         return True
+
+
+class SuiteHistory(models.Model):
+    suite = models.ForeignKey(Suite, on_delete=models.CASCADE, related_name="history")
+    run = models.ForeignKey(
+        "projects.Run",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="history",
+    )
+
+    average_setup_duration = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    objects: SuiteHistoryManager = SuiteHistoryManager()
+
+    class Meta:
+        ordering = ["-timestamp"]
+        indexes = [models.Index(fields=["suite", "timestamp"])]
+        verbose_name_plural = "Suite histories"
+
+    def __str__(self):
+        return f"{self.suite} @ {self.timestamp.date()}"
 
 
 class Team(models.Model):
@@ -140,7 +164,11 @@ class Subscription(models.Model):
 class Alert(models.Model):
     test = models.ForeignKey(Test, on_delete=models.CASCADE, related_name="alerts")
     history = models.OneToOneField(
-        History, on_delete=models.CASCADE, related_name="alert", null=True, blank=True
+        TestHistory,
+        on_delete=models.CASCADE,
+        related_name="alert",
+        null=True,
+        blank=True,
     )
 
     url = models.URLField(null=True, blank=True, verbose_name="URL")

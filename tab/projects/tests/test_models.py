@@ -8,7 +8,7 @@ import pytest
 
 from ..constants import DEFAULT_SUITE, FAILURE_RATE_EPSILON, RESTORATION_THRESHOLD
 from ..enums import Platform, Status, Target
-from ..models import Project, Result, Suite, Test
+from ..models import Project, Result, Run, Suite, Test
 from . import EXAMPLE_TESTS, ExampleTest
 from .constants import TEST_PROMPT
 
@@ -24,6 +24,10 @@ def describe_project(expect):
 
 
 def describe_suite(expect):
+    @pytest.fixture
+    def project():
+        return Project.objects.create(repository="https://github.com/foo/bar")
+
     def describe_str(expect):
         def it_formats_name():
             suite = Suite(
@@ -38,6 +42,33 @@ def describe_suite(expect):
                 name=DEFAULT_SUITE,
             )
             expect(str(suite)) == "MyUser › my_repo"
+
+    def describe_update_average_setup_duration(expect, project: Project):
+        @pytest.mark.django_db
+        def it_returns_false_if_no_runs():
+            project.save()
+            suite: Suite = project.suites.create(name="my-suite")
+            expect(suite.update_average_setup_duration()) == False
+
+        @pytest.mark.django_db
+        def it_computes_average_setup_duration():
+            project.save()
+            suite: Suite = project.suites.create(name="my-suite")
+            now = timezone.now()
+            for seconds in (2, 4, 6):
+                started = now - timedelta(seconds=seconds + 10)
+                tests_started = now - timedelta(seconds=10)
+                suite.runs.create(
+                    project=project,
+                    branch="main",
+                    commit=f"commit{seconds}",
+                    setup_started_at=started,
+                    tests_started_at=tests_started,
+                )
+
+            suite.average_setup_duration = -1
+            expect(suite.update_average_setup_duration()) == True
+            expect(suite.average_setup_duration) == 4.0
 
 
 def describe_test(expect):

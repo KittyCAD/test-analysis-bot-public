@@ -216,6 +216,32 @@ def describe_run_manager(expect):
             expect(run.tests_finished_at).is_not(None)
 
         @pytest.mark.django_db
+        def it_updates_suite_average_setup_duration_on_start():
+            now = timezone.now()
+            Run.objects.track_step(
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="setup",
+                metadata={},
+            )
+            run: Run = Run.objects.get(suite=suite, branch="main", commit="abc123")
+            run.setup_started_at = now - timedelta(seconds=12)
+            run.save(update_fields=["setup_started_at"])
+
+            Run.objects.track_step(
+                suite=suite,
+                branch="main",
+                commit="abc123",
+                step="start",
+                metadata={},
+            )
+
+            suite.refresh_from_db()
+            expect(suite.average_setup_duration) == pytest.approx(12.0, abs=0.5)
+            expect(suite.history.count()) == 1
+
+        @pytest.mark.django_db
         def with_finish_step_adjusts_teardown_if_in_past():
             now = timezone.now()
             tests_started = now - timedelta(minutes=5)

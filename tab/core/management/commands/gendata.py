@@ -10,7 +10,7 @@ import log
 
 from tab.api.helpers import parse_junit_xml
 from tab.core.models import Organization
-from tab.metrics.models import History, Team
+from tab.metrics.models import Team, TestHistory
 from tab.projects.enums import Platform, Status, Target
 from tab.projects.models import Project, Result, Suite, Test
 
@@ -142,7 +142,7 @@ class Command(BaseCommand):
                 else:
                     continue
 
-            history = History.objects.create(
+            history = TestHistory.objects.create(
                 test=test,
                 failure_rate=failure_rate,
                 block_rate=random.uniform(0.0, 0.1),

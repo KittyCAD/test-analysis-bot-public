@@ -5,11 +5,11 @@ from markdown import markdown
 
 from tab.projects.models import Suite
 
-from .models import Alert, History, Subscription, Team
+from .models import Alert, Subscription, SuiteHistory, Team, TestHistory
 
 
-@admin.register(History)
-class HistoryAdmin(admin.ModelAdmin):
+@admin.register(TestHistory)
+class TestHistoryAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("test__project")
 
@@ -33,6 +33,31 @@ class HistoryAdmin(admin.ModelAdmin):
         "failure_rate",
         "block_rate",
         "average_duration",
+        "timestamp",
+    )
+
+
+@admin.register(SuiteHistory)
+class SuiteHistoryAdmin(admin.ModelAdmin):
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("suite__project")
+
+    list_display = (
+        "id",
+        "suite__project",
+        "suite__name",
+        "run",
+        "average_setup_duration",
+        "timestamp",
+    )
+    search_fields = (
+        "suite__project__repository",
+        "suite__name",
+    )
+
+    raw_id_fields = ("suite", "run")
+    readonly_fields = (
+        "average_setup_duration",
         "timestamp",
     )
 

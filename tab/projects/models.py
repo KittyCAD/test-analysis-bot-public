@@ -159,6 +159,12 @@ class Suite(models.Model):
         default=30, help_text="Lower threshold to consider acceptable"
     )
 
+    average_setup_duration = models.FloatField(
+        default=-1,
+        editable=False,
+        help_text="Seconds of setup duration from recent runs on default branches",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True, db_index=True)
 
@@ -172,6 +178,35 @@ class Suite(models.Model):
         if self.name == DEFAULT_SUITE:
             return str(self.project)
         return f"{self.project} › {self.name}"
+
+    def update_average_setup_duration(self) -> bool:
+        old = self.average_setup_duration
+        queryset = self.runs.filter(
+            branch__in=self.project.default_branches,
+            setup_started_at__isnull=False,
+            tests_started_at__isnull=False,
+        ).order_by("-tests_started_at")
+        if not queryset.exists():
+            return False
+
+        runs = list(queryset[:150])
+        durations = [run.setup_duration for run in runs if run.setup_duration > 0]
+        if not durations:
+            return False
+
+        new = round(sum(durations) / len(durations), 3)
+        if old == new:
+            return False
+
+        log.debug(f"Suite has new average setup duration: {old} => {new} seconds")
+        self.average_setup_duration = new
+        return True
+
+    def update(self, run: Run | None = None) -> bool:
+        if not self.update_average_setup_duration():
+            return False
+        self.history.create_from_suite(self, run)
+        return True
 
 
 class Run(models.Model):

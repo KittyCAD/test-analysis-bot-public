@@ -6,10 +6,10 @@ from django.utils import timezone
 
 import log
 
-from tab.projects.models import Result, Test
+from tab.projects.models import Result, Run, Suite, Test
 
 if TYPE_CHECKING:
-    from .models import History
+    from .models import SuiteHistory, TestHistory
 
 
 def format_percentage(value: float, decimals: int = 1) -> str:
@@ -24,7 +24,7 @@ def format_duration(value: float, decimals: int = 1) -> str:
     return f"{round(value, decimals)}s"
 
 
-class HistoryManager(models.Manager):
+class TestHistoryManager(models.Manager):
     def create_from_test(self, test: Test, result: Result | None = None):
         limit = timezone.now() - timedelta(hours=1)
         if self.filter(test=test, timestamp__gte=limit).exists():
@@ -34,7 +34,7 @@ class HistoryManager(models.Manager):
             log.debug(f"Skipped metric creation for new test")
             return None
 
-        history: History = self.create(  # type: ignore[assignment]
+        history: TestHistory = self.create(  # type: ignore[assignment]
             test=test,
             result=result,
             failure_rate=test.failure_rate,
@@ -53,7 +53,7 @@ class HistoryManager(models.Manager):
         data = []
         cutoff = timezone.now() - timedelta(weeks=weeks)
         histories = self.filter(timestamp__gte=cutoff).order_by("timestamp")
-        for history in cast(list["History"], histories):
+        for history in cast(list["TestHistory"], histories):
             data.append(
                 {
                     "date": history.timestamp.strftime("%Y-%m-%d %H:%M"),
@@ -82,3 +82,26 @@ class HistoryManager(models.Manager):
                 },
             )
         return data
+
+
+class SuiteHistoryManager(models.Manager):
+    def create_from_suite(self, suite: Suite, run: Run | None = None):
+        limit = timezone.now() - timedelta(hours=1)
+        if self.filter(suite=suite, timestamp__gte=limit).exists():
+            log.debug(f"Skipped redundant suite metric creation: {suite}")
+            return None
+        if suite.average_setup_duration < 0:
+            log.debug(f"Skipped suite metric creation for new suite")
+            return None
+
+        history: SuiteHistory = self.create(  # type: ignore[assignment]
+            suite=suite,
+            run=run,
+            average_setup_duration=suite.average_setup_duration,
+        )
+
+        cutoff = timezone.now() - timedelta(weeks=26)
+        if count := self.filter(suite=suite, timestamp__lt=cutoff).delete()[0]:
+            log.debug(f"Deleted {count} old suite metrics")
+
+        return history
