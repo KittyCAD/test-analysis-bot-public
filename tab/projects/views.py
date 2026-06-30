@@ -344,14 +344,10 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         if context["suite_id"] and (
             suite := project.suites.filter(id=context["suite_id"]).first()
         ):
-            context["setup_duration"] = Run.objects.get_setup_duration(
-                suite, branch, commit=None
-            )
-            context["tests_duration"] = Run.objects.get_tests_duration(
-                suite, branch, commit=None
-            )
+            context["setup_duration"] = Run.objects.get_setup_duration(suite, branch)
+            context["tests_duration"] = Run.objects.get_tests_duration(suite, branch)
             context["teardown_duration"] = Run.objects.get_teardown_duration(
-                suite, branch, commit=None
+                suite, branch
             )
         if self.request.user.is_staff:
             if branch != project.default_branch:
@@ -479,9 +475,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         for field in test._meta.get_fields():
             if hasattr(field, "help_text") and field.help_text:
                 context[f"{field.name}_help"] = field.help_text
-        context["setup_duration"] = Run.objects.get_setup_duration(
-            test.suite, context["branch"] or project.default_branch, commit=None
-        )
+        context["setup_duration"] = Run.objects.get_setup_duration(test.suite)
         if self.request.user.is_staff:
             context["admin_url"] = reverse("admin:projects_test_change", args=[test.pk])
             if test.suite:

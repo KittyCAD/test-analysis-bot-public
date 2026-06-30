@@ -264,11 +264,13 @@ class RunManager(models.Manager):
         return run, created
 
     def get_setup_duration(
-        self, suite: Suite | None, branch: str, commit: str | None = None
+        self, suite: Suite | None, branch: str | None = None, commit: str | None = None
     ) -> float:
         """Get a cached value for the setup duration of a suite."""
         if suite is None:
             return 0.0
+        if branch is None and suite.average_setup_duration >= 0:
+            return suite.average_setup_duration
         cache_key = f"{DURATION_CACHE_KEY}:setup:{suite.id}:{branch}:{commit}"
         duration = cache.get(cache_key)
         if duration is None:

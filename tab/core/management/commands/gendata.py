@@ -12,7 +12,7 @@ from tab.api.helpers import parse_junit_xml
 from tab.core.models import Organization
 from tab.metrics.models import Team, TestHistory
 from tab.projects.enums import Platform, Status, Target
-from tab.projects.models import Project, Result, Suite, Test
+from tab.projects.models import Project, Result, Run, Suite, Test
 
 JUNIT_FIXTURE_PATH = (
     Path(__file__).resolve().parents[3] / "api" / "tests" / "files" / "junit.xml"
@@ -117,12 +117,22 @@ class Command(BaseCommand):
 
         test.results.filter(branch="main").delete()
 
+        suite = test.suite
+        if suite:
+            suite.runs.filter(branch="main").delete()
+            suite.history.all().delete()
+
         days = 8
         num_results = 500
         end = timezone.now()
         start = end - timedelta(days=days)
 
         self._generate_results(test, num_results, start, end)
+        if suite:
+            self._generate_runs(project, suite, num_results, start, end)
+            if suite.update_average_setup_duration():
+                suite.save(update_fields=["average_setup_duration", "updated_at"])
+                suite.history.create_from_suite(suite)
         test.save()  # refresh last_result
         self._generate_history(test, days)
 
@@ -173,6 +183,7 @@ class Command(BaseCommand):
             results.append(
                 Result(
                     test=test,
+                    suite=test.suite,
                     branch="main",
                     commit=f"sample{i:05x}",
                     status=random.choice(statuses),
@@ -186,3 +197,23 @@ class Command(BaseCommand):
             )
         Result.objects.bulk_create(results)
         self.stdout.write(self.style.SUCCESS("Generated sample test results"))
+
+    def _generate_runs(self, project, suite, num_results, start, end):
+        runs = []
+        for i in range(num_results):
+            fraction = (i + 0.5) / num_results
+            tests_started_at = start + (end - start) * fraction
+            setup_duration = round(random.uniform(8.0, 15.0), 2)
+            runs.append(
+                Run(
+                    project=project,
+                    suite=suite,
+                    branch="main",
+                    commit=f"sample{i:05x}",
+                    setup_started_at=tests_started_at
+                    - timedelta(seconds=setup_duration),
+                    tests_started_at=tests_started_at,
+                )
+            )
+        Run.objects.bulk_create(runs)
+        self.stdout.write(self.style.SUCCESS("Generated sample suite runs"))
