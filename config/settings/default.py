@@ -184,3 +184,9 @@ EMAIL_USE_TLS = True
 
 DEFAULT_FROM_EMAIL = "Test Analysis Bot <no-reply@zoo-corp.dev>"
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
+
+###############################################################################
+# API Limits
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
