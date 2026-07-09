@@ -1,8 +1,9 @@
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.staticfiles.views import serve
+from django.contrib.staticfiles.storage import staticfiles_storage
 from django.shortcuts import redirect
 from django.urls import include, path
+from django.views.generic import RedirectView
 
 urlpatterns = [
     path("", lambda _request: redirect("projects:index")),
@@ -10,7 +11,13 @@ urlpatterns = [
     path("projects/", include("tab.projects.urls", namespace="projects")),
     path("api/", include("tab.api.urls")),
     path("admin/", admin.site.urls),
-    path("favicon.ico", serve, {"path": "favicon/favicon.ico"}),
+    path(
+        "favicon.ico",
+        RedirectView.as_view(
+            url=staticfiles_storage.url("favicon/favicon.ico"),
+            permanent=True,
+        ),
+    ),
 ]
 if settings.DEBUG:
     urlpatterns = [
