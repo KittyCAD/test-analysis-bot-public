@@ -276,7 +276,7 @@ class Test(models.Model):
         Suite, null=True, blank=True, on_delete=models.SET_NULL, related_name="tests"
     )
 
-    name = models.CharField(max_length=1000, db_index=True)
+    name = models.CharField(max_length=4000, db_index=True)
     original_branch = models.CharField(
         max_length=500,
         default="",
