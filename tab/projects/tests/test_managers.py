@@ -1,17 +1,34 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.core.cache import cache
 from django.utils import timezone
 
 import pytest
+from redis.exceptions import ConnectionError
 
 from ..constants import PENDING_THRESHOLD
+from ..managers import safe_get
 from ..models import Project, Result, Run, Status, Suite, Test
 
 
 @pytest.fixture
 def project():
     return Project.objects.create(repository="https://github.com/foo/bar")
+
+
+def describe_safe_get(expect):
+    def it_returns_the_value_from_the_cache():
+        cache.set("test", "value")
+        expect(safe_get("test")) == "value"
+
+    def it_returns_none_if_the_cache_is_not_set():
+        expect(safe_get("missing-key", fallback="foobar")) == None
+
+    @patch("tab.projects.managers.cache.get", side_effect=ConnectionError())
+    def it_returns_the_fallback_value_if_the_cache_lookup_fails(mock_get):
+        expect(safe_get("test", fallback="fallback")) == "fallback"
+        mock_get.assert_called_once_with("test")
 
 
 def describe_result_manager(expect, project: Project):

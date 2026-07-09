@@ -26,6 +26,14 @@ if TYPE_CHECKING:
     from .models import Project, Run, Suite, Test
 
 
+def safe_get(key, *, fallback=None):
+    try:
+        return cache.get(key)
+    except Exception as e:
+        log.error(f"Cache lookup failed: {e}")
+        return fallback
+
+
 class ProjectManager(models.Manager):
 
     @staticmethod
@@ -108,7 +116,7 @@ class ResultManager(models.Manager):
     def get_active_branches(self, project: Project) -> list[str]:
         """Get a cached list of active branches for a project."""
         cache_key = f"{ACTIVE_BRANCHES_CACHE_KEY}:{project.pk}"
-        cached = cache.get(cache_key)
+        cached = safe_get(cache_key)
         if cached is not None:
             return list(cached)
 
@@ -272,7 +280,7 @@ class RunManager(models.Manager):
         if branch is None and suite.average_setup_duration >= 0:
             return suite.average_setup_duration
         cache_key = f"{DURATION_CACHE_KEY}:setup:{suite.id}:{branch}:{commit}"
-        duration = cache.get(cache_key)
+        duration = safe_get(cache_key, fallback=0.0)
         if duration is None:
             query = self.filter(suite=suite, branch=branch)
             if commit:
@@ -289,7 +297,7 @@ class RunManager(models.Manager):
         if suite is None:
             return 0.0
         cache_key = f"{DURATION_CACHE_KEY}:tests:{suite.id}:{branch}:{commit}"
-        duration = cache.get(cache_key)
+        duration = safe_get(cache_key, fallback=0.0)
         if duration is None:
             query = self.filter(suite=suite, branch=branch)
             if commit:
@@ -306,7 +314,7 @@ class RunManager(models.Manager):
         if suite is None:
             return 0.0
         cache_key = f"{DURATION_CACHE_KEY}:teardown:{suite.id}:{branch}:{commit}"
-        duration = cache.get(cache_key)
+        duration = safe_get(cache_key, fallback=0.0)
         if duration is None:
             query = self.filter(suite=suite, branch=branch)
             if commit:
