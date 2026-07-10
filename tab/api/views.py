@@ -2,6 +2,7 @@ import json
 import tomllib
 
 from django.conf import settings
+from django.core.exceptions import RequestDataTooBig
 from django.shortcuts import redirect
 
 import log
@@ -37,6 +38,19 @@ api = NinjaAPI(
 api_key = ApiKey()
 
 
+@api.exception_handler(RequestDataTooBig)
+def request_data_too_big(request, exc):
+    max_mb = settings.DATA_UPLOAD_MAX_MEMORY_SIZE / (1024 * 1024)
+    body_size = int(request.META.get("CONTENT_LENGTH") or 0)
+    if body_size:
+        body_mb = body_size / (1024 * 1024)
+        detail = f"Request body of {body_mb:g} MB exceeded the {max_mb:g} MB limit."
+    else:
+        detail = f"Request body exceeded the {max_mb:g} MB limit."
+    log.warning(f"Exceeded request body size: {body_size:g=} B, {max_mb:g=} MB")
+    return api.create_response(request, {"detail": detail}, status=413)
+
+
 @api.get("/", include_in_schema=False)
 def index(request):
     return redirect("/api/docs")
@@ -48,6 +62,7 @@ def index(request):
     response={
         200: ResultResponse,
         201: ResultResponse,
+        413: ErrorResponse,
         422: ErrorResponse,
     },
     tags=["Tests"],

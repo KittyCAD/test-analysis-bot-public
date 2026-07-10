@@ -81,6 +81,17 @@ def describe_results(expect, client):
             "detail": f"Invalid repository URL: {project}",
         }
 
+    def it_rejects_oversized_request_body(payload, settings):
+        settings.DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
+        payload["message"] = "x" * (1024 * 1024)
+        body_mb = len(json.dumps(payload).encode()) / (1024 * 1024)
+        response = post_json(client, url, payload)
+
+        expect(response.status_code) == 413
+        expect(response.json()) == {
+            "detail": f"Request body of {body_mb:g} MB exceeded the 1 MB limit.",
+        }
+
     @pytest.mark.django_db
     def it_updates_existing_test(payload):
         payload2 = payload.copy()
