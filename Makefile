@@ -214,14 +214,14 @@ docs: uml ## Generate documentation
 
 .PHONY: uml
 uml: docs/*.png
-docs/*.png: tab/*/migrations/*
+docs/*.png: tab/*/migrations/* templates/django_extensions/graph_models/*/digraph.dot
 	poetry install --with=docs
 	@ echo
 	poetry run pyreverse $(PROJECT) -p $(PROJECT) -a 1 -f ALL -o png --ignore admin.py,migrations,management,tests
 	rm -f docs/*.png
 	mv -f classes_$(PROJECT).png docs/classes.png
 	mv -f packages_$(PROJECT).png docs/packages.png
-	./manage.py graph_models --group-models --output=docs/tables.png core projects metrics releases
+	./manage.py graph_models --group-models --rankdir=LR --theme tab --dot core projects metrics releases 2>/dev/null | dot -Tpng -o docs/tables.png
 
 # HELP ########################################################################
 
