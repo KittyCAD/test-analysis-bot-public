@@ -34,6 +34,13 @@ def safe_get(key, *, fallback=None):
         return fallback
 
 
+def safe_set(key, value, *, timeout=None):
+    try:
+        cache.set(key, value, timeout=timeout)
+    except Exception as e:
+        log.error(f"Cache write failed: {e}")
+
+
 class ProjectManager(models.Manager):
 
     @staticmethod
@@ -127,7 +134,7 @@ class ResultManager(models.Manager):
             )
         branches = list(results.values_list("branch", flat=True))
         if len(branches) > 1:
-            cache.set(cache_key, branches, timeout=ACTIVE_BRANCHES_CACHE_TIMEOUT)
+            safe_set(cache_key, branches, timeout=ACTIVE_BRANCHES_CACHE_TIMEOUT)
         return branches
 
     def get_latest_commit(self, project: Project, branch: str) -> str | None:
@@ -287,7 +294,7 @@ class RunManager(models.Manager):
                 query = query.filter(commit=commit)
             run: Run = query.first()  # type: ignore[assignment]
             duration = run.setup_duration if run else 0.0
-            cache.set(cache_key, duration, timeout=DURATION_CACHE_TIMEOUT)
+            safe_set(cache_key, duration, timeout=DURATION_CACHE_TIMEOUT)
         return duration
 
     def get_tests_duration(
@@ -304,7 +311,7 @@ class RunManager(models.Manager):
                 query = query.filter(commit=commit)
             run: Run = query.first()  # type: ignore[assignment]
             duration = run.tests_duration if run else 0.0
-            cache.set(cache_key, duration, timeout=DURATION_CACHE_TIMEOUT)
+            safe_set(cache_key, duration, timeout=DURATION_CACHE_TIMEOUT)
         return duration
 
     def get_teardown_duration(
@@ -321,5 +328,5 @@ class RunManager(models.Manager):
                 query = query.filter(commit=commit)
             run: Run = query.first()  # type: ignore[assignment]
             duration = run.teardown_duration if run else 0.0
-            cache.set(cache_key, duration, timeout=DURATION_CACHE_TIMEOUT)
+            safe_set(cache_key, duration, timeout=DURATION_CACHE_TIMEOUT)
         return duration

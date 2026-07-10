@@ -8,7 +8,7 @@ import pytest
 from redis.exceptions import ConnectionError
 
 from ..constants import PENDING_THRESHOLD
-from ..managers import safe_get
+from ..managers import safe_get, safe_set
 from ..models import Project, Result, Run, Status, Suite, Test
 
 
@@ -29,6 +29,17 @@ def describe_safe_get(expect):
     def it_returns_the_fallback_value_if_the_cache_lookup_fails(mock_get):
         expect(safe_get("test", fallback="fallback")) == "fallback"
         mock_get.assert_called_once_with("test")
+
+
+def describe_safe_set(expect):
+    def it_writes_the_value_to_the_cache():
+        safe_set("test", "value")
+        expect(cache.get("test")) == "value"
+
+    @patch("tab.projects.managers.cache.set", side_effect=ConnectionError())
+    def it_does_not_raise_if_the_cache_write_fails(mock_set):
+        safe_set("test", "value", timeout=60)
+        mock_set.assert_called_once_with("test", "value", timeout=60)
 
 
 def describe_result_manager(expect, project: Project):
