@@ -44,11 +44,9 @@
                         <code>$(curl --silent {{ base_url }}{% url 'projects:disabled-tests-regex' project.path %})</code>
                     </div>
                     <hr>
-                    <div class="mt-3">
-                        {# djlint:off #}
+                    <div class="mt-3">{# djlint:off #}
                         <code>'{% for row in table.rows %}{% if not forloop.first %}|{% endif %}{{ row.record.regex }}{% endfor %}'</code>
-                        {# djlint:on #}
-                    </div>
+                        {# djlint:on #}</div>
                 </div>
             </div>
         </details>
