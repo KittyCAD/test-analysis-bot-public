@@ -129,9 +129,16 @@
                     <button type="button"
                             class="btn btn-sm btn-link text-muted p-0 ms-1 copy-btn"
                             data-clipboard-text="{{ base_url }}{% url 'projects:results-regex' project.path %}?show={{ show }}&branch={{ branch }}"
-                            title="Copy Regular Expression URL">
+                            title="Copy RegEx URL">
                         <i class="fa-solid fa-copy"></i>
                     </button>
+                    <a href="{% url 'projects:disabled-tests' project.path %}?preselect={{ preselect }}"
+                       target="_blank"
+                       rel="noopener"
+                       class="btn btn-sm btn-link text-muted p-0"
+                       title="Disable Tests...">
+                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                    </a>
                 </div>
             </div>
         </form>

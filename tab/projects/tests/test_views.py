@@ -405,6 +405,40 @@ def describe_tests(expect):
             html = response.content.decode("utf-8")
             expect(html).contains("1 Disabled Test")
 
+        @pytest.mark.django_db
+        def it_filters_to_provided_preselect_ids_and_disables_search(
+            admin_client, project: Project, disabled_test: Test
+        ):
+            other = Test.objects.create(project=project, name="other disabled")
+            other.results.create(
+                branch="main",
+                commit="abc123",
+                status=Status.PASSED,
+                duration=1.0,
+            )
+            other.disabled_at = timezone.now()
+            other.save()
+            enabled = Test.objects.create(project=project, name="enabled test")
+            enabled.results.create(
+                branch="main",
+                commit="abc123",
+                status=Status.FAILED,
+                duration=1.0,
+            )
+            enabled.save()
+
+            response = admin_client.get(
+                f"{url}?preselect={disabled_test.id},{enabled.id}"
+            )
+            expect(response.status_code) == 200
+            html = response.content.decode("utf-8")
+            expect(html).contains(disabled_test.name)
+            expect(html).contains(enabled.name)
+            expect(html).excludes(other.name)
+            expect(html).contains("Preselected Test")
+            expect(response.context["preselect"]) == f"{disabled_test.id},{enabled.id}"
+            expect(html.count("checked")) >= 2
+
         def describe_regex(expect):
             url = "/projects/foo/bar/tests/disabled/regex"
 

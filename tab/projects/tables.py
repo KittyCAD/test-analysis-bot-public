@@ -192,6 +192,21 @@ class DisabledTestTable(tables.Table):
         )
         order_by = "name"
 
+    def __init__(self, *args, preselect=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        if preselect:
+            column = self.columns["select"].column
+            column.attrs = {
+                "th__input": {
+                    **column.attrs.get("th__input", {}),
+                    "checked": True,
+                },
+                "td__input": {
+                    **column.attrs.get("td__input", {}),
+                    "checked": True,
+                },
+            }
+
     def render_name(self, record: Test):
         return render_to_string(
             "projects/_markers.html",

@@ -162,6 +162,10 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
+        if ids := self._parse_preselect_ids():
+            return project.tests.filter(id__in=ids).select_related(
+                "suite", "last_result", "disabled_user"
+            )
 
         search = self.request.GET.get("search", "").strip()
         tracker = self.request.GET.get("tracker", "").strip()
@@ -196,6 +200,8 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
         )
         context["disabled_only"] = True
         context["search"] = self.request.GET.get("search", "").strip()
+        context["preselect"] = self.request.GET.get("preselect", "").strip()
+        context["query_string"] = self.request.GET.urlencode(safe=",")
         context["base_url"] = settings.BASE_URL
         if self.request.user.is_staff:
             context["admin_url"] = reverse(
@@ -203,6 +209,9 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
             )
 
         return context
+
+    def get_table_kwargs(self):
+        return {"preselect": bool(self._parse_preselect_ids())}
 
     def get_initial(self):
         tests = self.get_queryset()
@@ -235,7 +244,11 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
             test.disabled_reason = disabled_reason
             test.disabled_tracker = disabled_tracker
             test.disabled_user = disabled_user
-            if not disabled and test.last_result.status in Status.test_disabled():
+            if (
+                not disabled
+                and test.last_result
+                and test.last_result.status in Status.test_disabled()
+            ):
                 # Change the status to hide it from this view
                 test.last_result.status = Status.INTERRUPTED
                 test.last_result.save()
@@ -245,11 +258,16 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
         s = "" if len(tests) == 1 else "s"
         messages.success(self.request, f"Successfully updated {len(tests)} test{s}.")
 
+        query_string = self.request.GET.urlencode(safe=",")
         redirect_url = self.request.path
-        if search := self.request.GET.get("search"):
-            redirect_url += f"?search={search}"
-
+        if query_string:
+            redirect_url += f"?{query_string}"
         return redirect(redirect_url)
+
+    def _parse_preselect_ids(self) -> list[int]:
+        if not (raw := self.request.GET.get("preselect", "").strip()):
+            return []
+        return [int(part) for part in raw.split(",") if part.strip().isdigit()]
 
 
 class DisabledTestsRegexView(DisabledTestsView):
@@ -341,6 +359,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         context["tag"] = self.request.GET.get("tag", "").strip()
         context["show"] = self.request.GET.get("show", "all")
         context["base_url"] = settings.BASE_URL
+        context["preselect"] = ",".join(self._get_test_ids())
         if context["suite_id"] and (
             suite := project.suites.filter(id=context["suite_id"]).first()
         ):
@@ -401,6 +420,9 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
             .first()
         )
         return result.merge_url if result else ""
+
+    def _get_test_ids(self) -> list[str]:
+        return sorted({str(row.record.test_id) for row in self.get_table().rows})
 
 
 class ResultsRegexView(ResultsView):

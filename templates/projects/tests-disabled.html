@@ -35,7 +35,18 @@
                 </ul>
             </div>
         </div>
-        <h2 class="mb-4">{{ table.rows|length }} Disabled Test{{ table.rows|length|pluralize }}</h2>
+        <h2 class="mb-4">
+            {% if preselect %}
+                {{ table.rows|length }} Preselected Test{{ table.rows|length|pluralize }}
+                <a href="{% url 'projects:disabled-tests' project.path %}"
+                   class="btn btn-sm btn-outline-danger ms-2"
+                   title="Clear preselected tests">
+                    <i class="fa-solid fa-xmark"></i>
+                </a>
+            {% else %}
+                {{ table.rows|length }} Disabled Test{{ table.rows|length|pluralize }}
+            {% endif %}
+        </h2>
         <details class="mb-4">
             <summary>Regular Expression</summary>
             <div class="card mt-2">
@@ -57,13 +68,15 @@
                        value="{{ search }}"
                        class="form-control border-dark_"
                        placeholder="Filter tests by name, reason, tracker, or user..."
-                       required>
+                       {% if preselect %}disabled{% else %}required{% endif %}>
                 {% if search %}
                     <a href="{% url 'projects:disabled-tests' project.path %}{% if enabled != 'true' %}?enabled={{ enabled }}{% endif %}"
                        class="btn btn-outline-danger"
                        type="button"><i class="fa-solid fa-xmark"></i></a>
                 {% endif %}
-                <button class="btn btn-outline-primary" type="submit">Search</button>
+                <button class="btn btn-outline-primary"
+                        type="submit"
+                        {% if preselect %}disabled{% endif %}>Search</button>
             </div>
         </form>
         {% render_table table %}
@@ -75,7 +88,9 @@
                     </h6>
                 </div>
                 <div class="card-body">
-                    <form method="post" id="bulk-update-form">
+                    <form method="post"
+                          id="bulk-update-form"
+                          {% if query_string %}action="?{{ query_string }}"{% endif %}>
                         {% csrf_token %}
                         {{ form.test_ids }}
                         <div class="row">{{ form.disabled|as_crispy_field }}</div>
