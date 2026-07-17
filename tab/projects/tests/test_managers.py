@@ -7,7 +7,7 @@ from django.utils import timezone
 import pytest
 from redis.exceptions import ConnectionError
 
-from ..constants import PENDING_THRESHOLD
+from ..constants import EXPIRED_THRESHOLD
 from ..managers import safe_get, safe_set
 from ..models import Project, Result, Run, Status, Suite, Test
 
@@ -326,8 +326,7 @@ def describe_run_manager(expect):
 
         @pytest.mark.django_db
         def with_finish_step_does_not_overwrite_if_expired():
-            threshold = PENDING_THRESHOLD * 2
-            expired_time = timezone.now() - threshold - timedelta(minutes=1)
+            expired_time = timezone.now() - EXPIRED_THRESHOLD - timedelta(minutes=1)
             Run.objects.create(
                 project=suite.project,
                 suite=suite,
@@ -382,7 +381,7 @@ def describe_run_manager(expect):
             )
 
             run: Run
-            run, created = Run.objects.track_step(  # type: ignore[assignment]
+            run, _created = Run.objects.track_step(  # type: ignore[assignment]
                 suite=suite,
                 branch="main",
                 commit="abc123",
@@ -394,8 +393,7 @@ def describe_run_manager(expect):
 
         @pytest.mark.django_db
         def with_teardown_step_does_not_overwrite_if_expired():
-            threshold = PENDING_THRESHOLD * 2
-            expired_time = timezone.now() - threshold - timedelta(minutes=1)
+            expired_time = timezone.now() - EXPIRED_THRESHOLD - timedelta(minutes=1)
             Run.objects.create(
                 project=suite.project,
                 suite=suite,
@@ -406,7 +404,7 @@ def describe_run_manager(expect):
             )
 
             run: Run
-            run, created = Run.objects.track_step(  # type: ignore[assignment]
+            run, _created = Run.objects.track_step(  # type: ignore[assignment]
                 suite=suite,
                 branch="main",
                 commit="abc123",

@@ -17,6 +17,7 @@ from .constants import (
     ALL_BRANCHES,
     DURATION_CACHE_KEY,
     DURATION_CACHE_TIMEOUT,
+    EXPIRED_THRESHOLD,
     PENDING_THRESHOLD,
 )
 from .enums import Status
@@ -254,8 +255,9 @@ class RunManager(models.Manager):
                 log.info(f"Found run: {run}")
 
         now = timezone.now()
-        threshold = PENDING_THRESHOLD * 2
-        expired = run.tests_started_at and now - run.tests_started_at > threshold
+        expired = (
+            run.tests_started_at and now - run.tests_started_at > EXPIRED_THRESHOLD
+        )
         if step == "setup" and not run.setup_started_at:
             run.setup_started_at = now
         elif step == "start" and not run.tests_started_at:
