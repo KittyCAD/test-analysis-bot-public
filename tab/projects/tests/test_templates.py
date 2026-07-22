@@ -133,3 +133,33 @@ def describe_highlight(expect):
         expect(result).contains("text-success")
         expect(result).contains("left:")
         expect(result).contains("right:")
+
+    def with_rust_pretty_assertions_diff():
+        text = (
+            "assertion failed: `(left == right)`\n"
+            "\n"
+            "Diff < left / right > :\n"
+            "<[DEVELOPMENT] Account Deletion Confirmation\n"
+            ">Account Deletion Confirmation\n"
+            "\n"
+            "stack backtrace:\n"
+            "   0: __rustc::rust_begin_unwind\n"
+        )
+        result = highlight(text)
+        expect(result).contains("text-danger")
+        expect(result).contains("text-success")
+        expect(result).contains(
+            '<span class="text-danger">&lt;[DEVELOPMENT] Account Deletion Confirmation</span>'
+        )
+        expect(result).contains(
+            '<span class="text-success">&gt;Account Deletion Confirmation</span>'
+        )
+        expect(result).excludes(
+            '<span class="text-success">   0: __rustc::rust_begin_unwind</span>'
+        )
+
+    def with_angle_brackets_outside_pretty_diff():
+        text = "<not a diff\n>also not a diff\n"
+        result = highlight(text)
+        expect(result).excludes("text-danger")
+        expect(result).excludes("text-success")

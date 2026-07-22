@@ -76,6 +76,7 @@ def highlight(value):
     seen_received = False
     logs_started = False
     in_unified_diff = False
+    in_rust_pretty_diff = False
 
     for line in lines:
         has_newline = line.endswith("\n")
@@ -87,6 +88,11 @@ def highlight(value):
             in_unified_diff = False
         elif "@@" in line_content:
             in_unified_diff = True
+
+        if "Diff < left / right >" in line_content:
+            in_rust_pretty_diff = True
+        elif line_content.lstrip().startswith("stack backtrace:"):
+            in_rust_pretty_diff = False
 
         # Handle Pytest diffs
         if match := PYTEST_DIFF_PLUS.match(line_content):
@@ -152,6 +158,16 @@ def highlight(value):
             if has_newline:
                 result_lines.append("\n")
         elif line_content.startswith(" right:"):
+            escaped = escape(line_content)
+            result_lines.append(f'<span class="text-success">{escaped}</span>')
+            if has_newline:
+                result_lines.append("\n")
+        elif in_rust_pretty_diff and line_content.lstrip().startswith("<"):
+            escaped = escape(line_content)
+            result_lines.append(f'<span class="text-danger">{escaped}</span>')
+            if has_newline:
+                result_lines.append("\n")
+        elif in_rust_pretty_diff and line_content.lstrip().startswith(">"):
             escaped = escape(line_content)
             result_lines.append(f'<span class="text-success">{escaped}</span>')
             if has_newline:
