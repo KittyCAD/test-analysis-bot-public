@@ -738,7 +738,10 @@ class Result(models.Model):
 
     @property
     def external(self) -> bool:
-        return self.metadata.get("GITHUB_WORKFLOW") == "deployment"
+        if path := self.metadata.get("GITHUB_REPOSITORY"):
+            if path != self.test.project.path:
+                return True
+        return False
 
     @property
     def branch_url(self) -> str:
@@ -777,10 +780,11 @@ class Result(models.Model):
 
     @property
     def run_url(self) -> str:
-        if self.external:
-            return ""
+        base_url = self.test.project.repository
+        if path := self.metadata.get("GITHUB_REPOSITORY"):
+            base_url = base_url.replace(self.test.project.path, path)
         if run_id := self.metadata.get("GITHUB_RUN_ID"):
-            url = f"{self.test.project.repository}/actions/runs/{run_id}"
+            url = f"{base_url}/actions/runs/{run_id}"
             if number := self.metadata.get("CI_PR_NUMBER"):
                 url += f"?pr={number}"
             return url
