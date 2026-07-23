@@ -301,14 +301,14 @@ class TestResultTable(tables.Table):
         return mark_safe(html)
 
     def render_branch(self, record: Result):
-        if not record.branch:
+        if not record.branch_url:
             return ""
         return mark_safe(
             f'<a href="{record.branch_url}" target="_blank">{record.branch}</a>'
         )
 
     def render_commit(self, record: Result):
-        if not record.commit:
+        if not record.commit_url:
             return ""
         return mark_safe(
             f'<a href="{record.commit_url}" target="_blank">{record.commit_humanized}</a>'

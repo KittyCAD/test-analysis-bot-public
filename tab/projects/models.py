@@ -737,13 +737,19 @@ class Result(models.Model):
         return []
 
     @property
+    def external(self) -> bool:
+        return self.metadata.get("GITHUB_WORKFLOW") == "deployment"
+
+    @property
     def branch_url(self) -> str:
-        if not self.branch:
+        if not self.branch or self.external:
             return ""
         return f"{self.test.project.repository}/tree/{self.branch}"
 
     @property
     def merge_url(self) -> str:
+        if self.external:
+            return ""
         if number := self.metadata.get("CI_PR_NUMBER"):  # GitHub
             return f"{self.test.project.repository}/pull/{number}"
         if number := self.metadata.get("CI_MERGE_REQUEST_IID"):  # GitLab
@@ -758,7 +764,7 @@ class Result(models.Model):
 
     @property
     def commit_url(self) -> str:
-        if not self.commit:
+        if not self.commit or self.external:
             return ""
         return f"{self.test.project.repository}/commit/{self.commit}"
 
@@ -771,6 +777,8 @@ class Result(models.Model):
 
     @property
     def run_url(self) -> str:
+        if self.external:
+            return ""
         if run_id := self.metadata.get("GITHUB_RUN_ID"):
             url = f"{self.test.project.repository}/actions/runs/{run_id}"
             if number := self.metadata.get("CI_PR_NUMBER"):
