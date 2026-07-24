@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
-from django.db.models import Q, Subquery
+from django.db.models import Q
 from django.utils import timezone
 
 import log
@@ -113,12 +113,10 @@ class Command(BaseCommand):
 
         deleted = 0
         while True:
-            chunk = results.values("pk")[:CHUNK_SIZE]
-            chunk_count, _ = (
-                Result.objects.filter(pk__in=Subquery(chunk)).order_by().delete()
-            )
-            if not chunk_count:
+            ids = list(results.values_list("pk", flat=True)[:CHUNK_SIZE])
+            if not ids:
                 break
+            chunk_count, _ = Result.objects.filter(pk__in=ids).order_by().delete()
             deleted += chunk_count
             log.info(f"Deleted {chunk_count} chunk results: {project}")
 
