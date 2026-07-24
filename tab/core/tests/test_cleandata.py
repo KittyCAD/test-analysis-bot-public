@@ -8,7 +8,7 @@ import pytest
 from tab.api.constants import TESTS_CACHE_KEY
 from tab.core.management.commands.cleandata import Command
 from tab.projects.enums import Status, Target
-from tab.projects.models import Project, Result
+from tab.projects.models import Project, Result, Test
 
 
 @pytest.mark.django_db
@@ -47,11 +47,15 @@ def describe_delete_stale_results(expect):
         Result.objects.filter(pk=old_default.pk).update(
             created_at=now - timedelta(days=141)
         )
+        # Point last_result at a row that will be deleted (bypass Test.save)
+        Test.objects.filter(pk=test.pk).update(last_result=stale_feature)
 
         deleted = Command().delete_stale_results(project, dry_run=False)
 
         expect(deleted) == 2
         expect(set(test.results.values_list("commit", flat=True))) == {"a2", "b1"}
+        test.refresh_from_db()
+        expect(test.last_result_id) == None
 
     def it_does_nothing_on_dry_run():
         project = Project.objects.create(

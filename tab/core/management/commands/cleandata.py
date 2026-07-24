@@ -2,18 +2,19 @@ from datetime import timedelta
 
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
-from django.db.models import Q
+from django.db.models import QuerySet
 from django.utils import timezone
 
 import log
 
 from tab.api.constants import TESTS_CACHE_KEY
+from tab.metrics.models import TestHistory
 from tab.projects.models import Project, Result, Run, Test
 from tab.releases.constants import PLACEHOLDER_CHARACTER, RESULTS_TIMEOUT
 from tab.releases.enums import Type
 from tab.releases.models import Environment, Release
 
-CHUNK_SIZE = 1000
+CHUNK_SIZE = 5000
 
 
 class Command(BaseCommand):
@@ -89,38 +90,41 @@ class Command(BaseCommand):
 
         short_cutoff = timezone.now() - project.result_stale_threshold
         long_cutoff = timezone.now() - (project.result_stale_threshold * 20)
-        results = (
+        branch_results = (
             Result.objects.filter(test__project=project)
-            .filter(
-                # Delete non-default branch results older than the threshold
-                (
-                    Q(created_at__lt=short_cutoff)
-                    & ~Q(branch__in=project.default_branches)
-                )
-                # Delete default branch results older than the threshold
-                | (
-                    Q(branch__in=project.default_branches)
-                    & Q(created_at__lt=long_cutoff)
-                )
-            )
-            .order_by()  # remove default ordering for performance
+            .exclude(branch__in=project.default_branches)
+            .filter(created_at__lt=short_cutoff)
+            .order_by()
         )
+        default_results = Result.objects.filter(
+            test__project=project,
+            branch__in=project.default_branches,
+            created_at__lt=long_cutoff,
+        ).order_by()
 
         if dry_run:
-            count = results.count()
+            count = branch_results.count() + default_results.count()
             log.warning(f"Would delete {count} total results: {project}")
             return 0
 
+        deleted = self._delete_result_chunks(project, branch_results)
+        deleted += self._delete_result_chunks(project, default_results)
+        log.info(f"Deleted {deleted} total results: {project}")
+        return deleted
+
+    def _delete_result_chunks(self, project: Project, results: QuerySet[Result]) -> int:
         deleted = 0
         while True:
             ids = list(results.values_list("pk", flat=True)[:CHUNK_SIZE])
             if not ids:
                 break
-            chunk_count, _ = Result.objects.filter(pk__in=ids).order_by().delete()
+            # Clear SET_NULL FKs ourselves so we can skip Django's collector
+            Test.objects.filter(last_result_id__in=ids).update(last_result=None)
+            TestHistory.objects.filter(result_id__in=ids).update(result=None)
+            chunk = Result.objects.filter(pk__in=ids).order_by()
+            chunk_count = chunk._raw_delete(chunk.db)
             deleted += chunk_count
             log.info(f"Deleted {chunk_count} chunk results: {project}")
-
-        log.info(f"Deleted {deleted} total results: {project}")
         return deleted
 
     def update_bulk_tests(self):
