@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     "django_extensions",
     "django_tables2",
     "django_user_agents",
+    "mozilla_django_oidc",
     # First-party
     "tab.api",
     "tab.core",
@@ -42,6 +43,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "tab.core.middleware.AuthentikSessionRefresh",
     "django_user_agents.middleware.UserAgentMiddleware",
     "tab.core.middleware.CrawlerPreviewMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -129,6 +131,36 @@ CACHES = {
 # Sessions
 
 SESSION_COOKIE_AGE = 30 * 24 * 60 * 60  # 30 days
+
+###############################################################################
+# Authentication
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "tab.core.auth.AuthentikOIDCBackend",
+]
+
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "/"
+LOGIN_REDIRECT_URL_FAILURE = "/accounts/login/"
+
+AUTHENTIK_BASE_URL = "https://auth.corp.zoo.dev"
+AUTHENTIK_PROVIDER_SLUG = "test-analysis-bot"
+OIDC_OP_ISSUER = f"{AUTHENTIK_BASE_URL}/application/o/{AUTHENTIK_PROVIDER_SLUG}/"
+OIDC_OP_AUTHORIZATION_ENDPOINT = f"{AUTHENTIK_BASE_URL}/application/o/authorize/"
+OIDC_OP_TOKEN_ENDPOINT = f"{AUTHENTIK_BASE_URL}/application/o/token/"
+OIDC_OP_USER_ENDPOINT = f"{AUTHENTIK_BASE_URL}/application/o/userinfo/"
+OIDC_OP_JWKS_ENDPOINT = (
+    f"{AUTHENTIK_BASE_URL}/application/o/{AUTHENTIK_PROVIDER_SLUG}/jwks/"
+)
+OIDC_RP_CLIENT_ID = os.getenv("OIDC_RP_CLIENT_ID", "")
+OIDC_RP_CLIENT_SECRET = os.getenv("OIDC_RP_CLIENT_SECRET", "")
+OIDC_RP_SCOPES = "openid email"
+OIDC_RP_SIGN_ALGO = "RS256"
+OIDC_TIMEOUT = 10
+OIDC_USE_PKCE = True
+OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 15 * 60
+OIDC_EXEMPT_URLS = ["logout"]
 
 ###############################################################################
 # Internationalization

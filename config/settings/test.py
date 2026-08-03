@@ -9,6 +9,8 @@ BASE_URL = "http://testserver.com"
 
 TEST = True
 SECRET_KEY = "test"
+OIDC_RP_CLIENT_ID = "test-client-id"
+OIDC_RP_CLIENT_SECRET = "test-client-secret"
 
 ###############################################################################
 # Databases

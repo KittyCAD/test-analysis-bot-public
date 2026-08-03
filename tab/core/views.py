@@ -1,5 +1,6 @@
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login as auth_login
 from django.contrib.auth import logout as auth_logout
@@ -8,17 +9,33 @@ from django.db import connection
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 
 import log
 
-from .helpers import generate_otp, get_or_create_user, send_otp_email
-from .models import Organization
+from .helpers import (
+    generate_otp,
+    get_or_create_user,
+    has_organization_email_domain,
+    send_otp_email,
+)
+
+
+def _get_safe_next_url(request: HttpRequest) -> str | None:
+    next_url = request.GET.get("next")
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return next_url
+    return None
 
 
 def login(request: HttpRequest) -> HttpResponse:
     if request.method == "GET" and (otp := request.GET.get("otp")):
         params = {"otp": otp}
-        if next_url := request.GET.get("next"):
+        if next_url := _get_safe_next_url(request):
             params["next"] = next_url
         query = urlencode(params)
         url = reverse("verify")
@@ -28,8 +45,7 @@ def login(request: HttpRequest) -> HttpResponse:
 
     if request.method == "POST":
         email: str = request.POST["email"]
-        domain = email.split("@")[1]
-        if not Organization.objects.filter(email_domain__iexact=domain).exists():
+        if not has_organization_email_domain(email):
             messages.error(request, "No organization found for that email domain.")
             return redirect("login")
 
@@ -40,11 +56,16 @@ def login(request: HttpRequest) -> HttpResponse:
         request.session["email"] = email
 
         url = reverse("verify")
-        if next := request.GET.get("next"):
-            url += f"?next={next}"
+        if next_url := _get_safe_next_url(request):
+            url += f"?{urlencode({'next': next_url})}"
         return redirect(url)
 
-    return render(request, "core/login.html")
+    context = {
+        "authentik_enabled": bool(
+            settings.OIDC_RP_CLIENT_ID and settings.OIDC_RP_CLIENT_SECRET
+        )
+    }
+    return render(request, "core/login.html", context)
 
 
 def verify(request: HttpRequest) -> HttpResponse:
@@ -60,10 +81,14 @@ def verify(request: HttpRequest) -> HttpResponse:
 
         if stored_otp and submitted_otp == stored_otp:
             user = get_or_create_user(email)
-            auth_login(request, user)
+            auth_login(
+                request,
+                user,
+                backend="django.contrib.auth.backends.ModelBackend",
+            )
             cache.delete(f"otp:{email}")
             request.session.pop("email", None)
-            url = request.GET.get("next", "/")
+            url = _get_safe_next_url(request) or "/"
             return redirect(url)
         else:
             messages.error(request, "Invalid OTP. Please try again.")

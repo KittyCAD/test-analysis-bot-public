@@ -6,9 +6,16 @@
             <div class="col-lg-6">
                 <div class="card">
                     <div class="card-header">
-                        <h1 class="h3 mb-0">Login via Email</h1>
+                        <h1 class="h3 mb-0">Login</h1>
                     </div>
                     <div class="card-body">
+                        {% if authentik_enabled %}
+                            <a href="{% url 'oidc_authentication_init' %}{% if request.GET.next %}?next={{ request.GET.next|urlencode }}{% endif %}"
+                               class="btn btn-primary w-100 mb-4">
+                                <i class="fa-solid fa-right-to-bracket me-1"></i>
+                                Continue with Authentik
+                            </a>
+                        {% endif %}
                         <p class="text-muted mb-4">
                             We'll send you a generated, one-time password to your email.
                             If you are an administrator, you can also login with your password.

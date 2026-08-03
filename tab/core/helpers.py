@@ -4,14 +4,29 @@ from contextlib import suppress
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.mail import EmailMessage
-from django.db import IntegrityError
+from django.core.validators import validate_email
+from django.db import IntegrityError, transaction
 from django.template.loader import render_to_string
 from django.urls import reverse
 
 import log
 
 from .constants import TEST_OTP
+from .models import Organization
+
+
+def has_organization_email_domain(email: str) -> bool:
+    try:
+        validate_email(email)
+    except ValidationError:
+        return False
+
+    local_part, separator, domain = email.rpartition("@")
+    if not separator or not local_part or not domain:
+        return False
+    return Organization.objects.filter(email_domain__iexact=domain).exists()
 
 
 def get_or_create_user(email: str) -> User:
@@ -24,7 +39,10 @@ def get_or_create_user(email: str) -> User:
             if count > 1:
                 username = f"{base_username}{count}"
             with suppress(IntegrityError):
-                return User.objects.create_user(username=username, email=email.lower())
+                with transaction.atomic():
+                    return User.objects.create_user(
+                        username=username, email=email.lower()
+                    )
     raise ValueError(f"Unable to generate username for {email}")
 
 

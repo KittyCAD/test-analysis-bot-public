@@ -2,7 +2,18 @@ from django.contrib import admin, messages
 
 import log
 
-from .models import Organization, generate_key
+from .models import OIDCIdentity, Organization, generate_key
+
+
+@admin.register(OIDCIdentity)
+class OIDCIdentityAdmin(admin.ModelAdmin):
+    list_display = ("issuer", "subject", "user", "created_at")
+    search_fields = ("issuer", "subject", "user__username", "user__email")
+    autocomplete_fields = ("user",)
+    readonly_fields = ("issuer", "subject", "user", "created_at")
+
+    def has_add_permission(self, request):
+        return False
 
 
 @admin.register(Organization)

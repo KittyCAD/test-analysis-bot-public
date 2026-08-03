@@ -1,5 +1,6 @@
 import secrets
 
+from django.conf import settings
 from django.db import models
 
 import log
@@ -8,6 +9,28 @@ from github import Auth, Github, GithubIntegration
 
 def generate_key() -> str:
     return "".join(secrets.choice("0123456789abcdef") for _ in range(32))
+
+
+class OIDCIdentity(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="oidc_identities",
+    )
+    issuer = models.URLField()
+    subject = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("issuer", "subject"), name="unique_oidc_identity"
+            ),
+            models.UniqueConstraint(fields=("issuer", "user"), name="unique_oidc_user"),
+        ]
+
+    def __str__(self):
+        return f"{self.issuer} › {self.subject}"
 
 
 class Organization(models.Model):

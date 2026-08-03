@@ -8,6 +8,7 @@ from django.views.generic import RedirectView
 urlpatterns = [
     path("", lambda _request: redirect("projects:index")),
     path("", include("tab.core.urls")),
+    path("oidc/", include("mozilla_django_oidc.urls")),
     path("projects/", include("tab.projects.urls", namespace="projects")),
     path("api/", include("tab.api.urls")),
     path("admin/", admin.site.urls),

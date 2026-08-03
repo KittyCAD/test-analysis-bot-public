@@ -53,6 +53,24 @@ def describe_login_and_verify(expect, client):
         expect(html).contains("No organization found for that email domain.")
 
     @pytest.mark.django_db
+    @pytest.mark.parametrize(
+        "email",
+        [
+            "invalid",
+            "person@@example.com",
+            "person@attacker.example@example.com",
+            " person@example.com",
+            "person@example.com ",
+            "person\n@example.com",
+        ],
+    )
+    def it_rejects_malformed_email_addresses(organization, email):
+        response = client.post(login_url, {"email": email}, follow=True)
+        expect(response.status_code) == 200
+        html = response.content.decode("utf-8")
+        expect(html).contains("No organization found for that email domain.")
+
+    @pytest.mark.django_db
     def it_redirects_to_login_if_no_email_in_session():
         # Try to access verify page without going through login first
         response = client.get(verify_url, follow=True)
@@ -78,6 +96,22 @@ def describe_login_and_verify(expect, client):
 
         # Should redirect to the next URL after successful login
         expect(response.redirect_chain[-1][0]).contains("/projects/")
+
+    @pytest.mark.django_db
+    def it_rejects_external_next_urls(organization):
+        response = client.post(
+            f"{login_url}?next=https://attacker.example/",
+            {"email": "test@example.com"},
+        )
+        expect(response.status_code) == 302
+        expect(response["Location"]) == verify_url
+
+        response = client.post(
+            f"{verify_url}?next=https://attacker.example/",
+            {"otp": TEST_OTP},
+        )
+        expect(response.status_code) == 302
+        expect(response["Location"]) == "/"
 
     @pytest.mark.django_db
     def it_redirects_to_verify_when_otp_is_in_query(organization):
