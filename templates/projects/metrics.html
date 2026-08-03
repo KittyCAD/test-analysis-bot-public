@@ -132,9 +132,9 @@
                                         <td>
                                             {% if stats.disabled > 0 %}
                                                 <a href="{% url 'projects:disabled-tests' project.path %}?search={{ user.email }}">
-                                                {% endif %}
-                                                {{ stats.disabled }} Test{{ stats.disabled|pluralize }}
-                                                {% if stats.disabled > 0 %}</a>{% endif %}
+                                            {% endif %}
+                                            {{ stats.disabled }} Test{{ stats.disabled|pluralize }}
+                                            {% if stats.disabled > 0 %}</a>{% endif %}
                                         </td>
                                         <td>{{ stats.enabled }} Test{{ stats.enabled|pluralize }}</td>
                                     </tr>

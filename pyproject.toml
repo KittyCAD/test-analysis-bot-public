@@ -52,7 +52,7 @@ whitenoise = "^6.12.0"
 # Formatting
 black = "^26.5.0"
 isort = "^8.0.0"
-djlint = "^1.40.6"
+djlint = "^1.42.3"
 
 # Linting
 mypy = "^2.3"
