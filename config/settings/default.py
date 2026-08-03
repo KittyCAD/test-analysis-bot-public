@@ -161,6 +161,7 @@ OIDC_TIMEOUT = 10
 OIDC_USE_PKCE = True
 OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 15 * 60
 OIDC_EXEMPT_URLS = ["logout"]
+OIDC_CALLBACK_CLASS = "tab.core.oidc.AuthentikOIDCCallbackView"
 
 ###############################################################################
 # Internationalization

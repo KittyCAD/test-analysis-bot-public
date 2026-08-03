@@ -157,10 +157,13 @@ def describe_authentik_login(expect, client):
             callback_response = client.get(
                 "/oidc/callback/",
                 {"code": "valid-code", "state": query["state"][0]},
+                follow=True,
             )
 
-        expect(callback_response.status_code) == 302
-        expect(callback_response["Location"]) == settings.LOGIN_REDIRECT_URL_FAILURE
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "TAB could not verify Authentik&#x27;s response."
+        )
         expect(User.objects.filter(email=oidc_provider.email).exists()) is False
         expect(OIDCIdentity.objects.exists()) is False
 
@@ -178,10 +181,61 @@ def describe_authentik_login(expect, client):
             callback_response = client.get(
                 "/oidc/callback/",
                 {"code": "valid-code", "state": query["state"][0]},
+                follow=True,
             )
 
-        expect(callback_response.status_code) == 302
-        expect(callback_response["Location"]) == settings.LOGIN_REDIRECT_URL_FAILURE
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "Your Authentik email domain is not configured for TAB."
+        )
+        expect(User.objects.exists()) is False
+        expect(OIDCIdentity.objects.exists()) is False
+
+    @pytest.mark.django_db
+    def it_explains_unverified_email_claims(
+        organization, oidc_provider: LocalOIDCProvider
+    ):
+        oidc_provider.email_verified = False
+
+        with override_settings(**oidc_provider.django_settings):
+            authorization_response = client.get("/oidc/authenticate/")
+            query = oidc_provider.capture_authorization(
+                authorization_response["Location"]
+            )
+            callback_response = client.get(
+                "/oidc/callback/",
+                {"code": "valid-code", "state": query["state"][0]},
+                follow=True,
+            )
+
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "Authentik did not verify your email address."
+        )
+        expect(User.objects.exists()) is False
+        expect(OIDCIdentity.objects.exists()) is False
+
+    @pytest.mark.django_db
+    def it_explains_invalid_email_claims(
+        organization, oidc_provider: LocalOIDCProvider
+    ):
+        oidc_provider.email = "not-an-email"
+
+        with override_settings(**oidc_provider.django_settings):
+            authorization_response = client.get("/oidc/authenticate/")
+            query = oidc_provider.capture_authorization(
+                authorization_response["Location"]
+            )
+            callback_response = client.get(
+                "/oidc/callback/",
+                {"code": "valid-code", "state": query["state"][0]},
+                follow=True,
+            )
+
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "Authentik did not provide a valid email address."
+        )
         expect(User.objects.exists()) is False
         expect(OIDCIdentity.objects.exists()) is False
 
@@ -199,11 +253,138 @@ def describe_authentik_login(expect, client):
             callback_response = client.get(
                 "/oidc/callback/",
                 {"code": "valid-code", "state": query["state"][0]},
+                follow=True,
             )
 
-        expect(callback_response.status_code) == 400
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "TAB could not verify Authentik&#x27;s response."
+        )
         expect(User.objects.exists()) is False
         expect(OIDCIdentity.objects.exists()) is False
+
+    @pytest.mark.django_db
+    def it_explains_expired_identity_tokens(
+        organization, oidc_provider: LocalOIDCProvider
+    ):
+        oidc_provider.id_token_claims["exp"] = int(time.time()) - 1
+
+        with override_settings(**oidc_provider.django_settings):
+            authorization_response = client.get("/oidc/authenticate/")
+            query = oidc_provider.capture_authorization(
+                authorization_response["Location"]
+            )
+            callback_response = client.get(
+                "/oidc/callback/",
+                {"code": "valid-code", "state": query["state"][0]},
+                follow=True,
+            )
+
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "TAB could not verify Authentik&#x27;s response."
+        )
+        expect(User.objects.exists()) is False
+        expect(OIDCIdentity.objects.exists()) is False
+
+    @pytest.mark.django_db
+    def it_handles_token_exchange_errors(
+        organization, oidc_provider: LocalOIDCProvider
+    ):
+        oidc_provider.token_error = "invalid_client"
+
+        with override_settings(**oidc_provider.django_settings):
+            authorization_response = client.get("/oidc/authenticate/")
+            query = oidc_provider.capture_authorization(
+                authorization_response["Location"]
+            )
+            callback_response = client.get(
+                "/oidc/callback/",
+                {"code": "valid-code", "state": query["state"][0]},
+                follow=True,
+            )
+
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "TAB could not complete sign-in with Authentik."
+        )
+        expect(User.objects.exists()) is False
+        expect(OIDCIdentity.objects.exists()) is False
+
+    @pytest.mark.django_db
+    def it_explains_access_denied_by_authentik():
+        authorization_response = client.get("/oidc/authenticate/")
+        query = parse_qs(urlparse(authorization_response["Location"]).query)
+
+        callback_response = client.get(
+            "/oidc/callback/",
+            {"error": "access_denied", "state": query["state"][0]},
+            follow=True,
+        )
+
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "Authentik denied access to TAB."
+        )
+
+    @pytest.mark.django_db
+    def it_distinguishes_provider_errors_from_access_denials():
+        authorization_response = client.get("/oidc/authenticate/")
+        query = parse_qs(urlparse(authorization_response["Location"]).query)
+
+        callback_response = client.get(
+            "/oidc/callback/",
+            {"error": "server_error", "state": query["state"][0]},
+            follow=True,
+        )
+
+        expect(callback_response.status_code) == 200
+        html = callback_response.content.decode()
+        expect(html).contains("TAB could not complete sign-in with Authentik.")
+        expect(html).does_not_contain("Authentik denied access to TAB.")
+
+    @pytest.mark.django_db
+    def it_keeps_tampered_state_as_a_bad_request():
+        client.get("/oidc/authenticate/")
+
+        callback_response = client.get(
+            "/oidc/callback/",
+            {"code": "valid-code", "state": "tampered"},
+        )
+
+        expect(callback_response.status_code) == 400
+
+    @pytest.mark.django_db
+    def it_rejects_a_callback_without_a_result_and_preserves_the_session():
+        user = User.objects.create_user(username="person", email="person@example.com")
+        client.force_login(user, backend="tab.core.auth.AuthentikOIDCBackend")
+
+        callback_response = client.get("/oidc/callback/")
+
+        expect(callback_response.status_code) == 400
+        expect(client.session["_auth_user_id"]) == str(user.id)
+
+    @pytest.mark.parametrize(
+        "callback_params",
+        [
+            {"error": "access_denied"},
+            {"error": "access_denied", "state": "tampered"},
+            {"code": "valid-code", "error": "server_error", "state": "tampered"},
+        ],
+    )
+    @pytest.mark.django_db
+    def it_rejects_provider_errors_without_a_valid_state(callback_params):
+        user = User.objects.create_user(username="person", email="person@example.com")
+        client.force_login(
+            user,
+            backend="django.contrib.auth.backends.ModelBackend",
+        )
+        client.get("/oidc/authenticate/")
+
+        callback_response = client.get("/oidc/callback/", callback_params)
+
+        expect(callback_response.status_code) == 400
+        expect(client.session["_auth_user_id"]) == str(user.id)
 
     @pytest.mark.django_db
     def it_rejects_a_second_subject_for_an_existing_identity(
@@ -228,10 +409,13 @@ def describe_authentik_login(expect, client):
             callback_response = client.get(
                 "/oidc/callback/",
                 {"code": "valid-code", "state": query["state"][0]},
+                follow=True,
             )
 
-        expect(callback_response.status_code) == 302
-        expect(callback_response["Location"]) == settings.LOGIN_REDIRECT_URL_FAILURE
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "This Authentik identity conflicts with an existing TAB account."
+        )
         expect(client.session.get("_auth_user_id")) is None
         expect(list(OIDCIdentity.objects.values_list("subject", flat=True))) == [
             "original-subject"
@@ -301,6 +485,41 @@ def describe_authentik_login(expect, client):
         expect(User.objects.get(pk=user.id).is_staff) is True
         expect(OIDCIdentity.objects.get(pk=identity.id).user_id) == user.id
         expect(OIDCIdentity.objects.count()) == 1
+
+    @pytest.mark.django_db
+    def it_logs_out_after_a_failed_silent_refresh(
+        organization, oidc_provider: LocalOIDCProvider
+    ):
+        user = User.objects.create_user(
+            username="person", email=oidc_provider.email, is_staff=True
+        )
+        OIDCIdentity.objects.create(
+            user=user,
+            issuer=oidc_provider.issuer,
+            subject=oidc_provider.id_token_subject,
+        )
+        oidc_provider.token_error = "login_required"
+
+        with override_settings(**oidc_provider.django_settings):
+            client.force_login(user, backend="tab.core.auth.AuthentikOIDCBackend")
+            session = client.session
+            session["oidc_id_token_expiration"] = 0
+            session.save()
+
+            refresh_response = client.get("/projects/")
+            query = oidc_provider.capture_authorization(refresh_response["Location"])
+            callback_response = client.get(
+                "/oidc/callback/",
+                {"code": "valid-code", "state": query["state"][0]},
+                follow=True,
+            )
+
+        expect(query["prompt"]) == ["none"]
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "TAB could not complete sign-in with Authentik."
+        )
+        expect(client.session.get("_auth_user_id")) is None
 
     @pytest.mark.django_db
     def it_accepts_claims_for_an_organization(organization):

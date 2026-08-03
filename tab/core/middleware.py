@@ -3,7 +3,6 @@ import time
 import traceback
 
 from django.conf import settings
-from django.contrib.auth import BACKEND_SESSION_KEY
 from django.contrib.auth import logout as auth_logout
 from django.http import (
     HttpRequest,
@@ -13,12 +12,11 @@ from django.http import (
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils.deprecation import MiddlewareMixin
-from django.utils.module_loading import import_string
 
 import log
-from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 from mozilla_django_oidc.middleware import SessionRefresh
 
+from tab.core.oidc import uses_oidc_backend
 from tab.projects.enums import Status
 from tab.projects.models import Project, Result, Test
 
@@ -43,20 +41,11 @@ class AuthentikSessionRefresh(SessionRefresh):
             status=401,
         )
 
-    @staticmethod
-    def _uses_oidc_backend(request: HttpRequest) -> bool:
-        backend_path = request.session.get(BACKEND_SESSION_KEY)
-        if not isinstance(backend_path, str):
-            return False
-
-        backend = import_string(backend_path)
-        return issubclass(backend, OIDCAuthenticationBackend)
-
     def _has_invalid_oidc_session(self, request: HttpRequest) -> bool:
-        return self._uses_oidc_backend(request) and not request.user.is_authenticated
+        return uses_oidc_backend(request) and not request.user.is_authenticated
 
     def _has_expired_oidc_session(self, request: HttpRequest) -> bool:
-        if not self._uses_oidc_backend(request) or not request.user.is_authenticated:
+        if not uses_oidc_backend(request) or not request.user.is_authenticated:
             return False
         if request.path in self.exempt_urls or any(
             pattern.match(request.path) for pattern in self.exempt_url_patterns

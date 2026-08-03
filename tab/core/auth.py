@@ -1,26 +1,37 @@
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import SuspiciousOperation, ValidationError
+from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
+from django.http import HttpRequest
 
+import jwt
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 
 from .helpers import get_or_create_user, has_organization_email_domain
 from .models import OIDCIdentity, Organization
+from .oidc import OIDCFailureReason, set_oidc_failure
 
 
 class AuthentikOIDCBackend(OIDCAuthenticationBackend):
     def verify_claims(self, claims: dict[str, object]) -> bool:
         email = claims.get("email")
-        return (
-            super().verify_claims(claims)
-            and isinstance(email, str)
-            and claims.get("email_verified") is True
-            and isinstance(claims.get("sub"), str)
-            and bool(claims["sub"])
-            and has_organization_email_domain(email)
-        )
+        if not super().verify_claims(claims) or not isinstance(email, str):
+            return self._reject(OIDCFailureReason.EMAIL_INVALID)
+        try:
+            validate_email(email)
+        except ValidationError:
+            return self._reject(OIDCFailureReason.EMAIL_INVALID)
+        if claims.get("email_verified") is not True:
+            return self._reject(OIDCFailureReason.EMAIL_UNVERIFIED)
+
+        subject = claims.get("sub")
+        if not isinstance(subject, str) or not subject:
+            return self._reject(OIDCFailureReason.SUBJECT_MISSING)
+        if not has_organization_email_domain(email):
+            return self._reject(OIDCFailureReason.DOMAIN_NOT_ALLOWED)
+        return True
 
     def filter_users_by_claims(self, claims: dict[str, object]) -> QuerySet[User]:
         subject = claims.get("sub")
@@ -49,6 +60,7 @@ class AuthentikOIDCBackend(OIDCAuthenticationBackend):
                 .first()
             )
             if organization is None:
+                self._set_failure(OIDCFailureReason.DOMAIN_NOT_ALLOWED)
                 raise SuspiciousOperation("OIDC email claim is not authorized")
             user = get_or_create_user(email)
             self._bind_identity(user, claims)
@@ -60,15 +72,16 @@ class AuthentikOIDCBackend(OIDCAuthenticationBackend):
         email = claims.get("email")
         if isinstance(email, str) and user.email.casefold() != email.casefold():
             if User.objects.exclude(pk=user.pk).filter(email__iexact=email).exists():
+                self._set_failure(OIDCFailureReason.IDENTITY_CONFLICT)
                 raise SuspiciousOperation("OIDC email belongs to another user")
             user.email = email.lower()
             user.save(update_fields=["email"])
         return user
 
-    @staticmethod
-    def _bind_identity(user: User, claims: dict[str, object]) -> None:
+    def _bind_identity(self, user: User, claims: dict[str, object]) -> None:
         subject = claims.get("sub")
         if not isinstance(subject, str) or not subject:
+            self._set_failure(OIDCFailureReason.SUBJECT_MISSING)
             raise SuspiciousOperation("OIDC subject claim is missing")
         try:
             identity, _ = OIDCIdentity.objects.get_or_create(
@@ -77,10 +90,12 @@ class AuthentikOIDCBackend(OIDCAuthenticationBackend):
                 defaults={"user": user},
             )
         except IntegrityError as error:
+            self._set_failure(OIDCFailureReason.IDENTITY_CONFLICT)
             raise SuspiciousOperation(
                 "OIDC user is already bound to another identity"
             ) from error
         if identity.user_id != user.id:
+            self._set_failure(OIDCFailureReason.IDENTITY_CONFLICT)
             raise SuspiciousOperation("OIDC identity belongs to another user")
 
     def get_userinfo(
@@ -91,9 +106,23 @@ class AuthentikOIDCBackend(OIDCAuthenticationBackend):
     ) -> dict[str, object]:
         user_info = super().get_userinfo(access_token, id_token, payload)
         if not isinstance(user_info, dict):
+            self._set_failure(OIDCFailureReason.INVALID_RESPONSE)
             raise SuspiciousOperation("OIDC UserInfo response is invalid")
-        self.verify_userinfo_subject(payload, user_info)
+        try:
+            self.verify_userinfo_subject(payload, user_info)
+        except SuspiciousOperation:
+            self._set_failure(OIDCFailureReason.INVALID_RESPONSE)
+            raise
         return user_info
+
+    def _reject(self, reason: OIDCFailureReason) -> bool:
+        self._set_failure(reason)
+        return False
+
+    def _set_failure(self, reason: OIDCFailureReason) -> None:
+        request: HttpRequest | None = getattr(self, "request", None)
+        if request is not None:
+            set_oidc_failure(request, reason)
 
     @staticmethod
     def verify_userinfo_subject(
@@ -115,7 +144,11 @@ class AuthentikOIDCBackend(OIDCAuthenticationBackend):
         return user
 
     def verify_token(self, token: str, **kwargs: object) -> dict[str, object]:
-        claims = super().verify_token(token, **kwargs)
+        try:
+            claims = super().verify_token(token, **kwargs)
+        except (jwt.PyJWTError, KeyError, TypeError, ValueError) as error:
+            self._set_failure(OIDCFailureReason.INVALID_RESPONSE)
+            raise SuspiciousOperation("OIDC token is invalid") from error
         self.verify_identity_token_claims(claims)
         return claims
 

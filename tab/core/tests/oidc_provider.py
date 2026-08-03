@@ -34,6 +34,7 @@ class LocalOIDCProvider:
         self.redirect_uri = ""
         self.id_token_claims: dict[str, object] = {}
         self.token_request: dict[str, str] = {}
+        self.token_error: str | None = None
 
         provider = self
 
@@ -48,6 +49,13 @@ class LocalOIDCProvider:
                 provider.token_request = {
                     key: values[0] for key, values in form.items() if values
                 }
+                if provider.token_error:
+                    provider._send_json(
+                        self,
+                        {"error": provider.token_error},
+                        status=400,
+                    )
+                    return
                 if error := provider._token_request_error():
                     provider._send_json(
                         self,
