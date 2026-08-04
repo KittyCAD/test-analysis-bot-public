@@ -9,8 +9,14 @@ BASE_URL = "http://testserver.com"
 
 TEST = True
 SECRET_KEY = "test"
+
+###############################################################################
+# Authentication
+
 OIDC_RP_CLIENT_ID = "test-client-id"
 OIDC_RP_CLIENT_SECRET = "test-client-secret"
+
+POSTMARK_API_KEY = "test-postmark-key"
 
 ###############################################################################
 # Databases

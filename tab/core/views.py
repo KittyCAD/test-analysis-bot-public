@@ -61,9 +61,8 @@ def login(request: HttpRequest) -> HttpResponse:
         return redirect(url)
 
     context = {
-        "authentik_enabled": bool(
-            settings.OIDC_RP_CLIENT_ID and settings.OIDC_RP_CLIENT_SECRET
-        )
+        "authentik_enabled": bool(settings.OIDC_RP_CLIENT_ID),
+        "email_enabled": bool(settings.POSTMARK_API_KEY),
     }
     return render(request, "core/login.html", context)
 

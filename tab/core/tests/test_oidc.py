@@ -34,6 +34,7 @@ def describe_authentik_login(expect, client):
         expect(response.status_code) == 200
 
         html = response.content.decode("utf-8")
+        expect(html).contains("Single Sign-On")
         expect(html).contains("Continue with Authentik")
         expect(html).contains("/oidc/authenticate/?next=/projects/")
 

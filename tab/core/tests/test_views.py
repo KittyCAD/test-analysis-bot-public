@@ -18,6 +18,27 @@ def describe_login_and_verify(expect, client):
         return Organization.objects.create(email_domain="example.com")
 
     @pytest.mark.django_db
+    def it_shows_email_login_when_enabled():
+        response = client.get(login_url)
+        expect(response.status_code) == 200
+        html = response.content.decode("utf-8")
+        expect(html).contains("We'll send you a generated, one-time password")
+        expect(html).contains('name="email"')
+
+    @pytest.mark.django_db
+    def it_hides_email_login_when_disabled(settings):
+        settings.POSTMARK_API_KEY = ""
+        response = client.get(login_url)
+        expect(response.status_code) == 200
+        html = response.content.decode("utf-8")
+        expect(html).excludes("We'll send you a generated, one-time password")
+        expect(html).excludes('name="email"')
+        expect(html).contains(
+            "If you are an administrator, you can login with your password."
+        )
+        expect(html).contains("Admin")
+
+    @pytest.mark.django_db
     def it_accepts_valid_otp(organization):
         # Submit email to login
         response = client.post(login_url, {"email": "test@example.com"}, follow=True)
