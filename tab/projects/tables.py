@@ -137,8 +137,10 @@ class TestTable(tables.Table):
     def render_updated_at(self, value):
         age = timezone.now() - value
         opacity_class = "opacity-25" if age > timedelta(hours=12) else ""
+        timestamp = value.strftime("%Y-%m-%d %H:%M")
         return mark_safe(
-            f'<span class="text-nowrap {opacity_class}">{naturaltime(value)}</span>'
+            f'<span class="text-nowrap {opacity_class}" title="{timestamp}">'
+            f"{naturaltime(value)}</span>"
         )
 
 
@@ -342,7 +344,11 @@ class TestResultTable(tables.Table):
             link = f'<a href="{url}" target="_blank"><i class="fa-solid fa-external-link ms-2"></i></a>'
         else:
             link = ""
-        html = f'<span class="text-nowrap">{icon}{naturaltime(value)}{link}</span>'
+        timestamp = value.strftime("%Y-%m-%d %H:%M")
+        html = (
+            f'<span class="text-nowrap" title="{timestamp}">'
+            f"{icon}{naturaltime(value)}{link}</span>"
+        )
         if record.markers:
             html = render_to_string(
                 "projects/_markers.html",
