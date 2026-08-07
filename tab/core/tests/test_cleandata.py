@@ -1,4 +1,5 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from django.core.cache import cache
 from django.utils import timezone
@@ -6,9 +7,67 @@ from django.utils import timezone
 import pytest
 
 from tab.api.constants import TESTS_CACHE_KEY
-from tab.core.management.commands.cleandata import Command
+from tab.core.management.commands.cleandata import Command, is_weekend
 from tab.projects.enums import Status, Target
 from tab.projects.models import Project, Result, Test
+
+ET = ZoneInfo("America/New_York")
+
+
+def describe_is_weekend(expect):
+    def it_is_false_on_weekdays():
+        expect(is_weekend(datetime(2026, 8, 7, 10, tzinfo=ET))) is False  # Friday
+
+    def it_is_true_on_saturday():
+        expect(is_weekend(datetime(2026, 8, 8, 10, tzinfo=ET))) is True
+
+    def it_is_true_on_sunday():
+        expect(is_weekend(datetime(2026, 8, 9, 10, tzinfo=ET))) is True
+
+
+@pytest.mark.django_db
+def describe_handle_weekend_cleanup(expect):
+    def it_skips_stale_cleanup_on_weekdays(mocker):
+        mocker.patch(
+            "tab.core.management.commands.cleandata.is_weekend",
+            return_value=False,
+        )
+        delete_stale = mocker.patch.object(Command, "delete_stale_data")
+        mocker.patch.object(Command, "finalize_releases")
+        mocker.patch.object(Command, "fetch_active_branches")
+        mocker.patch.object(Command, "update_bulk_tests")
+
+        Command().handle(dry_run=False, force=False)
+
+        expect(delete_stale.called) is False
+
+    def it_runs_stale_cleanup_on_weekends(mocker):
+        mocker.patch(
+            "tab.core.management.commands.cleandata.is_weekend",
+            return_value=True,
+        )
+        delete_stale = mocker.patch.object(Command, "delete_stale_data")
+        mocker.patch.object(Command, "finalize_releases")
+        mocker.patch.object(Command, "fetch_active_branches")
+        mocker.patch.object(Command, "update_bulk_tests")
+
+        Command().handle(dry_run=False, force=False)
+
+        delete_stale.assert_called_once_with(False)
+
+    def it_runs_stale_cleanup_with_force_on_weekdays(mocker):
+        mocker.patch(
+            "tab.core.management.commands.cleandata.is_weekend",
+            return_value=False,
+        )
+        delete_stale = mocker.patch.object(Command, "delete_stale_data")
+        mocker.patch.object(Command, "finalize_releases")
+        mocker.patch.object(Command, "fetch_active_branches")
+        mocker.patch.object(Command, "update_bulk_tests")
+
+        Command().handle(dry_run=False, force=True)
+
+        delete_stale.assert_called_once_with(False)
 
 
 @pytest.mark.django_db

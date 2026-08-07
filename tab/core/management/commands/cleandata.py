@@ -1,4 +1,5 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
@@ -14,6 +15,13 @@ from tab.releases.enums import Type
 from tab.releases.models import Environment, Release
 
 CHUNK_SIZE = 1000
+US_EAST_TZ = ZoneInfo("America/New_York")
+
+
+def is_weekend(moment: datetime | None = None) -> bool:
+    """Saturday or Sunday in US Eastern time."""
+    now = (moment or timezone.now()).astimezone(US_EAST_TZ)
+    return now.weekday() >= 5
 
 
 class Command(BaseCommand):
@@ -25,12 +33,27 @@ class Command(BaseCommand):
             action="store_true",
             help="Show what would be deleted without actually deleting anything",
         )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Run stale data cleanup even on weekdays",
+        )
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
         start = timezone.now()
         log.info(f"Started job at {start.strftime('%Y-%m-%d %H:%M:%S')}")
         self.finalize_releases()
+        self.fetch_active_branches()
+        self.update_bulk_tests()
+        if is_weekend() or options["force"]:
+            self.delete_stale_data(dry_run)
+        else:
+            log.info("Skipping stale data cleanup until the weekend")
+        delta = timezone.now() - start
+        log.info(f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}")
+
+    def delete_stale_data(self, dry_run: bool):
         self.delete_stale_environments()
         self.delete_stale_releases()
         for project in Project.objects.all():
@@ -43,10 +66,6 @@ class Command(BaseCommand):
             if count:
                 project.cleaned_at = timezone.now()
                 project.save()
-        self.update_bulk_tests()
-        self.fetch_active_branches()
-        delta = timezone.now() - start
-        log.info(f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}")
 
     def delete_stale_tests(self, project: Project, dry_run: bool) -> int:
         log.info(f"Cleaning up stale tests: {project}")
