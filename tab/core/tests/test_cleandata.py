@@ -40,12 +40,12 @@ def describe_delete_stale_results(expect):
         Result.objects.filter(pk=recent_feature.pk).update(
             created_at=now - timedelta(days=1)
         )
-        # Default branches use a 20x longer threshold
+        # Default branches use a 5x longer threshold
         Result.objects.filter(pk=stale_default.pk).update(
             created_at=now - timedelta(days=8)
         )
         Result.objects.filter(pk=old_default.pk).update(
-            created_at=now - timedelta(days=141)
+            created_at=now - timedelta(days=36)
         )
         # Point last_result at a row that will be deleted (bypass Test.save)
         Test.objects.filter(pk=test.pk).update(last_result=stale_feature)

@@ -68,7 +68,7 @@ class Command(BaseCommand):
 
     def delete_stale_runs(self, project: Project, dry_run: bool) -> int:
         log.info(f"Cleaning up stale runs: {project}")
-        cutoff = timezone.now() - (project.result_stale_threshold * 20)
+        cutoff = timezone.now() - (project.result_stale_threshold * 5)
         runs = (
             Run.objects.filter(project=project)
             .filter(setup_started_at__lt=cutoff)
@@ -88,7 +88,7 @@ class Command(BaseCommand):
         log.info(f"Cleaning up stale results: {project}")
 
         short_cutoff = timezone.now() - project.result_stale_threshold
-        long_cutoff = timezone.now() - (project.result_stale_threshold * 20)
+        long_cutoff = timezone.now() - (project.result_stale_threshold * 5)
         results = (
             Result.objects.filter(test__project=project)
             .filter(
