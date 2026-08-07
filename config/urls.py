@@ -10,6 +10,7 @@ urlpatterns = [
     path("", include("tab.core.urls")),
     path("oidc/", include("mozilla_django_oidc.urls")),
     path("projects/", include("tab.projects.urls", namespace="projects")),
+    path("releases/", include("tab.releases.urls", namespace="releases")),
     path("api/", include("tab.api.urls")),
     path("admin/", admin.site.urls),
     path(

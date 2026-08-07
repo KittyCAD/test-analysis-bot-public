@@ -13,6 +13,8 @@ from tab.core.models import Organization
 from tab.metrics.models import Team, TestHistory
 from tab.projects.enums import Platform, Status, Target
 from tab.projects.models import Project, Result, Run, Suite, Test
+from tab.releases.enums import Type
+from tab.releases.models import Environment, Release
 
 JUNIT_FIXTURE_PATH = (
     Path(__file__).resolve().parents[3] / "api" / "tests" / "files" / "junit.xml"
@@ -37,6 +39,7 @@ class Command(BaseCommand):
         self.create_default_organization()
         self.create_default_team()
         self.generate_sample_data()
+        self.generate_review_releases()
 
     def load_sample_data(self):
         project, _created = Project.objects.get_or_create(
@@ -217,3 +220,51 @@ class Command(BaseCommand):
             )
         Run.objects.bulk_create(runs)
         self.stdout.write(self.style.SUCCESS("Generated sample suite runs"))
+
+    def generate_review_releases(self):
+        project, _ = Project.objects.get_or_create(
+            repository="https://github.com/KittyCAD/modeling-app"
+        )
+        staging = Environment.objects.filter(project=project, name=Type.STAGING).first()
+        if staging is None:
+            staging = Environment.objects.create(
+                project=project,
+                name=Type.STAGING,
+                url="https://app.dev.zoo.dev",
+            )
+        Environment.objects.get_or_create(
+            project=project,
+            name=Type.REVIEW,
+            url="https://modeling-{slug}.vercel.dev.zoo.dev",
+        )
+
+        count = 1000
+        now = timezone.now()
+        base_age = timedelta(days=180)
+        for index in range(count):
+            pr_number = 1000 + index
+            url = f"https://modeling-pr-{pr_number}.vercel.dev.zoo.dev"
+            environment, env_created = Environment.objects.get_or_create(
+                project=project,
+                name=Type.REVIEW,
+                url=url,
+            )
+            if env_created:
+                environment.dependencies.add(staging)
+
+            branch = f"feat/sample-{pr_number}"
+            commit = f"rev{pr_number:05d}{'a' * 27}"
+            age = base_age + timedelta(hours=index * 2, minutes=index % 60)
+            release, release_created = Release.objects.get_or_create(
+                environment=environment,
+                commit=commit,
+                defaults={
+                    "branch": branch,
+                    "results": random.randint(3, 80),
+                    "tested_at": now - age - timedelta(hours=1),
+                },
+            )
+            if release_created:
+                Release.objects.filter(pk=release.pk).update(created_at=now - age)
+
+        self.stdout.write(self.style.SUCCESS(f"Generated sample review releases"))

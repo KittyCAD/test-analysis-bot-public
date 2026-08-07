@@ -1,0 +1,85 @@
+.releases-section-label {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-block: 1.25rem;
+}
+
+.releases-section-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin-block: 1.25rem;
+}
+
+.releases-section-header .releases-section-label {
+    margin-block: 0;
+}
+
+.releases-section-toggles {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.releases-section-toggles .form-check {
+    display: inline-block;
+    width: auto;
+    margin-bottom: 0;
+}
+
+.releases-graph {
+    width: 100%;
+    height: min(55vh, 560px);
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+}
+
+.releases-graph-wrap {
+    position: relative;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.releases-graph-wrap .releases-graph {
+    border: 0;
+    border-radius: 0;
+}
+
+.releases-graph-tall {
+    /* Initial height; JS grows this to fit the full timeline so the page scrolls. */
+    height: 480px;
+    min-height: 480px;
+}
+
+.releases-graph.is-loading::before {
+    content: "Loading graph…";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+.releases-graph-truncated::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 7rem;
+    pointer-events: none;
+    background: linear-gradient(to bottom, rgb(248 249 250 / 0%), #f8f9fa);
+}
+
+.releases-graph:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}

@@ -8,6 +8,20 @@ class Type(models.TextChoices):
     STAGING = "staging", "Staging"
     PRODUCTION = "production", "Production"
 
+    @property
+    def color(self) -> str:
+        match self:
+            case self.LOCAL:
+                return "#6c757d"
+            case self.REVIEW:
+                return "#fd7e14"
+            case self.STAGING:
+                return "#0d6efd"
+            case self.PRODUCTION:
+                return "#198754"
+            case _:
+                return "#6c757d"
+
     @classmethod
     def order_expression(cls):
         """Returns a Case expression for ordering by enum definition order."""

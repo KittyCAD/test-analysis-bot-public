@@ -17,6 +17,18 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
+            {% if user.is_superuser %}
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'projects' %}active{% endif %}"
+                           href="{% url 'projects:index' %}">Projects</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'releases' %}active{% endif %}"
+                           href="{% url 'releases:index' %}">Releases</a>
+                    </li>
+                </ul>
+            {% endif %}
             <ul class="navbar-nav ms-auto d-flex gap-2">
                 <li class="nav-item">
                     {% if admin_url %}

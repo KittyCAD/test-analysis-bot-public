@@ -31,6 +31,71 @@
     }
   },
   {
+    "model": "projects.project",
+    "pk": 3,
+    "fields": {
+      "repository": "https://github.com/KittyCAD/engine",
+      "default_branches": ["main"],
+      "test_inactive_threshold": "0",
+      "branch_inactive_threshold": "0",
+      "result_stale_threshold": "0",
+      "created_at": "2025-06-01T00:00:00Z",
+      "updated_at": "2025-06-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.project",
+    "pk": 4,
+    "fields": {
+      "repository": "https://github.com/KittyCAD/website",
+      "default_branches": ["main"],
+      "test_inactive_threshold": "0",
+      "branch_inactive_threshold": "0",
+      "result_stale_threshold": "0",
+      "created_at": "2025-06-01T00:00:00Z",
+      "updated_at": "2025-06-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.project",
+    "pk": 5,
+    "fields": {
+      "repository": "https://github.com/KittyCAD/text-to-cad",
+      "default_branches": ["main"],
+      "test_inactive_threshold": "0",
+      "branch_inactive_threshold": "0",
+      "result_stale_threshold": "0",
+      "created_at": "2025-06-01T00:00:00Z",
+      "updated_at": "2025-06-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.project",
+    "pk": 6,
+    "fields": {
+      "repository": "https://github.com/KittyCAD/test-analysis-bot",
+      "default_branches": ["main"],
+      "test_inactive_threshold": "0",
+      "branch_inactive_threshold": "0",
+      "result_stale_threshold": "0",
+      "created_at": "2025-06-01T00:00:00Z",
+      "updated_at": "2025-06-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "projects.project",
+    "pk": 7,
+    "fields": {
+      "repository": "https://github.com/KittyCAD/api",
+      "default_branches": ["main"],
+      "test_inactive_threshold": "0",
+      "branch_inactive_threshold": "0",
+      "result_stale_threshold": "0",
+      "created_at": "2025-06-01T00:00:00Z",
+      "updated_at": "2025-06-01T00:00:00Z"
+    }
+  },
+  {
     "model": "projects.suite",
     "pk": 1,
     "fields": {

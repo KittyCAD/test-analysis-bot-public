@@ -3,22 +3,983 @@
         "model": "releases.environment",
         "pk": 1,
         "fields": {
+            "project": 4,
+            "url": "https://website-{slug}.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7
+            ],
+            "created_at": "2026-08-01T18:00:00.000Z",
+            "updated_at": "2026-08-05T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 2,
+        "fields": {
             "project": 1,
-            "url": "http://localhost:3000",
-            "name": "local",
-            "created_at": "2025-01-27T10:00:00.000Z",
-            "updated_at": "2025-01-27T10:00:00.000Z"
+            "url": "https://modeling-{slug}.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7,
+                9,
+                8
+            ],
+            "created_at": "2026-08-01T18:01:00.000Z",
+            "updated_at": "2026-08-05T12:00:00.000Z"
         }
     },
     {
         "model": "releases.environment",
         "pk": 3,
         "fields": {
+            "project": 5,
+            "url": null,
+            "name": "review",
+            "dependencies": [
+                9
+            ],
+            "created_at": "2026-08-01T18:03:00.000Z",
+            "updated_at": "2026-08-05T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 4,
+        "fields": {
+            "project": 3,
+            "url": "wss://api.dev.zoo.dev/ws/modeling/commands?pr={number}",
+            "name": "review",
+            "dependencies": [],
+            "created_at": "2026-08-01T18:04:00.000Z",
+            "updated_at": "2026-08-05T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 5,
+        "fields": {
+            "project": 4,
+            "url": "https://dev.zoo.dev",
+            "name": "staging",
+            "dependencies": [
+                7
+            ],
+            "created_at": "2026-08-04T16:00:00.000Z",
+            "updated_at": "2026-08-06T10:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 6,
+        "fields": {
+            "project": 1,
+            "url": "https://app.dev.zoo.dev",
+            "name": "staging",
+            "dependencies": [
+                7,
+                8,
+                9
+            ],
+            "created_at": "2026-08-04T16:01:00.000Z",
+            "updated_at": "2026-08-06T10:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 7,
+        "fields": {
+            "project": 7,
+            "url": "https://api.dev.zoo.dev",
+            "name": "staging",
+            "dependencies": [
+                9,
+                8
+            ],
+            "created_at": "2026-08-04T16:02:00.000Z",
+            "updated_at": "2026-08-06T10:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 8,
+        "fields": {
+            "project": 5,
+            "url": null,
+            "name": "staging",
+            "dependencies": [
+                9
+            ],
+            "created_at": "2026-08-04T16:03:00.000Z",
+            "updated_at": "2026-08-06T10:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 9,
+        "fields": {
+            "project": 3,
+            "url": "wss://api.dev.zoo.dev/ws/modeling/commands",
+            "name": "staging",
+            "dependencies": [],
+            "created_at": "2026-08-04T16:04:00.000Z",
+            "updated_at": "2026-08-06T10:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 10,
+        "fields": {
+            "project": 4,
+            "url": "https://zoo.dev",
+            "name": "production",
+            "dependencies": [
+                11,
+                12
+            ],
+            "created_at": "2026-08-03T16:00:00.000Z",
+            "updated_at": "2026-08-06T09:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 11,
+        "fields": {
             "project": 1,
             "url": "https://app.zoo.dev",
             "name": "production",
-            "created_at": "2025-01-27T10:00:00.000Z",
-            "updated_at": "2025-01-27T10:00:00.000Z"
+            "dependencies": [
+                12,
+                13,
+                14
+            ],
+            "created_at": "2026-08-03T16:01:00.000Z",
+            "updated_at": "2026-08-06T09:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 12,
+        "fields": {
+            "project": 7,
+            "url": "https://api.zoo.dev",
+            "name": "production",
+            "dependencies": [
+                14,
+                13
+            ],
+            "created_at": "2026-08-03T16:02:00.000Z",
+            "updated_at": "2026-08-06T09:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 13,
+        "fields": {
+            "project": 5,
+            "url": null,
+            "name": "production",
+            "dependencies": [
+                14
+            ],
+            "created_at": "2026-08-03T16:03:00.000Z",
+            "updated_at": "2026-08-06T09:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 14,
+        "fields": {
+            "project": 3,
+            "url": "wss://api.zoo.dev/ws/modeling/commands",
+            "name": "production",
+            "dependencies": [],
+            "created_at": "2026-08-03T16:04:00.000Z",
+            "updated_at": "2026-08-06T09:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 15,
+        "fields": {
+            "project": 1,
+            "url": "http://localhost:3000",
+            "name": "local",
+            "dependencies": [],
+            "created_at": "2026-08-04T16:58:00.000Z",
+            "updated_at": "2026-08-06T11:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 16,
+        "fields": {
+            "project": 4,
+            "url": "http://localhost:3000",
+            "name": "local",
+            "dependencies": [],
+            "created_at": "2026-08-04T16:59:00.000Z",
+            "updated_at": "2026-08-06T11:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 17,
+        "fields": {
+            "project": 6,
+            "url": "http://localhost:8000",
+            "name": "local",
+            "dependencies": [],
+            "created_at": "2026-08-04T16:59:30.000Z",
+            "updated_at": "2026-08-06T11:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 18,
+        "fields": {
+            "project": 4,
+            "url": "https://website-pr-42.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7
+            ],
+            "created_at": "2026-08-05T13:00:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 19,
+        "fields": {
+            "project": 1,
+            "url": "https://modeling-abc123.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7,
+                9,
+                8
+            ],
+            "created_at": "2026-08-05T13:01:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 20,
+        "fields": {
+            "project": 3,
+            "url": "wss://api.dev.zoo.dev/ws/modeling/commands?pr=42",
+            "name": "review",
+            "dependencies": [],
+            "created_at": "2026-08-05T13:02:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 21,
+        "fields": {
+            "project": 3,
+            "url": "wss://api.dev.zoo.dev/ws/modeling/commands?pr=55",
+            "name": "review",
+            "dependencies": [],
+            "created_at": "2026-08-05T13:10:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 22,
+        "fields": {
+            "project": 5,
+            "url": null,
+            "name": "review",
+            "dependencies": [
+                9
+            ],
+            "created_at": "2026-08-05T13:11:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 23,
+        "fields": {
+            "project": 1,
+            "url": "https://modeling-sketch61.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7,
+                9,
+                8
+            ],
+            "created_at": "2026-08-05T13:12:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 24,
+        "fields": {
+            "project": 4,
+            "url": "https://website-pr-61.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7
+            ],
+            "created_at": "2026-08-05T13:13:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 25,
+        "fields": {
+            "project": 3,
+            "url": "wss://api.dev.zoo.dev/ws/modeling/commands?pr=70",
+            "name": "review",
+            "dependencies": [],
+            "created_at": "2026-08-04T17:00:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 26,
+        "fields": {
+            "project": 1,
+            "url": "https://modeling-export70.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7,
+                9,
+                8
+            ],
+            "created_at": "2026-08-04T17:01:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 27,
+        "fields": {
+            "project": 4,
+            "url": "https://website-pr-70.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7
+            ],
+            "created_at": "2026-08-04T17:02:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 28,
+        "fields": {
+            "project": 1,
+            "url": "https://modeling-vp88.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7,
+                9,
+                8
+            ],
+            "created_at": "2026-08-05T08:50:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 29,
+        "fields": {
+            "project": 3,
+            "url": "wss://api.dev.zoo.dev/ws/modeling/commands?pr=88",
+            "name": "review",
+            "dependencies": [],
+            "created_at": "2026-08-05T08:51:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 30,
+        "fields": {
+            "project": 5,
+            "url": null,
+            "name": "review",
+            "dependencies": [
+                9
+            ],
+            "created_at": "2026-08-05T10:50:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 31,
+        "fields": {
+            "project": 1,
+            "url": "https://modeling-prompt72.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7,
+                9,
+                8
+            ],
+            "created_at": "2026-08-05T10:51:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 32,
+        "fields": {
+            "project": 3,
+            "url": "wss://api.dev.zoo.dev/ws/modeling/commands?pr=91",
+            "name": "review",
+            "dependencies": [],
+            "created_at": "2026-08-05T19:50:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 33,
+        "fields": {
+            "project": 1,
+            "url": "https://modeling-mate91.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7,
+                9,
+                8
+            ],
+            "created_at": "2026-08-05T19:51:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 34,
+        "fields": {
+            "project": 4,
+            "url": "https://website-pr-95.vercel.dev.zoo.dev",
+            "name": "review",
+            "dependencies": [
+                7
+            ],
+            "created_at": "2026-08-06T06:50:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.environment",
+        "pk": 35,
+        "fields": {
+            "project": 5,
+            "url": null,
+            "name": "review",
+            "dependencies": [
+                9
+            ],
+            "created_at": "2026-08-06T07:20:00.000Z",
+            "updated_at": "2026-08-06T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 1,
+        "fields": {
+            "environment": 14,
+            "branch": "main",
+            "commit": "prodeng00000000000000000000000001",
+            "results": 50,
+            "dependencies": [],
+            "created_at": "2026-08-05T10:00:00.000Z",
+            "tested_at": "2026-08-05T10:20:00.000Z",
+            "finalized_at": "2026-08-05T10:25:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 2,
+        "fields": {
+            "environment": 13,
+            "branch": "main",
+            "commit": "prodttc00000000000000000000000002",
+            "results": 18,
+            "dependencies": [
+                1
+            ],
+            "created_at": "2026-08-05T10:10:00.000Z",
+            "tested_at": "2026-08-05T10:30:00.000Z",
+            "finalized_at": "2026-08-05T10:35:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 3,
+        "fields": {
+            "environment": 12,
+            "branch": "main",
+            "commit": "prodapi00000000000000000000000003",
+            "results": 40,
+            "dependencies": [
+                1,
+                2
+            ],
+            "created_at": "2026-08-05T10:40:00.000Z",
+            "tested_at": "2026-08-05T11:00:00.000Z",
+            "finalized_at": "2026-08-05T11:05:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 4,
+        "fields": {
+            "environment": 11,
+            "branch": "main",
+            "commit": "prodapp00000000000000000000000004",
+            "results": 120,
+            "dependencies": [
+                3,
+                2,
+                1
+            ],
+            "created_at": "2026-08-05T11:10:00.000Z",
+            "tested_at": "2026-08-05T11:50:00.000Z",
+            "finalized_at": "2026-08-05T12:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 5,
+        "fields": {
+            "environment": 10,
+            "branch": "main",
+            "commit": "prodweb00000000000000000000000005",
+            "results": 16,
+            "dependencies": [
+                4,
+                3
+            ],
+            "created_at": "2026-08-05T12:10:00.000Z",
+            "tested_at": "2026-08-05T12:25:00.000Z",
+            "finalized_at": "2026-08-05T12:30:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 6,
+        "fields": {
+            "environment": 9,
+            "branch": "main",
+            "commit": "stageng00000000000000000000000006",
+            "results": 48,
+            "dependencies": [],
+            "created_at": "2026-08-06T08:00:00.000Z",
+            "tested_at": "2026-08-06T08:15:00.000Z",
+            "finalized_at": "2026-08-06T08:20:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 7,
+        "fields": {
+            "environment": 8,
+            "branch": "main",
+            "commit": "stagttc00000000000000000000000007",
+            "results": 15,
+            "dependencies": [
+                6
+            ],
+            "created_at": "2026-08-06T08:10:00.000Z",
+            "tested_at": "2026-08-06T08:25:00.000Z",
+            "finalized_at": "2026-08-06T08:30:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 8,
+        "fields": {
+            "environment": 7,
+            "branch": "main",
+            "commit": "stagapi00000000000000000000000008",
+            "results": 44,
+            "dependencies": [
+                6,
+                7
+            ],
+            "created_at": "2026-08-06T08:35:00.000Z",
+            "tested_at": "2026-08-06T08:55:00.000Z",
+            "finalized_at": "2026-08-06T09:00:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 9,
+        "fields": {
+            "environment": 6,
+            "branch": "main",
+            "commit": "stagapp00000000000000000000000009",
+            "results": 95,
+            "dependencies": [
+                8,
+                7,
+                6
+            ],
+            "created_at": "2026-08-06T09:05:00.000Z",
+            "tested_at": "2026-08-06T09:40:00.000Z",
+            "finalized_at": null
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 10,
+        "fields": {
+            "environment": 5,
+            "branch": "main",
+            "commit": "stagweb00000000000000000000000010",
+            "results": 18,
+            "dependencies": [
+                8
+            ],
+            "created_at": "2026-08-06T09:45:00.000Z",
+            "tested_at": "2026-08-06T10:00:00.000Z",
+            "finalized_at": "2026-08-06T10:05:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 11,
+        "fields": {
+            "environment": 21,
+            "branch": "feat/ml-streaming",
+            "commit": "reveng00000000000000000000000011",
+            "results": 12,
+            "dependencies": [],
+            "created_at": "2026-08-05T14:00:00.000Z",
+            "tested_at": "2026-08-05T14:15:00.000Z",
+            "finalized_at": "2026-08-05T14:20:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 12,
+        "fields": {
+            "environment": 22,
+            "branch": "feat/ml-streaming",
+            "commit": "revttc00000000000000000000000012",
+            "results": 9,
+            "dependencies": [
+                15
+            ],
+            "created_at": "2026-08-05T14:10:00.000Z",
+            "tested_at": "2026-08-05T14:25:00.000Z",
+            "finalized_at": "2026-08-05T14:30:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 13,
+        "fields": {
+            "environment": 23,
+            "branch": "feat/sketch-mode",
+            "commit": "revapp00000000000000000000000013",
+            "results": 67,
+            "dependencies": [
+                16,
+                15
+            ],
+            "created_at": "2026-08-05T16:00:00.000Z",
+            "tested_at": "2026-08-05T16:45:00.000Z",
+            "finalized_at": null
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 14,
+        "fields": {
+            "environment": 24,
+            "branch": "feat/sketch-mode",
+            "commit": "revweb00000000000000000000000014",
+            "results": 14,
+            "dependencies": [
+                16
+            ],
+            "created_at": "2026-08-05T17:00:00.000Z",
+            "tested_at": "2026-08-05T17:20:00.000Z",
+            "finalized_at": null
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 15,
+        "fields": {
+            "environment": 9,
+            "branch": "main",
+            "commit": "stageng00000000000000000000000015",
+            "results": 46,
+            "dependencies": [],
+            "created_at": "2026-08-04T15:00:00.000Z",
+            "tested_at": "2026-08-04T15:20:00.000Z",
+            "finalized_at": "2026-08-04T15:25:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 16,
+        "fields": {
+            "environment": 7,
+            "branch": "main",
+            "commit": "stagapi00000000000000000000000016",
+            "results": 41,
+            "dependencies": [
+                15
+            ],
+            "created_at": "2026-08-04T15:30:00.000Z",
+            "tested_at": "2026-08-04T15:50:00.000Z",
+            "finalized_at": "2026-08-04T15:55:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 17,
+        "fields": {
+            "environment": 6,
+            "branch": "main",
+            "commit": "stagapp00000000000000000000000017",
+            "results": 88,
+            "dependencies": [
+                16,
+                15
+            ],
+            "created_at": "2026-08-04T16:00:00.000Z",
+            "tested_at": "2026-08-04T16:35:00.000Z",
+            "finalized_at": "2026-08-04T16:40:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 18,
+        "fields": {
+            "environment": 25,
+            "branch": "feat/export-step",
+            "commit": "reveng00000000000000000000000018",
+            "results": 11,
+            "dependencies": [],
+            "created_at": "2026-08-04T18:00:00.000Z",
+            "tested_at": "2026-08-04T18:15:00.000Z",
+            "finalized_at": "2026-08-04T18:20:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 19,
+        "fields": {
+            "environment": 26,
+            "branch": "feat/export-step",
+            "commit": "revapp00000000000000000000000019",
+            "results": 54,
+            "dependencies": [
+                16,
+                15
+            ],
+            "created_at": "2026-08-04T18:30:00.000Z",
+            "tested_at": "2026-08-04T19:00:00.000Z",
+            "finalized_at": "2026-08-04T19:05:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 20,
+        "fields": {
+            "environment": 27,
+            "branch": "feat/export-step",
+            "commit": "revweb00000000000000000000000020",
+            "results": 10,
+            "dependencies": [
+                16
+            ],
+            "created_at": "2026-08-04T19:10:00.000Z",
+            "tested_at": "2026-08-04T19:25:00.000Z",
+            "finalized_at": "2026-08-04T19:30:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 21,
+        "fields": {
+            "environment": 28,
+            "branch": "fix/viewport-crash",
+            "commit": "revapp00000000000000000000000021",
+            "results": 42,
+            "dependencies": [
+                16,
+                15
+            ],
+            "created_at": "2026-08-05T09:00:00.000Z",
+            "tested_at": "2026-08-05T09:30:00.000Z",
+            "finalized_at": "2026-08-05T09:35:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 22,
+        "fields": {
+            "environment": 29,
+            "branch": "fix/viewport-crash",
+            "commit": "reveng00000000000000000000000022",
+            "results": 8,
+            "dependencies": [],
+            "created_at": "2026-08-05T09:05:00.000Z",
+            "tested_at": "2026-08-05T09:20:00.000Z",
+            "finalized_at": "2026-08-05T09:25:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 23,
+        "fields": {
+            "environment": 30,
+            "branch": "feat/prompt-cache",
+            "commit": "revttc00000000000000000000000023",
+            "results": 7,
+            "dependencies": [
+                15
+            ],
+            "created_at": "2026-08-05T11:00:00.000Z",
+            "tested_at": "2026-08-05T11:15:00.000Z",
+            "finalized_at": "2026-08-05T11:20:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 24,
+        "fields": {
+            "environment": 31,
+            "branch": "feat/prompt-cache",
+            "commit": "revapp00000000000000000000000024",
+            "results": 38,
+            "dependencies": [
+                16,
+                23
+            ],
+            "created_at": "2026-08-05T11:30:00.000Z",
+            "tested_at": "2026-08-05T12:00:00.000Z",
+            "finalized_at": null
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 25,
+        "fields": {
+            "environment": 32,
+            "branch": "feat/assembly-mate",
+            "commit": "reveng00000000000000000000000025",
+            "results": 13,
+            "dependencies": [],
+            "created_at": "2026-08-05T20:00:00.000Z",
+            "tested_at": "2026-08-05T20:20:00.000Z",
+            "finalized_at": "2026-08-05T20:25:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 26,
+        "fields": {
+            "environment": 33,
+            "branch": "feat/assembly-mate",
+            "commit": "revapp00000000000000000000000026",
+            "results": 61,
+            "dependencies": [
+                16,
+                25
+            ],
+            "created_at": "2026-08-05T20:40:00.000Z",
+            "tested_at": "2026-08-05T21:20:00.000Z",
+            "finalized_at": null
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 27,
+        "fields": {
+            "environment": 34,
+            "branch": "feat/docs-search",
+            "commit": "revweb00000000000000000000000027",
+            "results": 9,
+            "dependencies": [
+                16
+            ],
+            "created_at": "2026-08-06T07:00:00.000Z",
+            "tested_at": "2026-08-06T07:15:00.000Z",
+            "finalized_at": "2026-08-06T07:20:00.000Z"
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 28,
+        "fields": {
+            "environment": 35,
+            "branch": "fix/token-limits",
+            "commit": "revttc00000000000000000000000028",
+            "results": 6,
+            "dependencies": [
+                15
+            ],
+            "created_at": "2026-08-06T07:30:00.000Z",
+            "tested_at": "2026-08-06T07:45:00.000Z",
+            "finalized_at": null
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 29,
+        "fields": {
+            "environment": 19,
+            "branch": "feat/kcl-lsp",
+            "commit": "revapp00000000000000000000000029",
+            "results": 49,
+            "dependencies": [
+                8,
+                6
+            ],
+            "created_at": "2026-08-06T10:30:00.000Z",
+            "tested_at": null,
+            "finalized_at": null
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 30,
+        "fields": {
+            "environment": 20,
+            "branch": "feat/kcl-lsp",
+            "commit": "reveng00000000000000000000000030",
+            "results": 10,
+            "dependencies": [],
+            "created_at": "2026-08-06T10:20:00.000Z",
+            "tested_at": "2026-08-06T10:35:00.000Z",
+            "finalized_at": null
+        }
+    },
+    {
+        "model": "releases.release",
+        "pk": 31,
+        "fields": {
+            "environment": 18,
+            "branch": "chore/pricing-copy",
+            "commit": "revweb00000000000000000000000031",
+            "results": 5,
+            "dependencies": [
+                8
+            ],
+            "created_at": "2026-08-06T11:00:00.000Z",
+            "tested_at": "2026-08-06T11:10:00.000Z",
+            "finalized_at": null
         }
     }
 ]

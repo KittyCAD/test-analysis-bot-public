@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 import log
@@ -13,10 +14,21 @@ from .constants import PLACEHOLDER_CHARACTER
 from .enums import Type
 
 if TYPE_CHECKING:
+    from tab.core.models import Organization
+
     from .models import Environment, Release
 
 
 class EnvironmentManager(models.Manager):
+    def filter_promotable(self, organization: Organization):
+        return (
+            self.filter(project__repository__startswith=organization.repository_index)
+            .exclude(name=Type.LOCAL)
+            .filter(~Q(name=Type.REVIEW) | Q(url__contains=PLACEHOLDER_CHARACTER))
+            .select_related("project")
+            .prefetch_related("dependencies")
+        )
+
     def process(self, project: Project, url: str | None, results: list[Result]):
         result = results[0]
 

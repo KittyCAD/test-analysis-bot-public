@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}
+    Releases
+{% endblock title %}
+
+{% block content %}
+    <div class="container mt-4">
+        <section>
+            <p class="releases-section-label">Environment Dependencies</p>
+            {% if environment_graph.nodes %}
+                <div class="releases-graph" data-graph="environment-graph-data"></div>
+                {{ environment_graph|json_script:"environment-graph-data" }}
+            {% else %}
+                <div class="alert alert-light border" role="status">No environments found for your organization.</div>
+            {% endif %}
+        </section>
+        <section>
+            <div class="releases-section-header">
+                <p class="releases-section-label">Change History</p>
+                <div class="releases-section-toggles">
+                    <div class="form-check">
+                        <input class="form-check-input border-dark"
+                               type="checkbox"
+                               id="show-dependency-lines"
+                               {% if show_lines %}checked{% endif %}>
+                        <label class="form-check-label" for="show-dependency-lines">Show dependency lines</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input border-dark"
+                               type="checkbox"
+                               id="show-review-releases"
+                               {% if show_review %}checked{% endif %}>
+                        <label class="form-check-label" for="show-review-releases">Include review environments</label>
+                    </div>
+                </div>
+            </div>
+            {% if release_graph.nodes %}
+                <div class="releases-graph-wrap{% if release_graph_truncated %} releases-graph-truncated{% endif %}">
+                    <div class="releases-graph releases-graph-tall"
+                         data-graph="release-graph-data"></div>
+                    {{ release_graph|json_script:"release-graph-data" }}
+                </div>
+            {% else %}
+                <div class="alert alert-light border" role="status">No releases found for your organization.</div>
+            {% endif %}
+        </section>
+    </div>
+{% endblock content %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/releases.css' %}">
+{% endblock extra_css %}
+
+{% block extra_js %}
+    <script>
+        (function () {
+            const reviewToggle = document.getElementById("show-review-releases");
+            if (reviewToggle) {
+                reviewToggle.addEventListener("change", function () {
+                    const url = new URL(window.location.href);
+                    if (reviewToggle.checked) {
+                        url.searchParams.set("review", "true");
+                    } else {
+                        url.searchParams.delete("review");
+                    }
+                    window.location.assign(url);
+                });
+            }
+
+            const linesToggle = document.getElementById("show-dependency-lines");
+            if (linesToggle) {
+                linesToggle.addEventListener("change", function () {
+                    const url = new URL(window.location.href);
+                    if (linesToggle.checked) {
+                        url.searchParams.delete("lines");
+                    } else {
+                        url.searchParams.set("lines", "false");
+                    }
+                    window.history.replaceState(null, "", url);
+                });
+            }
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.4/dist/cytoscape.min.js"
+            integrity="sha384-H3uzGzTfGHUAumB8+s4GEdfFwzAceN9wCCndN8AXubWKFIPuBSWKKtWDx7RhSf/z"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"
+            integrity="sha384-2IH3T69EIKYC4c+RXZifZRvaH5SRUdacJW7j6HtE5rQbvLhKKdawxq6vpIzJ7j9M"
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js"
+            integrity="sha384-u69h9ebXeSjlg6q/rb1zKTRAGu/h8deCl0409xpS/QJctMKnc4M9Fzkm01VOQdeF"
+            crossorigin="anonymous"></script>
+    <script src="{% static 'javascript/releases.js' %}"></script>
+{% endblock extra_js %}
