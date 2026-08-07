@@ -327,7 +327,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return elements;
     }
 
-    function buildTimelineColumnElements(data, layout) {
+    function buildTimelineColumnElements(data, layout, options) {
         const groups = {};
         const times = data.nodes
             .map(function (node) {
@@ -573,17 +573,19 @@ document.addEventListener("DOMContentLoaded", function () {
         const fadeExtension = data.truncated ? 120 : 40;
         axisEndElement.position.y = maxContentY + fadeExtension;
 
-        data.edges.forEach(function (edge) {
-            elements.push({
-                group: "edges",
-                data: {
-                    id: edge.id,
-                    source: edge.source,
-                    target: edge.target,
-                    isTimeline: false,
-                },
+        if (!options || options.includeDependencies !== false) {
+            data.edges.forEach(function (edge) {
+                elements.push({
+                    group: "edges",
+                    data: {
+                        id: edge.id,
+                        source: edge.source,
+                        target: edge.target,
+                        isTimeline: false,
+                    },
+                });
             });
-        });
+        }
 
         return elements;
     }
@@ -629,14 +631,19 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function buildElements(data, layout) {
+    function buildElements(data, layout, options) {
         if (data.layout === "columns-timeline") {
-            return buildTimelineColumnElements(data, layout);
+            return buildTimelineColumnElements(data, layout, options);
         }
         if (data.layout === "columns") {
             return buildColumnElements(data, layout);
         }
         return buildDagreElements(data);
+    }
+
+    function dependencyLinesEnabled() {
+        const toggle = document.getElementById("show-dependency-lines");
+        return !toggle || toggle.checked;
     }
 
     function renderGraph(container, data) {
@@ -652,7 +659,11 @@ document.addEventListener("DOMContentLoaded", function () {
                   withTimeline: data.layout === "columns-timeline",
               })
             : null;
-        const elements = buildElements(data, layout);
+        const includeDependencies =
+            data.layout !== "columns-timeline" || dependencyLinesEnabled();
+        const elements = buildElements(data, layout, {
+            includeDependencies: includeDependencies,
+        });
 
         const cy = cytoscape({
             container: container,
@@ -855,73 +866,79 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         // Fan edges that share a column corridor onto distinct bezier lanes.
-        (function assignCorridorLanes() {
-            const corridors = {};
+        if (includeDependencies) {
+            (function assignCorridorLanes() {
+                const corridors = {};
 
-            function columnKey(node) {
-                const column = node.data("column");
-                if (column !== undefined && column !== null && column !== "") {
-                    return String(column);
-                }
-                return String(Math.round(node.position("x") / 80));
-            }
-
-            cy.edges().forEach(function (edge) {
-                if (edge.data("isTimeline")) {
-                    return;
-                }
-                const key =
-                    columnKey(edge.source()) + "->" + columnKey(edge.target());
-                if (!corridors[key]) {
-                    corridors[key] = [];
-                }
-                corridors[key].push(edge);
-            });
-
-            Object.keys(corridors).forEach(function (key) {
-                const group = corridors[key];
-                group.sort(function (a, b) {
-                    const aMid =
-                        (a.source().position("y") + a.target().position("y")) /
-                        2;
-                    const bMid =
-                        (b.source().position("y") + b.target().position("y")) /
-                        2;
-                    if (aMid !== bMid) {
-                        return aMid - bMid;
+                function columnKey(node) {
+                    const column = node.data("column");
+                    if (column !== undefined && column !== null && column !== "") {
+                        return String(column);
                     }
-                    return (
-                        a.source().position("x") - b.source().position("x")
-                    );
+                    return String(Math.round(node.position("x") / 80));
+                }
+
+                cy.edges().forEach(function (edge) {
+                    if (edge.data("isTimeline")) {
+                        return;
+                    }
+                    const key =
+                        columnKey(edge.source()) +
+                        "->" +
+                        columnKey(edge.target());
+                    if (!corridors[key]) {
+                        corridors[key] = [];
+                    }
+                    corridors[key].push(edge);
                 });
 
-                const n = group.length;
-                group.forEach(function (edge, index) {
-                    const source = edge.source().position();
-                    const target = edge.target().position();
-                    const dy = target.y - source.y;
-                    const dx = target.x - source.x;
-                    const sameColumn = Math.abs(dx) < 48;
-                    // Center lanes around 0 so corridors stay balanced.
-                    const lane = index - (n - 1) / 2;
-                    const laneSpacing = sameColumn ? 42 : 30;
-                    const baseCurve = sameColumn ? 24 : 36;
-                    const direction =
-                        dy === 0
-                            ? lane === 0
-                                ? 1
-                                : Math.sign(lane)
-                            : Math.sign(dy);
-                    const distance =
-                        direction * baseCurve + lane * laneSpacing;
-                    edge.style("control-point-distances", [distance]);
-                    edge.style(
-                        "control-point-weights",
-                        [0.4 + (Math.abs(lane) % 3) * 0.08]
-                    );
+                Object.keys(corridors).forEach(function (key) {
+                    const group = corridors[key];
+                    group.sort(function (a, b) {
+                        const aMid =
+                            (a.source().position("y") +
+                                a.target().position("y")) /
+                            2;
+                        const bMid =
+                            (b.source().position("y") +
+                                b.target().position("y")) /
+                            2;
+                        if (aMid !== bMid) {
+                            return aMid - bMid;
+                        }
+                        return (
+                            a.source().position("x") - b.source().position("x")
+                        );
+                    });
+
+                    const n = group.length;
+                    group.forEach(function (edge, index) {
+                        const source = edge.source().position();
+                        const target = edge.target().position();
+                        const dy = target.y - source.y;
+                        const dx = target.x - source.x;
+                        const sameColumn = Math.abs(dx) < 48;
+                        // Center lanes around 0 so corridors stay balanced.
+                        const lane = index - (n - 1) / 2;
+                        const laneSpacing = sameColumn ? 42 : 30;
+                        const baseCurve = sameColumn ? 24 : 36;
+                        const direction =
+                            dy === 0
+                                ? lane === 0
+                                    ? 1
+                                    : Math.sign(lane)
+                                : Math.sign(dy);
+                        const distance =
+                            direction * baseCurve + lane * laneSpacing;
+                        edge.style("control-point-distances", [distance]);
+                        edge.style(
+                            "control-point-weights",
+                            [0.4 + (Math.abs(lane) % 3) * 0.08]
+                        );
+                    });
                 });
-            });
-        })();
+            })();
+        }
 
         if (data.layout === "columns-timeline" || data.layout === "columns") {
             // Keep column thirds at full panel width; grow height instead of shrinking.
@@ -1027,16 +1044,8 @@ document.addEventListener("DOMContentLoaded", function () {
         return cy;
     }
 
-    function setDependencyEdgesVisible(cy, visible) {
-        cy.edges().forEach(function (edge) {
-            if (edge.data("isTimeline")) {
-                return;
-            }
-            edge.style("display", visible ? "element" : "none");
-        });
-    }
-
     function scheduleGraphRender(container, data) {
+        container._graphData = data;
         if (container._cy || container._graphPending) {
             return;
         }
@@ -1046,21 +1055,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const start = function () {
             const run = function () {
                 try {
-                    const cy = renderGraph(container, data);
-                    if (
-                        cy &&
-                        data.layout === "columns-timeline" &&
-                        container.getAttribute("data-graph") ===
-                            "release-graph-data"
-                    ) {
-                        const toggle = document.getElementById(
-                            "show-dependency-lines"
-                        );
-                        setDependencyEdgesVisible(
-                            cy,
-                            !toggle || toggle.checked
-                        );
-                    }
+                    renderGraph(container, data);
                 } finally {
                     container.classList.remove("is-loading");
                     container._graphPending = false;
@@ -1112,10 +1107,10 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         toggle.addEventListener("change", function () {
-            if (!container._cy) {
+            if (!container._graphData) {
                 return;
             }
-            setDependencyEdgesVisible(container._cy, toggle.checked);
+            renderGraph(container, container._graphData);
         });
     })();
 });
