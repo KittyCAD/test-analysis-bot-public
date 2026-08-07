@@ -501,10 +501,10 @@ class Test(models.Model):
         queryset = self.results.filter(
             branch__in=self.significant_branches,
         ).order_by("-created_at")
-        if not queryset.exists():
+        results = self._bias_to_recent(queryset)
+        if not results:
             return False
 
-        results = self._bias_to_recent(queryset)
         failed = sum(result.status in Status.test_failed() for result in results)
         new = round(failed / len(results), 6)
 
@@ -535,10 +535,10 @@ class Test(models.Model):
             branch__in=self.significant_branches,
             final=True,
         ).order_by("-created_at")
-        if not queryset.exists():
+        results = self._bias_to_recent(queryset, min_samples=15, max_samples=40)
+        if not results:
             return False
 
-        results = self._bias_to_recent(queryset, min_samples=15, max_samples=40)
         failed = sum(result.status in Status.merge_blocked() for result in results)
         new = round(failed / len(results), 6)
 
@@ -556,9 +556,6 @@ class Test(models.Model):
             status__in=Status.measurable(),
             duration__gt=0,
         ).order_by("-created_at")
-        if not queryset.exists():
-            return False
-
         results = self._bias_to_recent(queryset, max_samples=150)
         durations = [result.duration for result in results if result.duration]
         if not durations:
@@ -576,12 +573,15 @@ class Test(models.Model):
         self, results: QuerySet[Result], *, min_samples: int = 20, max_samples: int = 60
     ) -> list[Result]:
         """Limit results to the past day, backfilling with older results if needed."""
+        candidates = list(results[:max_samples])
+        if not candidates:
+            return []
+
         lookback_window = timezone.now() - timedelta(days=1)
-        recent_results = results.filter(created_at__gte=lookback_window)
-        if recent_results.count() >= min_samples:
-            return list(recent_results[:max_samples])
-        else:
-            return list(results[:min_samples])
+        recent = [r for r in candidates if r.created_at >= lookback_window]
+        if len(recent) >= min_samples:
+            return recent
+        return candidates[:min_samples]
 
     def update(self, result=None) -> bool:
         if failure_rated_updated := self.update_failure_rate():
