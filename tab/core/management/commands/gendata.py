@@ -238,24 +238,36 @@ class Command(BaseCommand):
             url="https://modeling-{slug}.vercel.dev.zoo.dev",
         )
 
+        staging_release = (
+            Release.objects.filter(environment=staging).order_by("-created_at").first()
+        )
+        if staging_release is None:
+            now = timezone.now()
+            staging_release = Release.objects.create(
+                environment=staging,
+                branch="main",
+                commit="stagapp" + "0" * 25,
+                results=50,
+                tested_at=now - timedelta(hours=1),
+            )
+
         count = 1000
         now = timezone.now()
-        base_age = timedelta(days=180)
+        # Walk backward from "now" with growing gaps so timeline breaks are visible.
+        age = timedelta(hours=1)
         for index in range(count):
             pr_number = 1000 + index
             url = f"https://modeling-pr-{pr_number}.vercel.dev.zoo.dev"
-            environment, env_created = Environment.objects.get_or_create(
+            environment, _env_created = Environment.objects.get_or_create(
                 project=project,
                 name=Type.REVIEW,
                 url=url,
             )
-            if env_created:
-                environment.dependencies.add(staging)
+            environment.dependencies.add(staging)
 
             branch = f"feat/sample-{pr_number}"
             commit = f"rev{pr_number:05d}{'a' * 27}"
-            age = base_age + timedelta(hours=index * 2, minutes=index % 60)
-            release, release_created = Release.objects.get_or_create(
+            release, _release_created = Release.objects.get_or_create(
                 environment=environment,
                 commit=commit,
                 defaults={
@@ -264,7 +276,15 @@ class Command(BaseCommand):
                     "tested_at": now - age - timedelta(hours=1),
                 },
             )
-            if release_created:
-                Release.objects.filter(pk=release.pk).update(created_at=now - age)
+            Release.objects.filter(pk=release.pk).update(
+                created_at=now - age,
+                tested_at=now - age - timedelta(minutes=30),
+                branch=branch,
+            )
+            release.dependencies.add(staging_release)
+
+            # Next older release: gap grows each step (6h, 12h, 18h, ... capped at 14d).
+            gap_hours = min(24 * 14, 6 * (index + 1))
+            age += timedelta(hours=gap_hours)
 
         self.stdout.write(self.style.SUCCESS(f"Generated sample review releases"))

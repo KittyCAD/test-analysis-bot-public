@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const FIRST_ROW_Y = 90;
     const TIMELINE_FIRST_ROW_Y = 24;
     const COLUMN_STAGGER = 56;
-    const TIMELINE_MIN_GAP = 100;
+    const TIMELINE_MIN_GAP = 125;
     const GRAPH_PADDING = 24;
     const TIMELINE_RESERVE = 88;
     // Hour labels are ~9px; skip them when they would collide with day ticks or each other.
@@ -21,8 +21,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const MIN_DAY_GAP_FOR_HOURS = 56;
     const HOUR_MS = 60 * 60 * 1000;
     const DAY_MS = 24 * HOUR_MS;
-    // Collapsed gaps occupy this much "time weight" on the compressed axis.
-    const BREAK_DISPLAY_MS = 8 * HOUR_MS;
+    // Extra vertical space (on top of TIMELINE_MIN_GAP) when inserting a break marker.
+    const BREAK_EXTRA_PX = 32;
 
     // Column x positions depend only on container width + column count — never on nodes.
     function computeColumnLayout(container, columnCount, options) {
@@ -134,91 +134,77 @@ document.addEventListener("DOMContentLoaded", function () {
             return a - b;
         });
         const median = gaps[Math.floor(gaps.length / 2)];
-        // Collapse outliers while keeping same-day activity on a linear scale.
-        return Math.max(median * 5, DAY_MS);
+        // Only break on clear outliers (at least a week), not routine multi-day gaps.
+        return Math.max(median * 5, 7 * DAY_MS);
     }
 
-    // Map real timestamps onto a Y axis that compresses large empty gaps.
-    function buildCompressedTimeScale(times, firstRowY, pixelHeight) {
-        const sortedAsc = uniqueSortedTimes(times);
-        if (!sortedAsc.length) {
-            return {
-                timeToY: function () {
-                    return firstRowY;
-                },
-                breaks: [],
-            };
-        }
-        if (sortedAsc.length === 1) {
-            return {
-                timeToY: function () {
-                    return firstRowY;
-                },
-                breaks: [],
-            };
-        }
+    // Newest-first Y positions with min card spacing; large time gaps get a break.
+    function assignTimelinePositions(nodes) {
+        const sorted = nodes
+            .slice()
+            .map(function (node) {
+                return {
+                    node: node,
+                    time: Date.parse(node.createdAt),
+                };
+            })
+            .filter(function (entry) {
+                return !Number.isNaN(entry.time);
+            })
+            .sort(function (a, b) {
+                return b.time - a.time;
+            });
 
-        const threshold = gapThresholdMs(sortedAsc);
-        const compressedAt = {};
-        const breakMids = [];
-        let cursor = 0;
-        compressedAt[sortedAsc[0]] = 0;
+        const times = sorted.map(function (entry) {
+            return entry.time;
+        });
+        const threshold = gapThresholdMs(uniqueSortedTimes(times));
+        const yById = {};
+        const timeToY = {};
+        const breakYs = [];
+        let y = TIMELINE_FIRST_ROW_Y;
+        let prevTime = null;
 
-        for (let i = 1; i < sortedAsc.length; i++) {
-            const prev = sortedAsc[i - 1];
-            const next = sortedAsc[i];
-            const gap = next - prev;
-            if (gap > threshold) {
-                const breakStart = cursor;
-                cursor += BREAK_DISPLAY_MS;
-                breakMids.push(breakStart + BREAK_DISPLAY_MS / 2);
-            } else {
-                cursor += gap;
+        sorted.forEach(function (entry) {
+            if (prevTime !== null && entry.time === prevTime) {
+                yById[entry.node.id] = y;
+                return;
             }
-            compressedAt[next] = cursor;
-        }
-
-        const maxCompressed = Math.max(cursor, 1);
-
-        function timeToCompressed(timestamp) {
-            if (Object.prototype.hasOwnProperty.call(compressedAt, timestamp)) {
-                return compressedAt[timestamp];
-            }
-            if (timestamp <= sortedAsc[0]) {
-                return 0;
-            }
-            if (timestamp >= sortedAsc[sortedAsc.length - 1]) {
-                return maxCompressed;
-            }
-            for (let i = 1; i < sortedAsc.length; i++) {
-                if (timestamp <= sortedAsc[i]) {
-                    const t0 = sortedAsc[i - 1];
-                    const t1 = sortedAsc[i];
-                    const c0 = compressedAt[t0];
-                    const c1 = compressedAt[t1];
-                    const ratio = (timestamp - t0) / Math.max(t1 - t0, 1);
-                    return c0 + ratio * (c1 - c0);
+            if (prevTime !== null) {
+                y += TIMELINE_MIN_GAP;
+                if (prevTime - entry.time > threshold) {
+                    breakYs.push(y + BREAK_EXTRA_PX / 2);
+                    y += BREAK_EXTRA_PX;
                 }
             }
-            return maxCompressed;
-        }
-
-        function timeToY(timestamp) {
-            const compressed = timeToCompressed(timestamp);
-            return (
-                firstRowY +
-                ((maxCompressed - compressed) / maxCompressed) * pixelHeight
-            );
-        }
+            yById[entry.node.id] = y;
+            if (!Object.prototype.hasOwnProperty.call(timeToY, entry.time)) {
+                timeToY[entry.time] = y;
+            }
+            prevTime = entry.time;
+        });
 
         return {
-            timeToY: timeToY,
-            breaks: breakMids.map(function (mid) {
-                return (
-                    firstRowY +
-                    ((maxCompressed - mid) / maxCompressed) * pixelHeight
-                );
-            }),
+            yById: yById,
+            timeToY: function (timestamp) {
+                if (Object.prototype.hasOwnProperty.call(timeToY, timestamp)) {
+                    return timeToY[timestamp];
+                }
+                // Snap day/hour ticks to the nearest placed event.
+                let best = null;
+                let bestDelta = Number.POSITIVE_INFINITY;
+                Object.keys(timeToY).forEach(function (key) {
+                    const time = Number(key);
+                    const delta = Math.abs(time - timestamp);
+                    if (delta < bestDelta) {
+                        bestDelta = delta;
+                        best = timeToY[time];
+                    }
+                });
+                return best === null ? TIMELINE_FIRST_ROW_Y : best;
+            },
+            breaks: breakYs,
+            maxY: sorted.length ? y : TIMELINE_FIRST_ROW_Y,
         };
     }
 
@@ -341,13 +327,9 @@ document.addEventListener("DOMContentLoaded", function () {
             return buildColumnElements(data, layout);
         }
 
-        const timelineHeight = Math.max(
-            data.nodes.length * TIMELINE_MIN_GAP,
-            520
-        );
         const axisX = layout.axisX;
         const firstRowY = TIMELINE_FIRST_ROW_Y;
-        const scale = buildCompressedTimeScale(times, firstRowY, timelineHeight);
+        const positions = assignTimelinePositions(data.nodes);
 
         data.nodes.forEach(function (node) {
             const column = node.column || 0;
@@ -358,7 +340,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         const elements = [];
-        let maxContentY = firstRowY + timelineHeight;
+        let maxContentY = positions.maxY;
 
         // Continuous axis line via unlabeled endpoints.
         const axisStartId = "timeline-axis-start";
@@ -375,7 +357,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 isTimelineDot: true,
                 isTimelineEndpoint: true,
             },
-            position: { x: axisX, y: firstRowY + timelineHeight },
+            position: { x: axisX, y: maxContentY },
             grabbable: false,
             selectable: false,
         };
@@ -414,7 +396,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         dayTimes.forEach(function (timestamp, index) {
-            const y = scale.timeToY(timestamp);
+            const y = positions.timeToY(timestamp);
             dayYs.push(y);
             elements.push({
                 group: "nodes",
@@ -437,7 +419,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        scale.breaks.forEach(function (y, index) {
+        positions.breaks.forEach(function (y, index) {
             elements.push({
                 group: "nodes",
                 data: {
@@ -470,14 +452,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (dayHourKeys[hourKey(timestamp)]) {
                     return;
                 }
-                const y = scale.timeToY(timestamp);
+                const y = positions.timeToY(timestamp);
                 const tooCloseToDay = dayYs.some(function (dayY) {
                     return Math.abs(dayY - y) < MIN_HOUR_GAP_FROM_DAY;
                 });
                 if (tooCloseToDay) {
                     return;
                 }
-                const tooCloseToBreak = scale.breaks.some(function (breakY) {
+                const tooCloseToBreak = positions.breaks.some(function (breakY) {
                     return Math.abs(breakY - y) < MIN_HOUR_GAP_FROM_DAY;
                 });
                 if (tooCloseToBreak) {
@@ -520,18 +502,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     return Date.parse(b.createdAt) - Date.parse(a.createdAt);
                 });
 
-            const placed = [];
             nodes.forEach(function (node, row) {
-                const createdAt = Date.parse(node.createdAt);
-                let y = scale.timeToY(createdAt);
-
-                // Keep cards in the same column from stacking on top of each other.
-                placed.forEach(function (previousY) {
-                    if (Math.abs(y - previousY) < TIMELINE_MIN_GAP) {
-                        y = previousY + TIMELINE_MIN_GAP;
-                    }
-                });
-                placed.push(y);
+                const y = positions.yById[node.id];
+                if (y === undefined) {
+                    return;
+                }
                 if (y > maxContentY) {
                     maxContentY = y;
                 }
