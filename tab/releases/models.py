@@ -26,12 +26,7 @@ class Environment(models.Model):
         verbose_name="URL",
     )
     name = models.CharField(max_length=100, choices=Type.choices)
-    placeholder = models.BooleanField(
-        default=False,
-        editable=False,
-        db_index=True,
-        help_text="True when the URL is a template (e.g. contains `{slug}`).",
-    )
+    placeholder = models.BooleanField(default=False, editable=False, db_index=True)
 
     dependencies = models.ManyToManyField(
         "self", blank=True, symmetrical=False, related_name="dependents"

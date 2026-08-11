@@ -10,7 +10,6 @@ import log
 
 from tab.projects.models import Project, Result
 
-from .constants import PLACEHOLDER_CHARACTER
 from .enums import Type
 
 if TYPE_CHECKING:
@@ -24,7 +23,7 @@ class EnvironmentManager(models.Manager):
         return (
             self.filter(project__repository__startswith=organization.repository_index)
             .exclude(name=Type.LOCAL)
-            .filter(~Q(name=Type.REVIEW) | Q(url__contains=PLACEHOLDER_CHARACTER))
+            .filter(~Q(name=Type.REVIEW) | Q(placeholder=True))
             .select_related("project")
             .prefetch_related("dependencies")
         )
@@ -82,7 +81,7 @@ class EnvironmentManager(models.Manager):
                 if environment := self.filter(
                     project=project,
                     name=Type.REVIEW,
-                    url__contains=PLACEHOLDER_CHARACTER,
+                    placeholder=True,
                 ).first():  # type: ignore[assignment]
                     placeholder_url = environment.url  # type: ignore[attr-defined]
                 environment, created = self.get_or_create(  # type: ignore[assignment]

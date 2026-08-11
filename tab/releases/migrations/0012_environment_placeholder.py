@@ -18,12 +18,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="environment",
             name="placeholder",
-            field=models.BooleanField(
-                db_index=True,
-                default=False,
-                editable=False,
-                help_text="True when the URL is a template (e.g. contains `{slug}`).",
-            ),
+            field=models.BooleanField(db_index=True, default=False, editable=False),
         ),
         migrations.RunPython(backfill_placeholder, migrations.RunPython.noop),
     ]

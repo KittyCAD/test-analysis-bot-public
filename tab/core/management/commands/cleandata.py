@@ -10,7 +10,7 @@ import log
 
 from tab.api.constants import TESTS_CACHE_KEY
 from tab.projects.models import Project, Result, Run, Test
-from tab.releases.constants import PLACEHOLDER_CHARACTER, RESULTS_TIMEOUT
+from tab.releases.constants import RESULTS_TIMEOUT
 from tab.releases.enums import Type
 from tab.releases.models import Environment, Release
 
@@ -209,7 +209,7 @@ class Command(BaseCommand):
             name=Type.REVIEW, created_at__lt=cutoff
         ).exclude(
             # Preserve example environments with placeholders for identifiers
-            url__contains=PLACEHOLDER_CHARACTER,
+            placeholder=True,
         )
         for environment in environments:
             environment.delete()
