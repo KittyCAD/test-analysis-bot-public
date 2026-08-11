@@ -12,6 +12,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const FIRST_ROW_Y = 90;
     const TIMELINE_FIRST_ROW_Y = 24;
     const COLUMN_STAGGER = 56;
+    // Change History needs a wider left/right offset so a center taxi spine
+    // can run between staggered cards instead of scraping their edges.
+    const TIMELINE_COLUMN_STAGGER = 80;
     const TIMELINE_MIN_GAP = 125;
     const GRAPH_PADDING = 24;
     const TIMELINE_RESERVE = 88;
@@ -41,7 +44,11 @@ document.addEventListener("DOMContentLoaded", function () {
             axisX: 12,
             columnsRight: leftReserve + columnsArea,
             // Alternate cards left/right within the column so edges fan apart.
-            stagger: Math.min(COLUMN_STAGGER, columnWidth * 0.12),
+            // Timeline uses a larger stagger so left/right stacks leave a center
+            // corridor; still capped by column width to limit cross-column overlap.
+            stagger: withTimeline
+                ? Math.min(TIMELINE_COLUMN_STAGGER, columnWidth * 0.2)
+                : Math.min(COLUMN_STAGGER, columnWidth * 0.12),
             panX: GRAPH_PADDING,
         };
     }
@@ -626,6 +633,11 @@ document.addEventListener("DOMContentLoaded", function () {
             container._cy.destroy();
             container._cy = null;
         }
+        container
+            .querySelectorAll(".releases-graph-link-hover")
+            .forEach(function (el) {
+                el.remove();
+            });
 
         const usePreset =
             data.layout === "columns" || data.layout === "columns-timeline";
@@ -790,17 +802,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 },
                 {
                     selector: "edge",
-                    style: {
-                        width: 2,
-                        "line-color": "#adb5bd",
-                        "target-arrow-color": "#adb5bd",
-                        "target-arrow-shape": "triangle",
-                        "curve-style": "unbundled-bezier",
-                        "control-point-distances": 40,
-                        "control-point-weights": 0.5,
-                        "z-index-compare": "manual",
-                        "z-index": 1,
-                    },
+                    style: Object.assign(
+                        {
+                            width: 2,
+                            "line-color": "#adb5bd",
+                            "target-arrow-color": "#adb5bd",
+                            "target-arrow-shape": "triangle",
+                            "z-index-compare": "manual",
+                            "z-index": 1,
+                        },
+                        // Change History: orthogonal taxi routes avoid the
+                        // aggressive bezier fan-out on dense release graphs.
+                        // Per-edge taxi-turn is set after layout for card clearance.
+                        data.layout === "columns-timeline"
+                            ? {
+                                  "curve-style": "taxi",
+                                  "edge-distances": "node-position",
+                                  "taxi-direction": "horizontal",
+                                  "taxi-turn": 40,
+                                  "taxi-turn-min-distance": 16,
+                                  "taxi-radius": 8,
+                              }
+                            : {
+                                  "curve-style": "unbundled-bezier",
+                                  "control-point-distances": 40,
+                                  "control-point-weights": 0.5,
+                              }
+                    ),
                 },
                 {
                     selector: "edge[?isTimeline]",
@@ -812,6 +840,37 @@ document.addEventListener("DOMContentLoaded", function () {
                         "curve-style": "straight",
                         "line-style": "solid",
                         "z-index": 0,
+                    },
+                },
+                {
+                    selector: "node.faded",
+                    style: {
+                        opacity: 0.28,
+                    },
+                },
+                {
+                    selector: "edge.faded",
+                    style: {
+                        opacity: 0.1,
+                        "z-index": 0,
+                    },
+                },
+                {
+                    selector: "node.highlighted",
+                    style: {
+                        "background-opacity": 1,
+                        "border-width": 3,
+                        "z-index": 20,
+                    },
+                },
+                {
+                    selector: "edge.highlighted",
+                    style: {
+                        width: 3,
+                        "line-color": "#495057",
+                        "target-arrow-color": "#495057",
+                        opacity: 1,
+                        "z-index": 15,
                     },
                 },
             ],
@@ -841,7 +900,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         // Fan edges that share a column corridor onto distinct bezier lanes.
-        if (includeDependencies) {
+        // Skip for Change History taxi edges — control-point styles are bezier-only.
+        if (includeDependencies && data.layout !== "columns-timeline") {
             (function assignCorridorLanes() {
                 const corridors = {};
 
@@ -915,19 +975,119 @@ document.addEventListener("DOMContentLoaded", function () {
             })();
         }
 
+        // Route Change History same-column taxis down the column-center spine
+        // opened by the wider timeline stagger; cross-column stays horizontal.
+        function assignTaxiCorridors() {
+            if (!includeDependencies || data.layout !== "columns-timeline") {
+                return;
+            }
+            if (!layout) {
+                return;
+            }
+
+            const LANE_SPACING = 14;
+            const MIN_TURN = 24;
+
+            const depEdges = cy.edges().filter(function (edge) {
+                return !edge.data("isTimeline");
+            });
+
+            const corridors = {};
+            depEdges.forEach(function (edge) {
+                const key =
+                    String(edge.source().data("column")) +
+                    "->" +
+                    String(edge.target().data("column"));
+                if (!corridors[key]) {
+                    corridors[key] = [];
+                }
+                corridors[key].push(edge);
+            });
+
+            Object.keys(corridors).forEach(function (key) {
+                const group = corridors[key];
+                group.sort(function (a, b) {
+                    const aMid =
+                        (a.source().position("y") + a.target().position("y")) /
+                        2;
+                    const bMid =
+                        (b.source().position("y") + b.target().position("y")) /
+                        2;
+                    if (aMid !== bMid) {
+                        return aMid - bMid;
+                    }
+                    return a.source().position("x") - b.source().position("x");
+                });
+
+                group.forEach(function (edge, index) {
+                    const source = edge.source();
+                    const target = edge.target();
+                    const srcPos = source.position();
+                    const lane = index - (group.length - 1) / 2;
+                    const sameColumn =
+                        String(source.data("column")) ===
+                        String(target.data("column"));
+
+                    if (!sameColumn) {
+                        edge.style({
+                            "taxi-direction": "horizontal",
+                            "taxi-turn": Math.max(
+                                48,
+                                MIN_TURN + Math.abs(lane) * LANE_SPACING
+                            ),
+                            "taxi-turn-min-distance": 16,
+                        });
+                        return;
+                    }
+
+                    const column = Number(source.data("column"));
+                    // Spine down the true column center, with small lane offsets
+                    // for parallel same-column edges.
+                    const spineX =
+                        layout.columnX(column) + lane * LANE_SPACING;
+                    const turn = Math.max(Math.abs(srcPos.x - spineX), MIN_TURN);
+                    edge.style({
+                        "taxi-direction":
+                            srcPos.x >= spineX ? "leftward" : "rightward",
+                        "taxi-turn": turn,
+                        "taxi-turn-min-distance": 8,
+                    });
+                });
+            });
+        }
+
+        assignTaxiCorridors();
+
         if (data.layout === "columns-timeline" || data.layout === "columns") {
             // Keep column thirds at full panel width; grow height instead of shrinking.
             fitWidthAndGrow(cy, container, layout);
+            // Positions may shift slightly after fit — recompute taxi clearance.
+            assignTaxiCorridors();
         }
 
-        function cardLinkAt(node, renderedY) {
+        const CARD_PADDING = 14;
+        const CARD_FONT =
+            '11px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+        let measureCanvas = null;
+
+        function measureLabelTextWidth(text) {
+            if (!measureCanvas) {
+                measureCanvas = document.createElement("canvas");
+            }
+            const ctx = measureCanvas.getContext("2d");
+            ctx.font = CARD_FONT;
+            return ctx.measureText(text).width;
+        }
+
+        function cardLinks(node) {
             if (
+                !node ||
                 node.data("isHeader") ||
                 node.data("isTimelineDot") ||
                 node.data("isTimelineBreak") ||
                 node.data("isSpacer")
             ) {
-                return "";
+                return [];
             }
             const projectHref = node.data("projectHref") || "";
             const href = node.data("href") || "";
@@ -942,29 +1102,87 @@ document.addEventListener("DOMContentLoaded", function () {
             if (urlHref && urlHref !== href) {
                 links.push(urlHref);
             }
-            if (!links.length) {
-                return "";
-            }
-            if (links.length === 1) {
-                return links[0];
-            }
-            const bb = node.renderedBoundingBox({ includeLabels: true });
-            const ratio = (renderedY - bb.y1) / Math.max(bb.y2 - bb.y1, 1);
-            // Split the card into equal bands for each link, with a small
-            // drag-only gap between bands so grab remains available.
-            const band = 1 / links.length;
-            const gap = Math.min(0.06, band * 0.2);
-            for (let i = 0; i < links.length; i++) {
-                const start = i * band;
-                const end = (i + 1) * band;
-                if (ratio >= start + gap && ratio <= end - gap) {
-                    return links[i];
-                }
-            }
-            return "";
+            return links;
         }
 
-        function updateCardCursor(node, renderedY, dragging) {
+        // Map pointer to a link only when it sits on the label text itself
+        // (per line, centered), not the full card padding/width.
+        function cardLinkBandAt(node, renderedX, renderedY) {
+            const links = cardLinks(node);
+            if (!links.length) {
+                return null;
+            }
+
+            const bb = node.renderedBoundingBox({ includeLabels: true });
+            const zoom = cy.zoom();
+            const pad = CARD_PADDING * zoom;
+            const content = {
+                x1: bb.x1 + pad,
+                y1: bb.y1 + pad,
+                x2: bb.x2 - pad,
+                y2: bb.y2 - pad,
+                w: Math.max(bb.w - pad * 2, 0),
+                h: Math.max(bb.h - pad * 2, 0),
+            };
+            if (
+                renderedX < content.x1 ||
+                renderedX > content.x2 ||
+                renderedY < content.y1 ||
+                renderedY > content.y2
+            ) {
+                return null;
+            }
+
+            const lines = String(node.data("label") || "").split("\n");
+            const lineCount = Math.max(lines.length, 1);
+            const lineHeight = content.h / lineCount;
+            const lineIndex = Math.min(
+                lineCount - 1,
+                Math.max(0, Math.floor((renderedY - content.y1) / lineHeight))
+            );
+            const lineText = lines[lineIndex] || "";
+            if (!lineText.trim()) {
+                return null;
+            }
+
+            const textWidth = measureLabelTextWidth(lineText) * zoom;
+            const centerX = (content.x1 + content.x2) / 2;
+            if (Math.abs(renderedX - centerX) > textWidth / 2 + 1 * zoom) {
+                return null;
+            }
+
+            const nonEmptyIndexes = [];
+            lines.forEach(function (line, index) {
+                if (line.trim()) {
+                    nonEmptyIndexes.push(index);
+                }
+            });
+            const ordinal = nonEmptyIndexes.indexOf(lineIndex);
+            if (ordinal < 0) {
+                return null;
+            }
+            const linkIndex = Math.min(ordinal, links.length - 1);
+
+            return {
+                href: links[linkIndex],
+                index: linkIndex,
+                count: links.length,
+                lineIndex: lineIndex,
+                lineText: lineText,
+                lineCount: lineCount,
+                textWidth: textWidth,
+                content: content,
+                lineHeight: lineHeight,
+                centerX: centerX,
+            };
+        }
+
+        function cardLinkAt(node, renderedX, renderedY) {
+            const band = cardLinkBandAt(node, renderedX, renderedY);
+            return band ? band.href : "";
+        }
+
+        function updateCardCursor(node, renderedX, renderedY, dragging) {
             if (dragging) {
                 container.style.cursor = "grabbing";
                 return;
@@ -979,18 +1197,104 @@ document.addEventListener("DOMContentLoaded", function () {
                 container.style.cursor = "";
                 return;
             }
-            container.style.cursor = cardLinkAt(node, renderedY)
+            container.style.cursor = cardLinkAt(node, renderedX, renderedY)
                 ? "pointer"
                 : "grab";
         }
 
         let draggingCard = false;
+        let hoveredCard = null;
+
+        function isCardNode(node) {
+            return (
+                node &&
+                node.isNode() &&
+                !node.data("isHeader") &&
+                !node.data("isSpacer") &&
+                !node.data("isTimelineDot") &&
+                !node.data("isTimelineHour") &&
+                !node.data("isTimelineEndpoint") &&
+                !node.data("isTimelineBreak")
+            );
+        }
+
+        function cardNodes() {
+            return cy.nodes().filter(isCardNode);
+        }
+
+        function dependencyEdges() {
+            return cy.edges().filter(function (edge) {
+                return !edge.data("isTimeline");
+            });
+        }
+
+        function clearEmphasis() {
+            if (!includeDependencies) {
+                return;
+            }
+            cardNodes().removeClass("faded highlighted");
+            dependencyEdges().removeClass("faded highlighted");
+        }
+
+        function emphasizeAround(focusNode) {
+            if (!includeDependencies) {
+                return;
+            }
+            cy.batch(function () {
+                clearEmphasis();
+                if (!isCardNode(focusNode)) {
+                    return;
+                }
+                // Only the card's outgoing dependencies — not dependents that link to it.
+                const outEdges = dependencyEdges().filter(function (edge) {
+                    return edge.source().same(focusNode);
+                });
+                const outNodes = outEdges.targets().filter(isCardNode);
+                const neighborhood = focusNode.union(outEdges).union(outNodes);
+                cardNodes().difference(neighborhood.nodes()).addClass("faded");
+                dependencyEdges()
+                    .difference(neighborhood.edges())
+                    .addClass("faded");
+                neighborhood.addClass("highlighted");
+            });
+        }
+
+        function refreshEmphasis() {
+            if (!includeDependencies) {
+                return;
+            }
+            // Hover wins while exploring; selection sticks after the pointer leaves.
+            if (hoveredCard) {
+                emphasizeAround(hoveredCard);
+                return;
+            }
+            const selected = cy.$("node:selected").filter(isCardNode);
+            if (selected.length) {
+                emphasizeAround(selected[0]);
+                return;
+            }
+            clearEmphasis();
+        }
 
         cy.on("mousemove", "node", function (event) {
-            updateCardCursor(event.target, event.renderedPosition.y, draggingCard);
+            updateCardCursor(
+                event.target,
+                event.renderedPosition.x,
+                event.renderedPosition.y,
+                draggingCard
+            );
         });
         cy.on("mouseover", "node", function (event) {
-            updateCardCursor(event.target, event.renderedPosition.y, draggingCard);
+            updateCardCursor(
+                event.target,
+                event.renderedPosition.x,
+                event.renderedPosition.y,
+                draggingCard
+            );
+            if (!draggingCard && isCardNode(event.target)) {
+                hoveredCard = event.target;
+                refreshEmphasis();
+            }
         });
         cy.on("grab", "node", function () {
             draggingCard = true;
@@ -998,17 +1302,42 @@ document.addEventListener("DOMContentLoaded", function () {
         });
         cy.on("free", "node", function (event) {
             draggingCard = false;
-            updateCardCursor(event.target, event.renderedPosition.y, false);
+            updateCardCursor(
+                event.target,
+                event.renderedPosition.x,
+                event.renderedPosition.y,
+                false
+            );
+            assignTaxiCorridors();
+            refreshEmphasis();
         });
         cy.on("mouseout", "node", function () {
             if (!draggingCard) {
                 container.style.cursor = "";
             }
+            hoveredCard = null;
+            refreshEmphasis();
+        });
+        cy.on("select", "node", function () {
+            refreshEmphasis();
+        });
+        cy.on("unselect", "node", function () {
+            refreshEmphasis();
+        });
+        cy.on("tap", function (event) {
+            if (event.target === cy) {
+                cy.$("node:selected").unselect();
+                refreshEmphasis();
+            }
         });
 
         // Tap fires only when the node was not dragged.
         cy.on("tap", "node", function (event) {
-            const href = cardLinkAt(event.target, event.renderedPosition.y);
+            const href = cardLinkAt(
+                event.target,
+                event.renderedPosition.x,
+                event.renderedPosition.y
+            );
             if (href) {
                 window.open(href, "_blank", "noopener,noreferrer");
             }
