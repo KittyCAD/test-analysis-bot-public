@@ -9,6 +9,7 @@ from tab.api.helpers import update_status
 from tab.core.models import Organization
 from tab.projects.models import Project, Result
 
+from .constants import PLACEHOLDER_CHARACTER
 from .enums import Type
 from .managers import EnvironmentManager
 
@@ -25,6 +26,12 @@ class Environment(models.Model):
         verbose_name="URL",
     )
     name = models.CharField(max_length=100, choices=Type.choices)
+    placeholder = models.BooleanField(
+        default=False,
+        editable=False,
+        db_index=True,
+        help_text="True when the URL is a template (e.g. contains `{slug}`).",
+    )
 
     dependencies = models.ManyToManyField(
         "self", blank=True, symmetrical=False, related_name="dependents"
@@ -51,6 +58,10 @@ class Environment(models.Model):
 
     def __str__(self):
         return f"{self.get_name_display()}: {self.project}"
+
+    def save(self, *args, **kwargs):
+        self.placeholder = bool(self.url and PLACEHOLDER_CHARACTER in self.url)
+        super().save(*args, **kwargs)
 
     def change(self, branch: str, commit: str) -> Release:
         release, created = Release.objects.get_or_create(
