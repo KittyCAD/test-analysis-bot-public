@@ -17,7 +17,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const TIMELINE_COLUMN_STAGGER = 80;
     const TIMELINE_MIN_GAP = 125;
     const GRAPH_PADDING = 24;
-    const TIMELINE_RESERVE = 88;
+    // Keep cards clear of the axis + tick labels on the left.
+    const TIMELINE_RESERVE = 120;
+    const TIMELINE_MIN_CARD_CENTER = 220;
     // Hour labels are ~9px; skip them when they would collide with day ticks or each other.
     const MIN_HOUR_GAP_FROM_DAY = 20;
     const MIN_HOUR_GAP_BETWEEN = 14;
@@ -49,6 +51,13 @@ document.addEventListener("DOMContentLoaded", function () {
             stagger: withTimeline
                 ? Math.min(TIMELINE_COLUMN_STAGGER, columnWidth * 0.2)
                 : Math.min(COLUMN_STAGGER, columnWidth * 0.12),
+            // Card centers must stay right of the timeline axis/labels.
+            minCardCenterX: withTimeline
+                ? Math.max(
+                      leftReserve + 40,
+                      TIMELINE_MIN_CARD_CENTER
+                  )
+                : 0,
             panX: GRAPH_PADDING,
         };
     }
@@ -521,12 +530,21 @@ document.addEventListener("DOMContentLoaded", function () {
                 const stagger =
                     nodes.length <= 1
                         ? 0
-                        : row % 2 === 0
-                          ? -layout.stagger
-                          : layout.stagger;
+                        : column === 0
+                          ? // Keep review-lane stagger away from the timeline.
+                            row % 2 === 0
+                              ? 0
+                              : layout.stagger
+                          : row % 2 === 0
+                            ? -layout.stagger
+                            : layout.stagger;
                 const label = node.subtitle
                     ? node.label + "\n\n" + node.subtitle
                     : node.label;
+                const x = Math.max(
+                    layout.columnX(column) + stagger,
+                    layout.minCardCenterX || 0
+                );
                 elements.push({
                     group: "nodes",
                     data: {
@@ -543,7 +561,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         isTimelineDot: false,
                     },
                     position: {
-                        x: layout.columnX(column) + stagger,
+                        x: x,
                         y: y,
                     },
                 });
@@ -1058,9 +1076,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
         assignTaxiCorridors();
 
+        function clearTimelineOverlaps() {
+            if (!layout || data.layout !== "columns-timeline") {
+                return;
+            }
+            const axisClearance = layout.axisX + 64;
+            cy.nodes().forEach(function (node) {
+                if (
+                    node.data("isHeader") ||
+                    node.data("isSpacer") ||
+                    node.data("isTimeline") ||
+                    node.data("isTimelineDot") ||
+                    node.data("isTimelineHour") ||
+                    node.data("isTimelineEndpoint") ||
+                    node.data("isTimelineBreak")
+                ) {
+                    return;
+                }
+                const bb = node.boundingBox({
+                    includeLabels: true,
+                    includeOverlays: false,
+                });
+                if (bb.x1 >= axisClearance) {
+                    return;
+                }
+                node.position("x", node.position("x") + (axisClearance - bb.x1));
+            });
+        }
+
         if (data.layout === "columns-timeline" || data.layout === "columns") {
             // Keep column thirds at full panel width; grow height instead of shrinking.
             fitWidthAndGrow(cy, container, layout);
+            clearTimelineOverlaps();
             // Positions may shift slightly after fit — recompute taxi clearance.
             assignTaxiCorridors();
         }

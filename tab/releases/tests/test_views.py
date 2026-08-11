@@ -91,19 +91,15 @@ def describe_graph_helpers(expect):
 
         graph = build_release_graph([api_release, app_release])
         expect(graph["layout"]) == "columns-timeline"
-        expect([column["id"] for column in graph["columns"]]) == [
-            "review",
-            "staging",
-            "production",
-        ]
+        expect([column["id"] for column in graph["columns"]]) == ["deployed"]
         expect(len(graph["nodes"])) == 2
         expect(graph["edges"][0]["source"]) == str(app_release.pk)
         expect(graph["edges"][0]["target"]) == str(api_release.pk)
         by_id = {node["id"]: node for node in graph["nodes"]}
-        expect(by_id[str(app_release.pk)]["column"]) == 1
-        expect(by_id[str(api_release.pk)]["column"]) == 2
-        expect(by_id[str(app_release.pk)]["columnId"]) == "staging"
-        expect(by_id[str(api_release.pk)]["columnId"]) == "production"
+        expect(by_id[str(app_release.pk)]["column"]) == 0
+        expect(by_id[str(api_release.pk)]["column"]) == 0
+        expect(by_id[str(app_release.pk)]["columnId"]) == "deployed"
+        expect(by_id[str(api_release.pk)]["columnId"]) == "deployed"
         expect(by_id[str(app_release.pk)]["createdAt"]).contains("T")
         label = by_id[str(app_release.pk)]["label"]
         expect(label).contains(project.name)
@@ -122,15 +118,38 @@ def describe_graph_helpers(expect):
 
         graph = build_release_graph([release])
         by_id = {column["id"]: column for column in graph["columns"]}
+        expect([column["id"] for column in graph["columns"]]) == ["deployed"]
+        expect(by_id["deployed"]["color"]) == Type.PRODUCTION.color
+        expect(graph["nodes"][0]["column"]) == 0
+        expect(graph["nodes"][0]["columnId"]) == "deployed"
+
+    @pytest.mark.django_db
+    def it_adds_review_lane_when_included(project: Project):
+        staging = Environment.objects.create(
+            project=project, name=Type.STAGING, url="https://staging.example.com"
+        )
+        review = Environment.objects.create(
+            project=project, name=Type.REVIEW, url="https://app-pr-1.example.com"
+        )
+        staging_release = Release.objects.create(
+            environment=staging, branch="main", commit="3333333"
+        )
+        review_release = Release.objects.create(
+            environment=review, branch="feature", commit="reviewdeadbeef"
+        )
+
+        graph = build_release_graph(
+            [staging_release, review_release], include_review=True
+        )
         expect([column["id"] for column in graph["columns"]]) == [
             "review",
-            "staging",
-            "production",
+            "deployed",
         ]
-        expect(by_id["review"]["color"]) == Type.REVIEW.color
-        expect(by_id["staging"]["color"]) == Type.STAGING.color
-        expect(graph["nodes"][0]["column"]) == 1
-        expect(graph["nodes"][0]["columnId"]) == "staging"
+        by_id = {node["id"]: node for node in graph["nodes"]}
+        expect(by_id[str(review_release.pk)]["column"]) == 0
+        expect(by_id[str(review_release.pk)]["columnId"]) == "review"
+        expect(by_id[str(staging_release.pk)]["column"]) == 1
+        expect(by_id[str(staging_release.pk)]["columnId"]) == "deployed"
 
 
 def describe_releases_page(expect, admin_client, organization: Organization):
@@ -156,11 +175,7 @@ def describe_releases_page(expect, admin_client, organization: Organization):
         expect(hidden_lines.context["show_lines"]) == False
         expect(
             [column["id"] for column in response.context["release_graph"]["columns"]]
-        ) == [
-            "review",
-            "staging",
-            "production",
-        ]
+        ) == ["deployed"]
         expect(
             [
                 column["id"]
@@ -232,11 +247,7 @@ def describe_releases_page(expect, admin_client, organization: Organization):
         )
         expect(
             [column["id"] for column in hidden.context["release_graph"]["columns"]]
-        ) == [
-            "review",
-            "staging",
-            "production",
-        ]
+        ) == ["deployed"]
         expect(
             [column["id"] for column in hidden.context["environment_graph"]["columns"]]
         ) == [
@@ -254,8 +265,7 @@ def describe_releases_page(expect, admin_client, organization: Organization):
             [column["id"] for column in shown.context["release_graph"]["columns"]]
         ) == [
             "review",
-            "staging",
-            "production",
+            "deployed",
         ]
         expect(
             [node["subtitle"] for node in shown.context["environment_graph"]["nodes"]]

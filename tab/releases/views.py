@@ -62,7 +62,9 @@ class IndexView(LoginRequiredMixin, TemplateView):
         context["history_limit"] = limit
         context["release_graph_truncated"] = truncated
         context["environment_graph"] = build_environment_graph(environments)
-        context["release_graph"] = build_release_graph(releases, truncated=truncated)
+        context["release_graph"] = build_release_graph(
+            releases, truncated=truncated, include_review=show_review
+        )
         if self.request.user.is_staff:
             context["admin_url"] = reverse("admin:releases_environment_changelist")
         return context

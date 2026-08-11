@@ -11,6 +11,27 @@ GRAPH_ENVIRONMENT_COLUMNS = {
     choice.value: index for index, choice in enumerate(GRAPH_ENVIRONMENT_TYPES)
 }
 
+# Change History: review (orange) on the left when shown; staging+production
+# share the right lane (or the only lane when review is hidden).
+RELEASE_GRAPH_REVIEW_COLUMN = {
+    "id": Type.REVIEW.value,
+    "label": Type.REVIEW.label,
+    "color": Type.REVIEW.color,
+}
+RELEASE_GRAPH_DEPLOYED_COLUMN = {
+    "id": "deployed",
+    "label": "Staging / Production",
+    "color": Type.PRODUCTION.color,
+}
+
+
+def _release_column(environment_name: str, *, include_review: bool) -> tuple[int, str]:
+    if include_review:
+        if environment_name == Type.REVIEW:
+            return 0, Type.REVIEW.value
+        return 1, "deployed"
+    return 0, "deployed"
+
 
 def _column_layout_meta(*, row_height: int = 110) -> dict:
     return {
@@ -62,7 +83,12 @@ def build_environment_graph(environments: list[Environment]) -> dict:
     }
 
 
-def build_release_graph(releases: list[Release], *, truncated: bool = False) -> dict:
+def build_release_graph(
+    releases: list[Release],
+    *,
+    truncated: bool = False,
+    include_review: bool = False,
+) -> dict:
     nodes = []
     edges = []
     ids = {release.pk for release in releases}
@@ -75,6 +101,9 @@ def build_release_graph(releases: list[Release], *, truncated: bool = False) -> 
             else release.commit_humanized
         )
         local_created = timezone.localtime(release.created_at)
+        column, column_id = _release_column(
+            environment.name, include_review=include_review
+        )
         nodes.append(
             {
                 "id": str(release.pk),
@@ -86,8 +115,8 @@ def build_release_graph(releases: list[Release], *, truncated: bool = False) -> 
                 ),
                 "href": release.commit_url or release.branch_url or "",
                 "urlHref": environment.url or "",
-                "column": GRAPH_ENVIRONMENT_COLUMNS.get(environment.name, 0),
-                "columnId": environment.name,
+                "column": column,
+                "columnId": column_id,
                 "createdAt": release.created_at.isoformat(),
                 "createdLabel": local_created.strftime("%b %d, %H:%M"),
             }
@@ -102,9 +131,16 @@ def build_release_graph(releases: list[Release], *, truncated: bool = False) -> 
                     }
                 )
 
+    columns = (
+        [RELEASE_GRAPH_REVIEW_COLUMN, RELEASE_GRAPH_DEPLOYED_COLUMN]
+        if include_review
+        else [RELEASE_GRAPH_DEPLOYED_COLUMN]
+    )
+
     return {
-        **_column_layout_meta(row_height=130),
         "layout": "columns-timeline",
+        "rowHeight": 130,
+        "columns": columns,
         "truncated": truncated,
         "nodes": nodes,
         "edges": edges,
