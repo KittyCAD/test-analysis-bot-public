@@ -13,7 +13,6 @@
         <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock og_url %}">
         {# djlint:on #}
         <title>
-
             {% block title %}
                 Test Analysis Bot
             {% endblock title %}
@@ -61,7 +60,6 @@
             </div>
         {% endif %}
         <main class="container">
-
             {% block content %}
             {% endblock content %}
         </main>

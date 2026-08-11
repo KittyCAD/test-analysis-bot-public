@@ -18,7 +18,7 @@ package-mode = false
 django = "^6.0.7"
 django-browser-reload = "^1.21"
 django-cors-headers = "*"
-django-crispy-forms = "^2.6"
+django-crispy-forms = "^2.7"
 crispy-bootstrap5 = "*" # styling for 'django-crispy-forms'
 django-debug-toolbar = "^7.0"
 django-tables2 = "^3.0.0"
@@ -30,7 +30,7 @@ pydantic = "^2.12.5"
 # Storage
 dj-database-url = "*"
 psycopg2-binary = "^2.9.12"
-redis = "^8.0.1"
+redis = "^8.1.0"
 
 # Integrations
 mozilla-django-oidc = "^5.0.2"
@@ -53,7 +53,7 @@ whitenoise = "^6.12.0"
 # Formatting
 black = "^26.5.0"
 isort = "^8.0.0"
-djlint = "^1.42.3"
+djlint = "^1.43.2"
 
 # Linting
 mypy = "^2.3"
