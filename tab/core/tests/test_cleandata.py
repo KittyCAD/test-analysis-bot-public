@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from unittest.mock import ANY, PropertyMock
 from zoneinfo import ZoneInfo
 
 from django.core.cache import cache
@@ -12,6 +13,13 @@ from tab.projects.enums import Status, Target
 from tab.projects.models import Project, Result, Test
 
 ET = ZoneInfo("America/New_York")
+
+
+def _command_with_budget() -> Command:
+    command = Command()
+    command._time_budget_deadline = timezone.now() + timedelta(hours=1)
+    command._time_budget_warned = False
+    return command
 
 
 def describe_is_weekend(expect):
@@ -53,7 +61,7 @@ def describe_handle_weekend_cleanup(expect):
 
         Command().handle(dry_run=False, force=False)
 
-        delete_stale.assert_called_once_with(False)
+        delete_stale.assert_called_once_with(False, ANY)
 
     def it_runs_stale_cleanup_with_force_on_weekdays(mocker):
         mocker.patch(
@@ -67,7 +75,7 @@ def describe_handle_weekend_cleanup(expect):
 
         Command().handle(dry_run=False, force=True)
 
-        delete_stale.assert_called_once_with(False)
+        delete_stale.assert_called_once_with(False, ANY)
 
 
 @pytest.mark.django_db
@@ -109,7 +117,7 @@ def describe_delete_stale_results(expect):
         # Point last_result at a row that will be deleted (bypass Test.save)
         Test.objects.filter(pk=test.pk).update(last_result=stale_feature)
 
-        deleted = Command().delete_stale_results(project, dry_run=False)
+        deleted = _command_with_budget().delete_stale_results(project, dry_run=False)
 
         expect(deleted) == 2
         expect(set(test.results.values_list("commit", flat=True))) == {"a2", "b1"}
@@ -129,10 +137,39 @@ def describe_delete_stale_results(expect):
             created_at=timezone.now() - timedelta(days=8)
         )
 
-        deleted = Command().delete_stale_results(project, dry_run=True)
+        deleted = _command_with_budget().delete_stale_results(project, dry_run=True)
 
         expect(deleted) == 0
         expect(test.results.count()) == 1
+
+    def it_stops_when_time_budget_is_exhausted(mocker):
+        project = Project.objects.create(
+            repository="https://github.com/foo/budget",
+            result_stale_threshold=timedelta(days=7),
+        )
+        test = project.tests.create(name="my-test")
+        now = timezone.now()
+        for i in range(3):
+            result = Result.objects.create(
+                test=test, status=Status.PASSED, branch="feature", commit=f"c{i}"
+            )
+            Result.objects.filter(pk=result.pk).update(
+                created_at=now - timedelta(days=8)
+            )
+
+        mocker.patch("tab.core.management.commands.cleandata.CHUNK_SIZE", 1)
+        command = Command()
+        mocker.patch.object(
+            type(command),
+            "time_budget_remaining",
+            new_callable=PropertyMock,
+            side_effect=[True, False],
+        )
+
+        deleted = command.delete_stale_results(project, dry_run=False)
+
+        expect(deleted) == 1
+        expect(test.results.count()) == 2
 
 
 @pytest.mark.django_db

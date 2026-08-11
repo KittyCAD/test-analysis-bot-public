@@ -15,6 +15,7 @@ from tab.releases.enums import Type
 from tab.releases.models import Environment, Release
 
 CHUNK_SIZE = 1000
+TIME_BUDGET = timedelta(minutes=45)
 US_EAST_TZ = ZoneInfo("America/New_York")
 
 
@@ -42,18 +43,29 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
         start = timezone.now()
+        self._time_budget_warned = False
         log.info(f"Started job at {start.strftime('%Y-%m-%d %H:%M:%S')}")
         self.finalize_releases()
         self.fetch_active_branches()
         self.update_bulk_tests()
         if is_weekend() or options["force"]:
-            self.delete_stale_data(dry_run)
+            self.delete_stale_data(dry_run, start + TIME_BUDGET)
         else:
             log.info("Skipping stale data cleanup until the weekend")
         delta = timezone.now() - start
         log.info(f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}")
 
-    def delete_stale_data(self, dry_run: bool):
+    @property
+    def time_budget_remaining(self) -> bool:
+        if timezone.now() < self._time_budget_deadline:
+            return True
+        if not self._time_budget_warned:
+            log.warning("Time budget exhausted, deferring remaining cleanup")
+            self._time_budget_warned = True
+        return False
+
+    def delete_stale_data(self, dry_run: bool, deadline: datetime):
+        self._time_budget_deadline = deadline
         self.delete_stale_environments()
         self.delete_stale_releases()
         for project in Project.objects.all():
@@ -75,15 +87,25 @@ class Command(BaseCommand):
             project=project,
             updated_at__lt=cutoff,
         ).order_by()  # remove default ordering for performance
-        count = tests.count()
 
         if dry_run:
+            count = tests.count()
             log.warning(f"Would delete {count} tests: {project}")
             return 0
 
-        tests.delete()
-        log.info(f"Deleted {count} tests: {project}")
-        return count
+        deleted = 0
+        while self.time_budget_remaining:
+            chunk = tests.values("pk")[:CHUNK_SIZE]
+            chunk_count, _ = (
+                Test.objects.filter(pk__in=Subquery(chunk)).order_by().delete()
+            )
+            if not chunk_count:
+                break
+            deleted += chunk_count
+            log.info(f"Deleted {chunk_count} chunk tests: {project}")
+
+        log.info(f"Deleted {deleted} total tests: {project}")
+        return deleted
 
     def delete_stale_runs(self, project: Project, dry_run: bool) -> int:
         log.info(f"Cleaning up stale runs: {project}")
@@ -93,15 +115,25 @@ class Command(BaseCommand):
             .filter(setup_started_at__lt=cutoff)
             .order_by()
         )
-        count = runs.count()
 
         if dry_run:
+            count = runs.count()
             log.warning(f"Would delete {count} runs: {project}")
             return 0
 
-        runs.delete()
-        log.info(f"Deleted {count} runs: {project}")
-        return count
+        deleted = 0
+        while self.time_budget_remaining:
+            chunk = runs.values("pk")[:CHUNK_SIZE]
+            chunk_count, _ = (
+                Run.objects.filter(pk__in=Subquery(chunk)).order_by().delete()
+            )
+            if not chunk_count:
+                break
+            deleted += chunk_count
+            log.info(f"Deleted {chunk_count} chunk runs: {project}")
+
+        log.info(f"Deleted {deleted} total runs: {project}")
+        return deleted
 
     def delete_stale_results(self, project: Project, dry_run: bool) -> int:
         log.info(f"Cleaning up stale results: {project}")
@@ -131,7 +163,7 @@ class Command(BaseCommand):
             return 0
 
         deleted = 0
-        while True:
+        while self.time_budget_remaining:
             chunk = results.values("pk")[:CHUNK_SIZE]
             chunk_count, _ = (
                 Result.objects.filter(pk__in=Subquery(chunk)).order_by().delete()
