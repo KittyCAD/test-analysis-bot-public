@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 
 from tab.projects.models import Result
 
+from .enums import Type
 from .models import Environment, Release
 
 
@@ -19,7 +20,9 @@ class EnvironmentAdmin(admin.ModelAdmin):
 
     def formfield_for_manytomany(self, db_field, request, **kwargs):
         if db_field.name == "dependencies":
-            kwargs["queryset"] = Environment.objects.select_related("project")
+            kwargs["queryset"] = Environment.objects.exclude(
+                name=Type.REVIEW
+            ).select_related("project")
         return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     search_fields = ("project__repository", "name", "url")
