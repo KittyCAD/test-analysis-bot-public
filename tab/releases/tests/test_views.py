@@ -277,6 +277,29 @@ def describe_releases_page(expect, admin_client, organization: Organization):
         expect(len(shown.context["release_graph"]["nodes"])) == 1
 
     @pytest.mark.django_db
+    def it_shows_only_latest_review_release_per_branch(project: Project):
+        review = Environment.objects.create(
+            project=project,
+            name=Type.REVIEW,
+            url="https://app-pr-1.example.com",
+        )
+        older = Release.objects.create(
+            environment=review, branch="feature", commit="oldreviewdeadbeef"
+        )
+        newer = Release.objects.create(
+            environment=review, branch="feature", commit="newreviewdeadbeef"
+        )
+        other_branch = Release.objects.create(
+            environment=review, branch="other-feature", commit="otherreviewdeadbeef"
+        )
+
+        response = admin_client.get(reverse("releases:index"), {"review": "true"})
+        expect(response.status_code) == 200
+        node_ids = {node["id"] for node in response.context["release_graph"]["nodes"]}
+        expect(node_ids) == {str(newer.pk), str(other_branch.pk)}
+        expect(str(older.pk) in node_ids) == False
+
+    @pytest.mark.django_db
     def it_scopes_to_organization_and_excludes_local(project: Project):
         other = Project.objects.create(repository="https://github.com/other/repo")
         Environment.objects.create(

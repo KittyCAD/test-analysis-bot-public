@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import OuterRef, Q, Subquery
 from django.urls import reverse
 from django.views.generic import TemplateView
 
@@ -33,8 +34,8 @@ class IndexView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         organization = self.get_organization()
-        show_review = self.request.GET.get("review") in ("true", "1")
-        show_lines = self.request.GET.get("lines", "true") not in ("false", "0")
+        show_review = self.request.GET.get("review") == "true"
+        show_lines = self.request.GET.get("lines", "true") == "true"
         limit = self.get_history_limit()
         truncated = False
 
@@ -46,7 +47,20 @@ class IndexView(LoginRequiredMixin, TemplateView):
             releases_qs = Release.objects.filter(
                 environment__project__repository__startswith=organization.repository_index
             ).exclude(environment__name=Type.LOCAL)
-            if not show_review:
+            if show_review:
+                latest_review_id = (
+                    Release.objects.filter(
+                        environment__project_id=OuterRef("environment__project_id"),
+                        branch=OuterRef("branch"),
+                        environment__name=Type.REVIEW,
+                    )
+                    .order_by("-created_at", "-pk")
+                    .values("pk")[:1]
+                )
+                releases_qs = releases_qs.filter(
+                    ~Q(environment__name=Type.REVIEW) | Q(pk=Subquery(latest_review_id))
+                )
+            else:
                 releases_qs = releases_qs.exclude(environment__name=Type.REVIEW)
             # Fetch one extra row to detect whether the chart is truncated.
             releases = list(
