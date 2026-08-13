@@ -836,7 +836,7 @@ document.addEventListener("DOMContentLoaded", function () {
                             ? {
                                   "curve-style": "taxi",
                                   "edge-distances": "node-position",
-                                  "taxi-direction": "horizontal",
+                                  "taxi-direction": "rightward",
                                   "taxi-turn": 40,
                                   "taxi-turn-min-distance": 16,
                                   "taxi-radius": 8,
@@ -993,8 +993,8 @@ document.addEventListener("DOMContentLoaded", function () {
             })();
         }
 
-        // Route Change History same-column taxis down the column-center spine
-        // opened by the wider timeline stagger; cross-column stays horizontal.
+        // Route Change History same-column taxis down a rail to the RIGHT of
+        // the cards so vertical segments never cross the timeline gutter.
         function assignTaxiCorridors() {
             if (!includeDependencies || data.layout !== "columns-timeline") {
                 return;
@@ -1005,6 +1005,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
             const LANE_SPACING = 14;
             const MIN_TURN = 24;
+            const RAIL_GAP = 24;
+            // Stay clear of the axis + day/hour tick labels.
+            const taxiMinX = layout.axisX + 80;
 
             const depEdges = cy.edges().filter(function (edge) {
                 return !edge.data("isTimeline");
@@ -1047,8 +1050,9 @@ document.addEventListener("DOMContentLoaded", function () {
                         String(target.data("column"));
 
                     if (!sameColumn) {
+                        // Bend rightward first so the path stays off the timeline.
                         edge.style({
-                            "taxi-direction": "horizontal",
+                            "taxi-direction": "rightward",
                             "taxi-turn": Math.max(
                                 48,
                                 MIN_TURN + Math.abs(lane) * LANE_SPACING
@@ -1058,16 +1062,21 @@ document.addEventListener("DOMContentLoaded", function () {
                         return;
                     }
 
-                    const column = Number(source.data("column"));
-                    // Spine down the true column center, with small lane offsets
-                    // for parallel same-column edges.
+                    const srcBox = source.boundingBox({
+                        includeLabels: true,
+                        includeOverlays: false,
+                    });
+                    const tgtBox = target.boundingBox({
+                        includeLabels: true,
+                        includeOverlays: false,
+                    });
                     const spineX =
-                        layout.columnX(column) + lane * LANE_SPACING;
-                    const turn = Math.max(Math.abs(srcPos.x - spineX), MIN_TURN);
+                        Math.max(srcBox.x2, tgtBox.x2, taxiMinX) +
+                        RAIL_GAP +
+                        Math.abs(lane) * LANE_SPACING;
                     edge.style({
-                        "taxi-direction":
-                            srcPos.x >= spineX ? "leftward" : "rightward",
-                        "taxi-turn": turn,
+                        "taxi-direction": "rightward",
+                        "taxi-turn": Math.max(spineX - srcPos.x, MIN_TURN),
                         "taxi-turn-min-distance": 8,
                     });
                 });
