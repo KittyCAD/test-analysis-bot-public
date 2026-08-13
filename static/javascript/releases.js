@@ -836,10 +836,12 @@ document.addEventListener("DOMContentLoaded", function () {
                             ? {
                                   "curve-style": "taxi",
                                   "edge-distances": "node-position",
+                                  "source-endpoint": "outside-to-node",
+                                  "target-endpoint": "outside-to-node",
                                   "taxi-direction": "rightward",
                                   "taxi-turn": 40,
-                                  "taxi-turn-min-distance": 16,
-                                  "taxi-radius": 8,
+                                  "taxi-turn-min-distance": 8,
+                                  "taxi-radius": 6,
                               }
                             : {
                                   "curve-style": "unbundled-bezier",
@@ -993,92 +995,34 @@ document.addEventListener("DOMContentLoaded", function () {
             })();
         }
 
-        // Route Change History same-column taxis down a rail to the RIGHT of
-        // the cards so vertical segments never cross the timeline gutter.
+        // Exit right from the source card (short stub), then vertical to the target.
         function assignTaxiCorridors() {
             if (!includeDependencies || data.layout !== "columns-timeline") {
                 return;
             }
-            if (!layout) {
-                return;
-            }
 
-            const LANE_SPACING = 14;
-            const MIN_TURN = 24;
             const RAIL_GAP = 24;
-            // Stay clear of the axis + day/hour tick labels.
-            const taxiMinX = layout.axisX + 80;
 
-            const depEdges = cy.edges().filter(function (edge) {
-                return !edge.data("isTimeline");
-            });
-
-            const corridors = {};
-            depEdges.forEach(function (edge) {
-                const key =
-                    String(edge.source().data("column")) +
-                    "->" +
-                    String(edge.target().data("column"));
-                if (!corridors[key]) {
-                    corridors[key] = [];
+            cy.edges().forEach(function (edge) {
+                if (edge.data("isTimeline")) {
+                    return;
                 }
-                corridors[key].push(edge);
-            });
-
-            Object.keys(corridors).forEach(function (key) {
-                const group = corridors[key];
-                group.sort(function (a, b) {
-                    const aMid =
-                        (a.source().position("y") + a.target().position("y")) /
-                        2;
-                    const bMid =
-                        (b.source().position("y") + b.target().position("y")) /
-                        2;
-                    if (aMid !== bMid) {
-                        return aMid - bMid;
-                    }
-                    return a.source().position("x") - b.source().position("x");
+                const source = edge.source();
+                const srcPos = source.position();
+                const srcBox = source.boundingBox({
+                    includeLabels: true,
+                    includeOverlays: false,
                 });
-
-                group.forEach(function (edge, index) {
-                    const source = edge.source();
-                    const target = edge.target();
-                    const srcPos = source.position();
-                    const lane = index - (group.length - 1) / 2;
-                    const sameColumn =
-                        String(source.data("column")) ===
-                        String(target.data("column"));
-
-                    if (!sameColumn) {
-                        // Bend rightward first so the path stays off the timeline.
-                        edge.style({
-                            "taxi-direction": "rightward",
-                            "taxi-turn": Math.max(
-                                48,
-                                MIN_TURN + Math.abs(lane) * LANE_SPACING
-                            ),
-                            "taxi-turn-min-distance": 16,
-                        });
-                        return;
-                    }
-
-                    const srcBox = source.boundingBox({
-                        includeLabels: true,
-                        includeOverlays: false,
-                    });
-                    const tgtBox = target.boundingBox({
-                        includeLabels: true,
-                        includeOverlays: false,
-                    });
-                    const spineX =
-                        Math.max(srcBox.x2, tgtBox.x2, taxiMinX) +
-                        RAIL_GAP +
-                        Math.abs(lane) * LANE_SPACING;
-                    edge.style({
-                        "taxi-direction": "rightward",
-                        "taxi-turn": Math.max(spineX - srcPos.x, MIN_TURN),
-                        "taxi-turn-min-distance": 8,
-                    });
+                // Only clear THIS card's right edge — don't stretch to the
+                // widest neighbor (that caused the long horizontal runs).
+                const turn = Math.max(srcBox.x2 - srcPos.x + RAIL_GAP, RAIL_GAP);
+                edge.style({
+                    "edge-distances": "node-position",
+                    "source-endpoint": "outside-to-node",
+                    "target-endpoint": "outside-to-node",
+                    "taxi-direction": "rightward",
+                    "taxi-turn": turn,
+                    "taxi-turn-min-distance": 8,
                 });
             });
         }
