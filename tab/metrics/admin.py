@@ -27,6 +27,10 @@ class TestHistoryAdmin(admin.ModelAdmin):
         "test__project__repository",
         "test__name",
     )
+    list_filter = (
+        "test__project__repository",
+        "test__suite__name",
+    )
 
     raw_id_fields = ("test", "result")
     readonly_fields = (
@@ -51,6 +55,10 @@ class SuiteHistoryAdmin(admin.ModelAdmin):
         "timestamp",
     )
     search_fields = (
+        "suite__project__repository",
+        "suite__name",
+    )
+    list_filter = (
         "suite__project__repository",
         "suite__name",
     )
