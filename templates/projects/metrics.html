@@ -135,12 +135,12 @@
                                             {% endif %}
                                             {{ stats.disabled }} Test{{ stats.disabled|pluralize }}
                                             {% if stats.disabled > 0 %}</a>{% endif %}
-                                    </td>
-                                    <td>{{ stats.enabled }} Test{{ stats.enabled|pluralize }}</td>
+                                        </td>
+                                        <td>{{ stats.enabled }} Test{{ stats.enabled|pluralize }}</td>
                                     </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 {% else %}
                     <div class="text-muted">No tests have been disabled or fixed.</div>
