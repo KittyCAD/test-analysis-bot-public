@@ -57,12 +57,12 @@ def test_releases(page: Page, live_server, admin_user):
     review = page.locator("#show-review-releases")
     assert lines.is_checked()
     assert not review.is_checked()
-    take_snapshot(page, "releases-lines-on-review-off")
+    take_snapshot(page, "releases/lines-on-review-off")
 
     lines.uncheck()
     assert re.search(r"[?&]lines=false", page.url)
     assert not review.is_checked()
-    take_snapshot(page, "releases-lines-off-review-off")
+    take_snapshot(page, "releases/lines-off-review-off")
 
     with page.expect_navigation():
         review.check()
@@ -72,9 +72,9 @@ def test_releases(page: Page, live_server, admin_user):
     assert review.is_checked()
     assert re.search(r"[?&]lines=false", page.url)
     assert re.search(r"[?&]review=true", page.url)
-    take_snapshot(page, "releases-lines-off-review-on")
+    take_snapshot(page, "releases/lines-off-review-on")
 
     lines.check()
     assert not re.search(r"[?&]lines=false", page.url)
     assert review.is_checked()
-    take_snapshot(page, "releases-lines-on-review-on")
+    take_snapshot(page, "releases/lines-on-review-on")

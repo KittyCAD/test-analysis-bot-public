@@ -29,32 +29,30 @@ class OIDCFailureReason(StrEnum):
 
 
 FAILURE_MESSAGES = {
-    OIDCFailureReason.ACCESS_DENIED: "Authentik denied access to TAB.",
+    OIDCFailureReason.ACCESS_DENIED: "Authentik denied access.",
     OIDCFailureReason.DOMAIN_NOT_ALLOWED: (
-        "Your Authentik email domain is not configured for TAB."
+        "Your Authentik email domain is not configured."
     ),
     OIDCFailureReason.EMAIL_INVALID: (
         "Authentik did not provide a valid email address."
     ),
     OIDCFailureReason.EMAIL_UNVERIFIED: (
-        "Authentik did not verify your email address. Ask an Authentik administrator "
-        "to verify it, or use email login."
+        "Authentik could not verify your email address."
     ),
     OIDCFailureReason.IDENTITY_CONFLICT: (
-        "This Authentik identity conflicts with an existing TAB account. "
-        "Contact an administrator."
+        "This Authentik identity conflicts with an existing account."
     ),
     OIDCFailureReason.INVALID_RESPONSE: (
-        "TAB could not verify Authentik's response. Try again or use email login."
+        "Unable to verify Authentik's response. Try again or use email login."
     ),
     OIDCFailureReason.PROVIDER_ERROR: (
-        "TAB could not complete sign-in with Authentik. Try again or use email login."
+        "Unable to complete sign-in with Authentik. Try again or use email login."
     ),
     OIDCFailureReason.SUBJECT_MISSING: (
         "Authentik did not provide a stable user identifier."
     ),
     OIDCFailureReason.UNKNOWN: (
-        "TAB could not sign you in with Authentik. Try again or use email login."
+        "Unable to sign you in with Authentik. Try again or use email login."
     ),
 }
 

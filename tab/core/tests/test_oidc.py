@@ -163,7 +163,7 @@ def describe_authentik_login(expect, client):
 
         expect(callback_response.status_code) == 200
         expect(callback_response.content.decode()).contains(
-            "TAB could not verify Authentik&#x27;s response."
+            "Unable to verify Authentik&#x27;s response."
         )
         expect(User.objects.filter(email=oidc_provider.email).exists()) is False
         expect(OIDCIdentity.objects.exists()) is False
@@ -187,7 +187,7 @@ def describe_authentik_login(expect, client):
 
         expect(callback_response.status_code) == 200
         expect(callback_response.content.decode()).contains(
-            "Your Authentik email domain is not configured for TAB."
+            "Your Authentik email domain is not configured."
         )
         expect(User.objects.exists()) is False
         expect(OIDCIdentity.objects.exists()) is False
@@ -211,7 +211,7 @@ def describe_authentik_login(expect, client):
 
         expect(callback_response.status_code) == 200
         expect(callback_response.content.decode()).contains(
-            "Authentik did not verify your email address."
+            "Authentik could not verify your email address."
         )
         expect(User.objects.exists()) is False
         expect(OIDCIdentity.objects.exists()) is False
@@ -259,7 +259,7 @@ def describe_authentik_login(expect, client):
 
         expect(callback_response.status_code) == 200
         expect(callback_response.content.decode()).contains(
-            "TAB could not verify Authentik&#x27;s response."
+            "Unable to verify Authentik&#x27;s response."
         )
         expect(User.objects.exists()) is False
         expect(OIDCIdentity.objects.exists()) is False
@@ -283,7 +283,7 @@ def describe_authentik_login(expect, client):
 
         expect(callback_response.status_code) == 200
         expect(callback_response.content.decode()).contains(
-            "TAB could not verify Authentik&#x27;s response."
+            "Unable to verify Authentik&#x27;s response."
         )
         expect(User.objects.exists()) is False
         expect(OIDCIdentity.objects.exists()) is False
@@ -307,7 +307,7 @@ def describe_authentik_login(expect, client):
 
         expect(callback_response.status_code) == 200
         expect(callback_response.content.decode()).contains(
-            "TAB could not complete sign-in with Authentik."
+            "Unable to complete sign-in with Authentik."
         )
         expect(User.objects.exists()) is False
         expect(OIDCIdentity.objects.exists()) is False
@@ -324,9 +324,7 @@ def describe_authentik_login(expect, client):
         )
 
         expect(callback_response.status_code) == 200
-        expect(callback_response.content.decode()).contains(
-            "Authentik denied access to TAB."
-        )
+        expect(callback_response.content.decode()).contains("Authentik denied access.")
 
     @pytest.mark.django_db
     def it_distinguishes_provider_errors_from_access_denials():
@@ -341,8 +339,8 @@ def describe_authentik_login(expect, client):
 
         expect(callback_response.status_code) == 200
         html = callback_response.content.decode()
-        expect(html).contains("TAB could not complete sign-in with Authentik.")
-        expect(html).does_not_contain("Authentik denied access to TAB.")
+        expect(html).contains("Unable to complete sign-in with Authentik.")
+        expect(html).does_not_contain("Authentik denied access.")
 
     @pytest.mark.django_db
     def it_keeps_tampered_state_as_a_bad_request():
@@ -415,7 +413,7 @@ def describe_authentik_login(expect, client):
 
         expect(callback_response.status_code) == 200
         expect(callback_response.content.decode()).contains(
-            "This Authentik identity conflicts with an existing TAB account."
+            "This Authentik identity conflicts with an existing account."
         )
         expect(client.session.get("_auth_user_id")) is None
         expect(list(OIDCIdentity.objects.values_list("subject", flat=True))) == [
@@ -518,7 +516,7 @@ def describe_authentik_login(expect, client):
         expect(query["prompt"]) == ["none"]
         expect(callback_response.status_code) == 200
         expect(callback_response.content.decode()).contains(
-            "TAB could not complete sign-in with Authentik."
+            "Unable to complete sign-in with Authentik."
         )
         expect(client.session.get("_auth_user_id")) is None
 
