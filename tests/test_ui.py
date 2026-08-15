@@ -38,6 +38,7 @@ def organization():
     return organization
 
 
+@pytest.mark.django_db
 def test_releases(page: Page, live_server, admin_user):
     force_login(page, live_server, admin_user)
     page.goto(f"{live_server.url}{reverse('releases:index')}")

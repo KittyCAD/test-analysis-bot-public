@@ -111,9 +111,9 @@ endif
 
 .PHONY: test-integration
 test-integration: install
-	@ if test -e $(FAILURES); then poetry run pytest tests --last-failed; fi
+	@ if test -e $(FAILURES); then poetry run pytest $(PACKAGES) tests --last-failed; fi
 	@ rm -rf $(FAILURES)
-	poetry run pytest tests $(PYTEST_OPTIONS)
+	poetry run pytest $(PACKAGES) -m django_db tests $(PYTEST_OPTIONS)
 	poetry run coveragespace update integration
 
 .PHONY: test-all

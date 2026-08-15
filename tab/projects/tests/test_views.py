@@ -287,6 +287,7 @@ def describe_projects(expect):
 def describe_tests(expect):
     url = "/projects/foo/bar/tests"
 
+    @pytest.mark.django_db
     def it_redirects_tag_search_to_query_param(admin_client):
         response = admin_client.get(f"{url}?search=foobar tag:@FIXME")
         expect(response.status_code) == 302
@@ -482,16 +483,19 @@ def describe_results(expect, admin_client):
         html = response.content.decode("utf-8")
         expect(html).contains("(1 result)")
 
+    @pytest.mark.django_db
     def it_redirects_platform_search_to_query_param():
         response = admin_client.get(f"{url}?search=foo PLATFORM:Windows bar")
         expect(response.status_code) == 302
         expect(response.url) == f"{url}?search=foo+bar&platform=windows"
 
+    @pytest.mark.django_db
     def it_redirects_tag_search_to_query_param():
         response = admin_client.get(f"{url}?search=foobar tag:@FIXME")
         expect(response.status_code) == 302
         expect(response.url) == f"{url}?search=foobar&tag=fixme"
 
+    @pytest.mark.django_db
     def it_redirects_branch_all_to_default():
         response = admin_client.get(f"{url}?branch=all&show=fails")
         expect(response.status_code) == 302
