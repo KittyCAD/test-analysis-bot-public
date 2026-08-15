@@ -103,7 +103,7 @@ test: test-all ## Run all tests
 .PHONY: test-unit
 test-unit: install
 	@ ( mv $(FAILURES) $(FAILURES).bak || true ) > /dev/null 2>&1
-	poetry run pytest $(PACKAGES) --markers="not django_db" $(PYTEST_OPTIONS)
+	poetry run pytest $(PACKAGES) -m "not django_db" $(PYTEST_OPTIONS)
 	@ ( mv $(FAILURES).bak $(FAILURES) || true ) > /dev/null 2>&1
 ifndef DISABLE_COVERAGE
 	poetry run coveragespace update unit
