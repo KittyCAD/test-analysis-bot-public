@@ -1,31 +1,5 @@
 # Test Analysis Bot (TAB)
 
-## Authentik authentication
-
-TAB accepts OpenID Connect logins from the `test-analysis-bot` provider on the
-Zoo Corp Authentik instance. Configure the Authentik application with:
-
-- provider type: OAuth2/OpenID Connect
-- confidential client and application slug: `test-analysis-bot`
-- per-provider issuer mode and an RS256 signing key
-- subject mode based on an immutable Authentik user ID or UUID, not email or username
-- strict redirect URI: `https://test-analysis-bot.corp.zoo.dev/oidc/callback/`
-- authorization code grant and the `openid` and `email` scopes
-- an email scope mapping that returns `email_verified: true` only for a
-  directory-verified address that the user cannot edit
-- an application binding or policy that limits access to the intended users or groups
-
-Write the generated credentials to the Vault KV v2 secret
-`secret/corp/test-analysis-bot/authentik_oauth` with `client_id` and
-`client_secret` properties. The Kubernetes ExternalSecret maps those properties
-to the environment variables expected by Django. Create this Vault secret before
-deploying the manifest. For credential rotation, wait for the
-`authentik-oauth` ExternalSecret to report `Ready` and verify that the generated
-Secret's resource version changed before restarting the deployment. Existing
-OIDC sessions are silently reauthorized with Authentik every 15 minutes, so
-removing an application binding or disabling an Authentik user takes effect
-within that window.
-
 ## Examples
 
 ### E2E Tests: Playwright + TypeScript + GitHub
