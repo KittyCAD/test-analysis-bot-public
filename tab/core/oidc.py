@@ -24,9 +24,15 @@ class OIDCFailureReason(StrEnum):
     IDENTITY_CONFLICT = "identity_conflict"
     INVALID_RESPONSE = "invalid_response"
     PROVIDER_ERROR = "provider_error"
+    SESSION_EXPIRED = "session_expired"
     SUBJECT_MISSING = "subject_missing"
     UNKNOWN = "unknown"
 
+
+# Authentik returns these when silent re-auth (prompt=none) can't continue.
+_SESSION_REAUTH_ERRORS = frozenset(
+    {"login_required", "interaction_required", "consent_required"}
+)
 
 FAILURE_MESSAGES = {
     OIDCFailureReason.ACCESS_DENIED: "Authentik denied access.",
@@ -47,6 +53,9 @@ FAILURE_MESSAGES = {
     ),
     OIDCFailureReason.PROVIDER_ERROR: (
         "Unable to complete sign-in with Authentik. Try again or use email login."
+    ),
+    OIDCFailureReason.SESSION_EXPIRED: (
+        "Your Authentik session expired. Sign in again to continue."
     ),
     OIDCFailureReason.SUBJECT_MISSING: (
         "Authentik did not provide a stable user identifier."
@@ -89,7 +98,10 @@ class AuthentikOIDCCallbackView(OIDCAuthenticationCallbackView):
             return super().get(request)
         except RequestException:
             LOGGER.exception("Authentik provider request failed during OIDC callback")
-            set_oidc_failure(request, OIDCFailureReason.PROVIDER_ERROR)
+            if request.user.is_authenticated and uses_oidc_backend(request):
+                set_oidc_failure(request, OIDCFailureReason.SESSION_EXPIRED)
+            else:
+                set_oidc_failure(request, OIDCFailureReason.PROVIDER_ERROR)
             return self.login_failure()
         except SuspiciousOperation:
             LOGGER.warning(
@@ -117,8 +129,11 @@ class AuthentikOIDCCallbackView(OIDCAuthenticationCallbackView):
         if isinstance(reason, OIDCFailureReason):
             delattr(self.request, OIDC_FAILURE_REQUEST_ATTRIBUTE)
             return reason
-        if self.request.GET.get("error") == "access_denied":
+        error = self.request.GET.get("error")
+        if error == "access_denied":
             return OIDCFailureReason.ACCESS_DENIED
-        if self.request.GET.get("error"):
+        if error in _SESSION_REAUTH_ERRORS:
+            return OIDCFailureReason.SESSION_EXPIRED
+        if error:
             return OIDCFailureReason.PROVIDER_ERROR
         return OIDCFailureReason.UNKNOWN

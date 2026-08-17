@@ -327,6 +327,22 @@ def describe_authentik_login(expect, client):
         expect(callback_response.content.decode()).contains("Authentik denied access.")
 
     @pytest.mark.django_db
+    def it_explains_expired_authentik_sessions():
+        authorization_response = client.get("/oidc/authenticate/")
+        query = parse_qs(urlparse(authorization_response["Location"]).query)
+
+        callback_response = client.get(
+            "/oidc/callback/",
+            {"error": "login_required", "state": query["state"][0]},
+            follow=True,
+        )
+
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "Your Authentik session expired."
+        )
+
+    @pytest.mark.django_db
     def it_distinguishes_provider_errors_from_access_denials():
         authorization_response = client.get("/oidc/authenticate/")
         query = parse_qs(urlparse(authorization_response["Location"]).query)
@@ -341,6 +357,7 @@ def describe_authentik_login(expect, client):
         html = callback_response.content.decode()
         expect(html).contains("Unable to complete sign-in with Authentik.")
         expect(html).does_not_contain("Authentik denied access.")
+        expect(html).does_not_contain("Your Authentik session expired.")
 
     @pytest.mark.django_db
     def it_keeps_tampered_state_as_a_bad_request():
@@ -516,7 +533,7 @@ def describe_authentik_login(expect, client):
         expect(query["prompt"]) == ["none"]
         expect(callback_response.status_code) == 200
         expect(callback_response.content.decode()).contains(
-            "Unable to complete sign-in with Authentik."
+            "Your Authentik session expired."
         )
         expect(client.session.get("_auth_user_id")) is None
 

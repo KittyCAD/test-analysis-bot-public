@@ -110,9 +110,13 @@ def test_denied_oidc_refresh_logs_the_user_out(expect, client):
     callback_response = client.get(
         "/oidc/callback/",
         {"error": "login_required", "state": state},
+        follow=True,
     )
 
-    expect(callback_response.status_code) == 302
+    expect(callback_response.status_code) == 200
+    expect(callback_response.content.decode()).contains(
+        "Your Authentik session expired."
+    )
     expect(client.session.get("_auth_user_id")) is None
 
 
