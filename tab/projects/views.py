@@ -688,7 +688,18 @@ class ResultDetailsView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class _LeastReliableTestsMixin:
+class DataExportMixin:
+    def _attachment(
+        self, project: Project, body: str, suffix: str = ""
+    ) -> HttpResponse:
+        stem = project.path.replace("/", "-").lower()
+        filename = f"tab-ai-data-{stem}{suffix}.json"
+        response = HttpResponse(body, content_type="application/json; charset=utf-8")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
+class LeastReliableTestsMixin:
     def _least_reliable_tests(self, project: Project) -> list[Test]:
         week_ago = timezone.now() - timedelta(days=7)
         least_reliable = (
@@ -712,7 +723,7 @@ class _LeastReliableTestsMixin:
         return sorted(queryset, key=lambda t: str(t).lower())
 
 
-class MetricsView(_LeastReliableTestsMixin, LoginRequiredMixin, TemplateView):
+class MetricsView(LeastReliableTestsMixin, LoginRequiredMixin, TemplateView):
     template_name = "projects/metrics.html"
 
     def get_context_data(self, **kwargs):
@@ -737,24 +748,21 @@ class MetricsView(_LeastReliableTestsMixin, LoginRequiredMixin, TemplateView):
         return context
 
 
-class MetricsDownloadView(_LeastReliableTestsMixin, LoginRequiredMixin, View):
+class MetricsDownloadView(
+    DataExportMixin, LeastReliableTestsMixin, LoginRequiredMixin, View
+):
 
     def get(self, request, *args, **kwargs):
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
         tests = self._least_reliable_tests(project)
-        body = build_metrics_json(project, tests)
-        stem = project.path.replace("/", "-").lower()
-        filename = f"tab-ai-data-{stem}.json"
-        response = HttpResponse(body, content_type="application/json; charset=utf-8")
-        response["Content-Disposition"] = f'attachment; filename="{filename}"'
-        return response
+        return self._attachment(project, build_metrics_json(project, tests))
 
 
-class MetricsRawView(_LeastReliableTestsMixin, LoginRequiredMixin, TemplateView):
+class MetricsRawView(LeastReliableTestsMixin, LoginRequiredMixin, TemplateView):
 
-    template_name = "projects/metrics_raw.html"
+    template_name = "projects/export.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -764,4 +772,46 @@ class MetricsRawView(_LeastReliableTestsMixin, LoginRequiredMixin, TemplateView)
         context["project"] = project
         tests = self._least_reliable_tests(project)
         context["export_json"] = build_metrics_json(project, tests)
+        context["back_url"] = reverse("projects:metrics", args=[project.path])
+        context["back_label"] = "Back to Metrics"
+        return context
+
+
+class SingleTestMixin:
+    kwargs: dict
+
+    def _project_and_test(self) -> tuple[Project, Test]:
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        test = get_object_or_404(
+            Test.objects.select_related("suite"),
+            project=project,
+            id=self.kwargs["test_id"],
+        )
+        return project, test
+
+
+class TestDownloadView(DataExportMixin, SingleTestMixin, LoginRequiredMixin, View):
+
+    def get(self, request, *args, **kwargs):
+        project, test = self._project_and_test()
+        body = build_metrics_json(project, [test], limit=25)
+        return self._attachment(project, body, suffix=f"-test-{test.pk}")
+
+
+class TestRawView(SingleTestMixin, LoginRequiredMixin, TemplateView):
+
+    template_name = "projects/export.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project, test = self._project_and_test()
+        context["project"] = project
+        context["test"] = test
+        context["export_json"] = build_metrics_json(project, [test], limit=25)
+        context["back_url"] = reverse(
+            "projects:test-results", args=[project.path, test.id]
+        )
+        context["back_label"] = "Back to Test"
         return context

@@ -21,8 +21,6 @@ if TYPE_CHECKING:
     from .models import Project, Result, Test
 
 
-METRICS_JSON_RESULTS_LIMIT = 10
-
 METRICS_JSON_ROOT_META = "The following is exported from the Test Analysis Bot (TAB)."
 METRICS_JSON_TEST_META = "These are the least-reliable and slowest tests in this project. Use this information to triage and suggest fixes. Durations are in seconds."
 METRICS_JSON_RESULT_META = "These are recent results for this test including at least one pass and one fail, if available. Durations are in seconds."
@@ -208,7 +206,7 @@ def build_result_prompt(result: Result) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
-def build_metrics_json(project: Project, tests: list[Test]) -> str:
+def build_metrics_json(project: Project, tests: list[Test], limit: int = 10) -> str:
 
     def interpolated_command(test: Test) -> str | None:
         if not test.suite:
@@ -277,9 +275,9 @@ def build_metrics_json(project: Project, tests: list[Test]) -> str:
         add(pass_result)
         add(fail_result)
 
-        if len(chosen_ids) < METRICS_JSON_RESULTS_LIMIT:
+        if len(chosen_ids) < limit:
             for r in test.results.order_by("-created_at")[:100]:
-                if len(chosen_ids) >= METRICS_JSON_RESULTS_LIMIT:
+                if len(chosen_ids) >= limit:
                     break
                 add(r)
 
@@ -290,7 +288,7 @@ def build_metrics_json(project: Project, tests: list[Test]) -> str:
         by_pk = {r.pk: r for r in rows}
         ordered = [by_pk[pk] for pk in chosen_ids if pk in by_pk]
         ordered.sort(key=lambda r: r.created_at, reverse=True)
-        return ordered[:METRICS_JSON_RESULTS_LIMIT]
+        return ordered[:limit]
 
     now = django_timezone.now()
     if django_timezone.is_aware(now):

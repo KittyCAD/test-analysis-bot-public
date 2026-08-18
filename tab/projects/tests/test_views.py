@@ -300,6 +300,31 @@ def describe_tests(expect):
         def it_renders_the_test_details_page():
             response = admin_client.get(url.format(pk=disabled_test.pk))
             expect(response.status_code) == 200
+            html = response.content.decode("utf-8")
+            expect(html).contains(url.format(pk=disabled_test.pk) + "/export.json")
+
+        @pytest.mark.django_db
+        def it_downloads_ai_data_json():
+            response = admin_client.get(
+                url.format(pk=disabled_test.pk) + "/export.json"
+            )
+            expect(response.status_code) == 200
+            expect(response["Content-Type"]).contains("application/json")
+            expect(response["Content-Disposition"]).contains("attachment")
+            expect(response["Content-Disposition"]).contains(
+                f"tab-ai-data-foo-bar-test-{disabled_test.pk}.json"
+            )
+            body = response.content.decode("utf-8")
+            expect(body).contains('"name": "test"')
+
+        @pytest.mark.django_db
+        def it_renders_ai_data_export_preview():
+            response = admin_client.get(url.format(pk=disabled_test.pk) + "/export")
+            expect(response.status_code) == 200
+            html = response.content.decode("utf-8")
+            expect(html).contains("AI Data")
+            expect(html).contains("Back to Test")
+            expect(html).contains("&quot;name&quot;: &quot;test&quot;")
 
         @pytest.mark.django_db
         def it_updates_override_behavior(mocker, admin_user):
@@ -547,7 +572,7 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
     def it_downloads_ai_data_json():
         project.tests.create(name="my-test", disabled_user=admin_user)
 
-        response = admin_client.get("/projects/foo/bar/metrics/download.json")
+        response = admin_client.get("/projects/foo/bar/metrics/export.json")
         expect(response.status_code) == 200
         expect(response["Content-Type"]).contains("application/json")
         expect(response["Content-Disposition"]).contains("attachment")
@@ -556,11 +581,12 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
         expect(body).contains('"name": "foo › bar"')
 
     @pytest.mark.django_db
-    def it_renders_metrics_raw_preview():
+    def it_renders_metrics_export_preview():
         project.tests.create(name="my-test", disabled_user=admin_user)
 
-        response = admin_client.get("/projects/foo/bar/metrics/raw")
+        response = admin_client.get("/projects/foo/bar/metrics/export")
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
         expect(html).contains("AI Data")
+        expect(html).contains("Back to Metrics")
         expect(html).contains("&quot;name&quot;: &quot;foo › bar&quot;")

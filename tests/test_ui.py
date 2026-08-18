@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 from django.urls import reverse
 
@@ -6,7 +7,8 @@ import pytest
 from playwright.sync_api import Page
 
 from tab.core.models import Organization
-from tab.projects.models import Project
+from tab.projects.enums import Status
+from tab.projects.models import Project, Test
 from tab.releases.enums import Type
 from tab.releases.models import Environment, Release
 
@@ -78,3 +80,35 @@ def test_releases(page: Page, live_server, admin_user):
     assert not re.search(r"[?&]lines=false", page.url)
     assert review.is_checked()
     take_snapshot(page, "releases/lines-on-review-on")
+
+
+@pytest.mark.django_db
+def test_export_button(page: Page, live_server, admin_user):
+    project = Project.objects.get(repository="https://github.com/foo/bar")
+    test = Test.objects.create(project=project, name="flaky-test")
+    test.results.create(
+        branch="main",
+        commit="abc123",
+        status=Status.PASSED,
+        duration=1.0,
+    )
+
+    force_login(page, live_server, admin_user)
+    page.goto(
+        f"{live_server.url}"
+        f"{reverse('projects:test-results', args=[project.path, test.id])}"
+    )
+
+    button = page.locator("#export-button")
+    assert button.is_visible()
+    assert not button.evaluate("el => el.classList.contains('disabled')")
+
+    with page.expect_download() as download_info:
+        button.click()
+
+    download = download_info.value
+    assert download.suggested_filename == f"tab-ai-data-foo-bar-test-{test.pk}.json"
+    path = download.path()
+    assert path is not None
+    body = Path(path).read_text()
+    assert '"name": "flaky-test"' in body

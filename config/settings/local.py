@@ -29,6 +29,8 @@ MIDDLEWARE += [
     "django_browser_reload.middleware.BrowserReloadMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
+if not OIDC_RP_CLIENT_ID:
+    MIDDLEWARE.remove("tab.core.middleware.AuthentikSessionRefresh")
 
 ###############################################################################
 # Logging

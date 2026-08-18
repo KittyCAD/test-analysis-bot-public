@@ -21,6 +21,16 @@ urlpatterns = [
         name="disabled-tests",
     ),
     path(
+        "<path:path>/tests/<int:test_id>/export.json",
+        views.TestDownloadView.as_view(),
+        name="test-export",
+    ),
+    path(
+        "<path:path>/tests/<int:test_id>/export",
+        views.TestRawView.as_view(),
+        name="test-export-page",
+    ),
+    path(
         "<path:path>/tests/<int:test_id>",
         views.TestResultsView.as_view(),
         name="test-results",
@@ -51,14 +61,14 @@ urlpatterns = [
         name="results-regex",
     ),
     path(
-        "<path:path>/metrics/download.json",
+        "<path:path>/metrics/export.json",
         views.MetricsDownloadView.as_view(),
-        name="metrics-download",
+        name="metrics-export",
     ),
     path(
-        "<path:path>/metrics/raw",
+        "<path:path>/metrics/export",
         views.MetricsRawView.as_view(),
-        name="metrics-raw",
+        name="metrics-export-page",
     ),
     path(
         "<path:path>/metrics",
