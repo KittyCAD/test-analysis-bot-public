@@ -185,6 +185,7 @@ test-e2e: install
 	time ./docs/examples/junit/upload-results.sh || true
 	@ echo
 
+	./manage.py syncdata
 	./manage.py cleandata
 	@ echo
 

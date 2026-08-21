@@ -1,16 +1,13 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from django.db.models import Q, Subquery
 from django.utils import timezone
 
 import log
 
-from tab.api.constants import TESTS_CACHE_KEY
 from tab.projects.models import Project, Result, Run, Test
-from tab.releases.constants import RESULTS_TIMEOUT
 from tab.releases.enums import Type
 from tab.releases.models import Environment, Release
 
@@ -19,10 +16,9 @@ TIME_BUDGET = timedelta(minutes=45)
 US_EAST_TZ = ZoneInfo("America/New_York")
 
 
-def is_weekend(moment: datetime | None = None) -> bool:
-    """Saturday or Sunday in US Eastern time."""
+def is_weekday(moment: datetime | None = None) -> bool:
     now = (moment or timezone.now()).astimezone(US_EAST_TZ)
-    return now.weekday() >= 5
+    return now.weekday() < 5
 
 
 class Command(BaseCommand):
@@ -41,31 +37,15 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        if is_weekday() and not options["force"]:
+            log.info("Skipping stale data cleanup until the weekend")
+            return
+
         dry_run = options["dry_run"]
         start = timezone.now()
         self._time_budget_warned = False
+        self._time_budget_deadline = start + TIME_BUDGET
         log.info(f"Started job at {start.strftime('%Y-%m-%d %H:%M:%S')}")
-        self.finalize_releases()
-        self.fetch_active_branches()
-        self.update_bulk_tests()
-        if is_weekend() or options["force"]:
-            self.delete_stale_data(dry_run, start + TIME_BUDGET)
-        else:
-            log.info("Skipping stale data cleanup until the weekend")
-        delta = timezone.now() - start
-        log.info(f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}")
-
-    @property
-    def time_budget_remaining(self) -> bool:
-        if timezone.now() < self._time_budget_deadline:
-            return True
-        if not self._time_budget_warned:
-            log.warning("Time budget exhausted, deferring remaining cleanup")
-            self._time_budget_warned = True
-        return False
-
-    def delete_stale_data(self, dry_run: bool, deadline: datetime):
-        self._time_budget_deadline = deadline
         self.delete_stale_environments()
         self.delete_stale_releases()
         for project in Project.objects.all():
@@ -78,6 +58,34 @@ class Command(BaseCommand):
             if count:
                 project.cleaned_at = timezone.now()
                 project.save()
+        delta = timezone.now() - start
+        log.info(f"Finished job after {delta.seconds // 60}:{delta.seconds % 60:02d}")
+
+    @property
+    def time_budget_remaining(self) -> bool:
+        if timezone.now() < self._time_budget_deadline:
+            return True
+        if not self._time_budget_warned:
+            log.warning("Time budget exhausted, deferring remaining cleanup")
+            self._time_budget_warned = True
+        return False
+
+    def delete_stale_environments(self):
+        cutoff = timezone.now() - timedelta(weeks=13)
+        environments = Environment.objects.filter(
+            name=Type.REVIEW, created_at__lt=cutoff
+        ).exclude(
+            # Preserve example environments with placeholders for identifiers
+            placeholder=True,
+        )
+        for environment in environments:
+            environment.delete()
+
+    def delete_stale_releases(self):
+        cutoff = timezone.now() - timedelta(weeks=26)
+        releases = Release.objects.filter(created_at__lt=cutoff)
+        for release in releases:
+            release.delete()
 
     def delete_stale_tests(self, project: Project, dry_run: bool) -> int:
         log.info(f"Cleaning up stale tests: {project}")
@@ -175,51 +183,3 @@ class Command(BaseCommand):
 
         log.info(f"Deleted {deleted} total results: {project}")
         return deleted
-
-    def update_bulk_tests(self):
-        if test_ids := cache.get(TESTS_CACHE_KEY):
-            cache.delete(TESTS_CACHE_KEY)
-            tests = Test.objects.filter(id__in=test_ids)
-            log.info(f"Updating tests: {tests.count()} (multiple projects)")
-            for test in tests:
-                if test.update():
-                    log.info(f"Updated test: {test}")
-                test.save()
-                for result in (
-                    test.results.filter(
-                        created_at__gte=timezone.now() - timedelta(hours=1),
-                        final=True,
-                    )
-                    .order_by("commit", "target", "platform", "branch", "-id")
-                    .distinct("commit", "target", "platform", "branch")
-                ):
-                    result.finalize()
-
-    def finalize_releases(self):
-        cutoff = timezone.now() - RESULTS_TIMEOUT
-        releases = Release.objects.filter(
-            created_at__lt=cutoff, finalized_at__isnull=True
-        )
-        for release in releases:
-            release.finalize()
-
-    def delete_stale_environments(self):
-        cutoff = timezone.now() - timedelta(weeks=13)
-        environments = Environment.objects.filter(
-            name=Type.REVIEW, created_at__lt=cutoff
-        ).exclude(
-            # Preserve example environments with placeholders for identifiers
-            placeholder=True,
-        )
-        for environment in environments:
-            environment.delete()
-
-    def delete_stale_releases(self):
-        cutoff = timezone.now() - timedelta(weeks=26)
-        releases = Release.objects.filter(created_at__lt=cutoff)
-        for release in releases:
-            release.delete()
-
-    def fetch_active_branches(self):
-        for project in Project.objects.all():
-            Result.objects.get_active_branches(project)

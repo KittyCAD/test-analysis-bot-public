@@ -1,15 +1,13 @@
 from datetime import datetime, timedelta
-from unittest.mock import ANY, PropertyMock
+from unittest.mock import PropertyMock
 from zoneinfo import ZoneInfo
 
-from django.core.cache import cache
 from django.utils import timezone
 
 import pytest
 
-from tab.api.constants import TESTS_CACHE_KEY
-from tab.core.management.commands.cleandata import Command, is_weekend
-from tab.projects.enums import Status, Target
+from tab.core.management.commands.cleandata import Command, is_weekday
+from tab.projects.enums import Status
 from tab.projects.models import Project, Result, Test
 
 ET = ZoneInfo("America/New_York")
@@ -22,28 +20,25 @@ def _command_with_budget() -> Command:
     return command
 
 
-def describe_is_weekend(expect):
-    def it_is_false_on_weekdays():
-        expect(is_weekend(datetime(2026, 8, 7, 10, tzinfo=ET))) is False  # Friday
+def describe_is_weekday(expect):
+    def it_is_true_on_weekdays():
+        expect(is_weekday(datetime(2026, 8, 7, 10, tzinfo=ET))) is True  # Friday
 
-    def it_is_true_on_saturday():
-        expect(is_weekend(datetime(2026, 8, 8, 10, tzinfo=ET))) is True
+    def it_is_false_on_saturday():
+        expect(is_weekday(datetime(2026, 8, 8, 10, tzinfo=ET))) is False
 
-    def it_is_true_on_sunday():
-        expect(is_weekend(datetime(2026, 8, 9, 10, tzinfo=ET))) is True
+    def it_is_false_on_sunday():
+        expect(is_weekday(datetime(2026, 8, 9, 10, tzinfo=ET))) is False
 
 
 @pytest.mark.django_db
 def describe_handle_weekend_cleanup(expect):
     def it_skips_stale_cleanup_on_weekdays(mocker):
         mocker.patch(
-            "tab.core.management.commands.cleandata.is_weekend",
-            return_value=False,
+            "tab.core.management.commands.cleandata.is_weekday",
+            return_value=True,
         )
-        delete_stale = mocker.patch.object(Command, "delete_stale_data")
-        mocker.patch.object(Command, "finalize_releases")
-        mocker.patch.object(Command, "fetch_active_branches")
-        mocker.patch.object(Command, "update_bulk_tests")
+        delete_stale = mocker.patch.object(Command, "delete_stale_environments")
 
         Command().handle(dry_run=False, force=False)
 
@@ -51,31 +46,27 @@ def describe_handle_weekend_cleanup(expect):
 
     def it_runs_stale_cleanup_on_weekends(mocker):
         mocker.patch(
-            "tab.core.management.commands.cleandata.is_weekend",
-            return_value=True,
+            "tab.core.management.commands.cleandata.is_weekday",
+            return_value=False,
         )
-        delete_stale = mocker.patch.object(Command, "delete_stale_data")
-        mocker.patch.object(Command, "finalize_releases")
-        mocker.patch.object(Command, "fetch_active_branches")
-        mocker.patch.object(Command, "update_bulk_tests")
+        delete_stale = mocker.patch.object(Command, "delete_stale_environments")
+        mocker.patch.object(Command, "delete_stale_releases")
 
         Command().handle(dry_run=False, force=False)
 
-        delete_stale.assert_called_once_with(False, ANY)
+        expect(delete_stale.called) is True
 
     def it_runs_stale_cleanup_with_force_on_weekdays(mocker):
         mocker.patch(
-            "tab.core.management.commands.cleandata.is_weekend",
-            return_value=False,
+            "tab.core.management.commands.cleandata.is_weekday",
+            return_value=True,
         )
-        delete_stale = mocker.patch.object(Command, "delete_stale_data")
-        mocker.patch.object(Command, "finalize_releases")
-        mocker.patch.object(Command, "fetch_active_branches")
-        mocker.patch.object(Command, "update_bulk_tests")
+        delete_stale = mocker.patch.object(Command, "delete_stale_environments")
+        mocker.patch.object(Command, "delete_stale_releases")
 
         Command().handle(dry_run=False, force=True)
 
-        delete_stale.assert_called_once_with(False, ANY)
+        expect(delete_stale.called) is True
 
 
 @pytest.mark.django_db
@@ -170,124 +161,3 @@ def describe_delete_stale_results(expect):
 
         expect(deleted) == 1
         expect(test.results.count()) == 2
-
-
-@pytest.mark.django_db
-def describe_update_bulk_tests(expect):
-    def it_finalizes_recent_bulk_created_duplicates():
-        project = Project.objects.create(repository="https://github.com/foo/bar")
-        test = project.tests.create(name="my-test")
-        now = timezone.now()
-        Result.objects.bulk_create(
-            [
-                Result(
-                    test=test,
-                    status=Status.PASSED,
-                    branch="main",
-                    commit="a1",
-                    final=True,
-                    created_at=now,
-                ),
-                Result(
-                    test=test,
-                    status=Status.PASSED,
-                    branch="main",
-                    commit="a1",
-                    final=True,
-                    created_at=now,
-                ),
-            ]
-        )
-        cache.set(TESTS_CACHE_KEY, {test.id})
-
-        Command().update_bulk_tests()
-
-        expect(test.results.filter(final=True).count()) == 1
-
-    def it_finalizes_each_target_separately():
-        project = Project.objects.create(repository="https://github.com/foo/bar")
-        test = project.tests.create(name="my-test")
-        now = timezone.now()
-        Result.objects.bulk_create(
-            [
-                Result(
-                    test=test,
-                    status=Status.PASSED,
-                    branch="main",
-                    commit="a1",
-                    target=Target.WEB.value,
-                    final=True,
-                    created_at=now,
-                ),
-                Result(
-                    test=test,
-                    status=Status.PASSED,
-                    branch="main",
-                    commit="a1",
-                    target=Target.WEB.value,
-                    final=True,
-                    created_at=now,
-                ),
-                Result(
-                    test=test,
-                    status=Status.PASSED,
-                    branch="main",
-                    commit="a1",
-                    target=Target.DESKTOP.value,
-                    final=True,
-                    created_at=now,
-                ),
-                Result(
-                    test=test,
-                    status=Status.PASSED,
-                    branch="main",
-                    commit="a1",
-                    target=Target.DESKTOP.value,
-                    final=True,
-                    created_at=now,
-                ),
-            ]
-        )
-        cache.set(TESTS_CACHE_KEY, {test.id})
-
-        Command().update_bulk_tests()
-
-        expect(test.results.filter(final=True).count()) == 2
-
-    def it_ignores_non_final_results_when_selecting():
-        project = Project.objects.create(repository="https://github.com/foo/bar")
-        test = project.tests.create(name="my-test")
-        now = timezone.now()
-        Result.objects.bulk_create(
-            [
-                Result(
-                    test=test,
-                    status=Status.FAILED,
-                    branch="main",
-                    commit="a1",
-                    final=False,
-                    created_at=now,
-                ),
-                Result(
-                    test=test,
-                    status=Status.PASSED,
-                    branch="main",
-                    commit="a1",
-                    final=True,
-                    created_at=now - timedelta(seconds=1),
-                ),
-                Result(
-                    test=test,
-                    status=Status.PASSED,
-                    branch="main",
-                    commit="a1",
-                    final=True,
-                    created_at=now - timedelta(seconds=1),
-                ),
-            ]
-        )
-        cache.set(TESTS_CACHE_KEY, {test.id})
-
-        Command().update_bulk_tests()
-
-        expect(test.results.filter(final=True).count()) == 1
