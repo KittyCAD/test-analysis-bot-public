@@ -1,18 +1,18 @@
-import logging
+import time
 from enum import StrEnum
 
 from django.contrib import messages
 from django.contrib.auth import BACKEND_SESSION_KEY
 from django.contrib.auth import logout as auth_logout
 from django.core.exceptions import SuspiciousOperation
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.utils.module_loading import import_string
 
+import log
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend
 from mozilla_django_oidc.views import OIDCAuthenticationCallbackView
 from requests.exceptions import RequestException
 
-LOGGER = logging.getLogger(__name__)
 OIDC_FAILURE_REQUEST_ATTRIBUTE = "_oidc_failure_reason"
 
 
@@ -90,30 +90,29 @@ class AuthentikOIDCCallbackView(OIDCAuthenticationCallbackView):
             or not isinstance(state, str)
             or state not in known_states
         ):
-            raise SuspiciousOperation(
-                "OIDC callback state not found in session `oidc_states`!"
-            )
+            log.warning("OIDC callback state not found in session `oidc_states`")
+            if self._has_unexpired_oidc_session(request):
+                return HttpResponseRedirect(self.success_url)
+            set_oidc_failure(request, OIDCFailureReason.SESSION_EXPIRED)
+            return self.login_failure()
 
         try:
             return super().get(request)
         except RequestException:
-            LOGGER.exception("Authentik provider request failed during OIDC callback")
+            log.exception("Authentik provider request failed during OIDC callback")
             if request.user.is_authenticated and uses_oidc_backend(request):
                 set_oidc_failure(request, OIDCFailureReason.SESSION_EXPIRED)
             else:
                 set_oidc_failure(request, OIDCFailureReason.PROVIDER_ERROR)
             return self.login_failure()
         except SuspiciousOperation:
-            LOGGER.warning(
-                "Authentik returned an invalid OIDC response",
-                exc_info=True,
-            )
+            log.warning("Authentik returned an invalid OIDC response")
             set_oidc_failure(request, OIDCFailureReason.INVALID_RESPONSE)
             return self.login_failure()
 
     def login_failure(self) -> HttpResponse:
         reason = self._failure_reason()
-        LOGGER.warning("OIDC authentication failed: %s", reason.value)
+        log.warning(f"OIDC authentication failed: {reason.value}")
         if self.request.user.is_authenticated and uses_oidc_backend(self.request):
             auth_logout(self.request)
         messages.error(self.request, FAILURE_MESSAGES[reason])
@@ -123,6 +122,12 @@ class AuthentikOIDCCallbackView(OIDCAuthenticationCallbackView):
         if hasattr(self.request, OIDC_FAILURE_REQUEST_ATTRIBUTE):
             delattr(self.request, OIDC_FAILURE_REQUEST_ATTRIBUTE)
         return super().login_success()
+
+    def _has_unexpired_oidc_session(self, request: HttpRequest) -> bool:
+        if not request.user.is_authenticated or not uses_oidc_backend(request):
+            return False
+        expiration = request.session.get("oidc_id_token_expiration", 0)
+        return isinstance(expiration, (int, float)) and expiration > time.time()
 
     def _failure_reason(self) -> OIDCFailureReason:
         reason = getattr(self.request, OIDC_FAILURE_REQUEST_ATTRIBUTE, None)

@@ -360,15 +360,58 @@ def describe_authentik_login(expect, client):
         expect(html).does_not_contain("Your Authentik session expired.")
 
     @pytest.mark.django_db
-    def it_keeps_tampered_state_as_a_bad_request():
+    def it_sends_unknown_callback_state_to_login():
         client.get("/oidc/authenticate/")
 
         callback_response = client.get(
             "/oidc/callback/",
             {"code": "valid-code", "state": "tampered"},
+            follow=True,
         )
 
-        expect(callback_response.status_code) == 400
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "Your Authentik session expired."
+        )
+        expect(client.session.get("_auth_user_id")) is None
+
+    @pytest.mark.django_db
+    def it_ignores_a_stale_callback_when_the_oidc_session_is_still_valid():
+        user = User.objects.create_user(username="person", email="person@example.com")
+        client.force_login(user, backend="tab.core.auth.AuthentikOIDCBackend")
+        session = client.session
+        session["oidc_id_token_expiration"] = time.time() + 60
+        session["oidc_login_next"] = "/projects/"
+        session.save()
+
+        callback_response = client.get(
+            "/oidc/callback/",
+            {"code": "valid-code", "state": "stale"},
+        )
+
+        expect(callback_response.status_code) == 302
+        expect(callback_response["Location"]) == "/projects/"
+        expect(client.session["_auth_user_id"]) == str(user.id)
+
+    @pytest.mark.django_db
+    def it_sends_an_expired_oidc_session_to_login_when_callback_state_is_missing():
+        user = User.objects.create_user(username="person", email="person@example.com")
+        client.force_login(user, backend="tab.core.auth.AuthentikOIDCBackend")
+        session = client.session
+        session["oidc_id_token_expiration"] = 0
+        session.save()
+
+        callback_response = client.get(
+            "/oidc/callback/",
+            {"code": "valid-code", "state": "stale"},
+            follow=True,
+        )
+
+        expect(callback_response.status_code) == 200
+        expect(callback_response.content.decode()).contains(
+            "Your Authentik session expired."
+        )
+        expect(client.session.get("_auth_user_id")) is None
 
     @pytest.mark.django_db
     def it_rejects_a_callback_without_a_result_and_preserves_the_session():
@@ -399,7 +442,8 @@ def describe_authentik_login(expect, client):
 
         callback_response = client.get("/oidc/callback/", callback_params)
 
-        expect(callback_response.status_code) == 400
+        expect(callback_response.status_code) == 302
+        expect(callback_response["Location"]) == "/accounts/login/"
         expect(client.session["_auth_user_id"]) == str(user.id)
 
     @pytest.mark.django_db
