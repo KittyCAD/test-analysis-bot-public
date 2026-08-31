@@ -739,18 +739,18 @@ django = ">=4.2"
 
 [[package]]
 name = "django-ninja"
-version = "1.6.2"
+version = "1.6.3"
 description = "Django Ninja - Fast Django REST framework"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "django_ninja-1.6.2-py3-none-any.whl", hash = "sha256:20095f5900bada22ea00cf1a58af50bdb285b2354c61a9d9b47d0dc89ac462d6"},
-    {file = "django_ninja-1.6.2.tar.gz", hash = "sha256:d56ae5aa4791068ef4ac9a66cfdf2fc11f507413ded35abb79c51d0d52ad6412"},
+    {file = "django_ninja-1.6.3-py3-none-any.whl", hash = "sha256:e83ba573e0f17b1d2fddca078613e2aaad512acb3d3c6bc9a5f1a0d9257dd70c"},
+    {file = "django_ninja-1.6.3.tar.gz", hash = "sha256:a65a5016bbf044702fb1f1ff702f96dc3c806fbd7c918290512659531873039f"},
 ]
 
 [package.dependencies]
-Django = ">=3.1,<6.1"
+Django = ">=3.1"
 pydantic = ">=2.0,<3.0.0"
 
 [package.extras]
@@ -2741,4 +2741,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.14"
-content-hash = "29628f374fbb1b902068816bb54dcdc2050d3a09e12953e32e49a4d1e44c5dec"
+content-hash = "162543d6e0bcf59281d1523e2e71f7d85aa7443b1239308ddc93f1f8d4a4efee"
