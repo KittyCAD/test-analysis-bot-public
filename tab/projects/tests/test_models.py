@@ -142,6 +142,8 @@ def describe_test(expect):
                 name="my-test",
                 disabled_at=timezone.now() - RESTORATION_THRESHOLD,
                 disabled_user=admin_user,
+                disabled_reason="Waiting on infra.",
+                disabled_tracker="https://example.com/ticket/1",
                 failure_rate=0.25,
             )
             expect(bool(test.disabled_at)) == True
@@ -149,6 +151,8 @@ def describe_test(expect):
             test.failure_rate = 0
             test.save()
             expect(bool(test.disabled_at)) == False
+            expect(test.disabled_reason) == ""
+            expect(test.disabled_tracker) == None
             expect(test.disabled_user) == admin_user
 
         @pytest.mark.django_db

@@ -604,6 +604,8 @@ class Test(models.Model):
         ):
             log.info(f"Restoring test based on failure rate: {self}")
             self.disabled_at = None
+            self.disabled_reason = ""
+            self.disabled_tracker = None
             # TODO: Find a way to avoid this circular import
             from tab.metrics.models import Alert
 
