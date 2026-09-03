@@ -705,7 +705,7 @@ class LeastReliableTestsMixin:
         least_reliable = (
             Q(failure_rate__gt=0.25, block_rate__gt=0)
             | Q(block_rate__gt=0.05, failure_rate__gt=0.20)
-            | Q(failure_rate__gt=0.50)
+            | Q(failure_rate__gt=0.33)
             | Q(average_duration__gt=90)
         )
         queryset = (
