@@ -703,7 +703,7 @@ class LeastReliableTestsMixin:
     def _least_reliable_tests(self, project: Project) -> list[Test]:
         week_ago = timezone.now() - timedelta(days=7)
         least_reliable = (
-            Q(failure_rate__gt=0.30, block_rate__gt=0)
+            Q(failure_rate__gt=0.25, block_rate__gt=0)
             | Q(block_rate__gt=0.05, failure_rate__gt=0.20)
             | Q(failure_rate__gt=0.50)
             | Q(average_duration__gt=90)
