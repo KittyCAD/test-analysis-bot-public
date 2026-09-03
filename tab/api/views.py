@@ -186,7 +186,6 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
             step="start",
             metadata=metadata,
         )
-        deferred = content.count("</testcase>") > 300
         results = parse_junit_xml(
             content,
             project,
@@ -194,7 +193,6 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
             payload.branch,
             payload.commit,
             metadata,
-            deferred=deferred,
         )
         Environment.objects.process(project, payload.url, results)
         Run.objects.track_step(

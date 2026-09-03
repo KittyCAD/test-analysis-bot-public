@@ -1,9 +1,13 @@
 import json
 from pathlib import Path
 
+from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
+
 import log
 import pytest
 
+from tab.api.constants import TESTS_CACHE_KEY
 from tab.core.models import Organization
 from tab.projects.models import Result, Test
 
@@ -151,6 +155,21 @@ def describe_bulk_results(expect, client):
         expect(result.branch) == "main"
         expect(result.commit) == "abc123"
         expect(result.metadata) == {"EXTRA": "foobar", "suite": "unit"}
+
+    @pytest.mark.django_db
+    def it_defers_large_reports_with_self_closing_testcases(payload):
+        cache.delete(TESTS_CACHE_KEY)
+        testcases = "".join(f'<testcase name="test-{index}" />' for index in range(301))
+        content = f"<testsuites><testsuite>{testcases}</testsuite></testsuites>"
+        payload["tests"] = SimpleUploadedFile("junit.xml", content.encode())
+
+        response = post_form(client, url, payload)
+
+        expect(response.status_code) == 200
+        expect(response.json()["tests"]) == 301
+        expect(cache.get(TESTS_CACHE_KEY)) == set(
+            Test.objects.values_list("id", flat=True)
+        )
 
     @pytest.mark.django_db
     def it_requires_tests_as_file_upload(payload):
