@@ -335,12 +335,14 @@ def describe_result(expect):
                 local_command='make test-e2e-desktop E2E_GREP="my-suite.*{test.name}"',
             )
             disabled_user = User(username="tab_user", email="user@example.com")
+            maintainer = User(username="maintainer", email="maintainer@example.com")
             test = Test(
                 project=project,
                 suite=suite,
                 name="my-test",
                 original_branch="my-branch",
                 original_commit="abc123",
+                maintainer=maintainer,
                 failure_rate=0.099,
                 block_rate=0.088,
                 average_duration=4.2,

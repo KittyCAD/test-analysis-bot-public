@@ -288,6 +288,14 @@ class Test(models.Model):
         help_text="Hash of the commit that originally added this test",
     )
     original_metadata = models.JSONField(default=dict, blank=True)
+    maintainer = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="maintained_tests",
+        help_text="User responsible for maintaining this test",
+    )
 
     disabled_at = models.DateTimeField(
         null=True,

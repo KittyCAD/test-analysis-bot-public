@@ -18,6 +18,7 @@ Use this information to:
 - Date created: 2024-01-01T12:00:00+00:00
 - Added in branch: my-branch
 - Added in commit: abc123
+- Maintainer: maintainer@example.com
 
 ## Historical signals
 

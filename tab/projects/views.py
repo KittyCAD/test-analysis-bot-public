@@ -703,7 +703,7 @@ class LeastReliableTestsMixin:
     def _least_reliable_tests(self, project: Project) -> list[Test]:
         week_ago = timezone.now() - timedelta(days=7)
         least_reliable = (
-            Q(failure_rate__gt=0.40, block_rate__gt=0)
+            Q(failure_rate__gt=0.30, block_rate__gt=0)
             | Q(block_rate__gt=0.05, failure_rate__gt=0.20)
             | Q(failure_rate__gt=0.50)
             | Q(average_duration__gt=90)
@@ -717,10 +717,29 @@ class LeastReliableTestsMixin:
                 disabled_at__isnull=True,
             )
             .exclude(last_result__status=Status.DISABLED)
-            .select_related("suite")
+            .select_related("maintainer", "suite")
             .order_by("-failure_rate", "-average_duration")[:10]
         )
         return sorted(queryset, key=lambda t: str(t).lower())
+
+
+class TestMaintainerView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        project = get_object_or_404(
+            Project, repository__iendswith=self.kwargs["path"].strip("/")
+        )
+        test = get_object_or_404(Test, pk=self.kwargs["test_id"], project=project)
+
+        action = request.POST.get("action")
+        if action == "assign":
+            test.maintainer = request.user
+        elif action == "clear":
+            test.maintainer = None
+        else:
+            return HttpResponse("Invalid maintainer action", status=400)
+
+        test.save(update_fields=["maintainer", "updated_at"])
+        return redirect("projects:metrics", path=project.path)
 
 
 class MetricsView(LeastReliableTestsMixin, LoginRequiredMixin, TemplateView):
@@ -785,7 +804,7 @@ class SingleTestMixin:
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
         test = get_object_or_404(
-            Test.objects.select_related("suite"),
+            Test.objects.select_related("suite", "maintainer"),
             project=project,
             id=self.kwargs["test_id"],
         )

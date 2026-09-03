@@ -251,6 +251,20 @@ def describe_build_metrics_json(expect, admin_user, project: Project):
         expect(row["original_branch"]) == None
         expect(row["original_commit"]) == None
 
+    @pytest.mark.django_db
+    def it_includes_maintainer():
+        test = project.tests.create(
+            name="my-test", disabled_user=admin_user, maintainer=admin_user
+        )
+        payload = json.loads(build_metrics_json(project, [test]))
+        expect(payload["tests"][1]["maintainer"]) == admin_user.email
+
+    @pytest.mark.django_db
+    def it_serializes_empty_maintainer_as_null():
+        test = project.tests.create(name="my-test", disabled_user=admin_user)
+        payload = json.loads(build_metrics_json(project, [test]))
+        expect(payload["tests"][1]["maintainer"]) == None
+
 
 def describe_projects_index(expect, admin_client, organization: Organization):
     index_url = "/projects/"
@@ -567,6 +581,32 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
         expect(html).contains(admin_user.email)
+
+    @pytest.mark.django_db
+    def it_assigns_the_current_user_as_maintainer():
+        test = project.tests.create(name="flaky-test")
+
+        response = admin_client.post(
+            f"/projects/foo/bar/metrics/tests/{test.pk}/maintainer",
+            {"action": "assign"},
+        )
+
+        expect(response.status_code) == 302
+        test.refresh_from_db()
+        expect(test.maintainer) == admin_user
+
+    @pytest.mark.django_db
+    def it_clears_the_maintainer():
+        test = project.tests.create(name="flaky-test", maintainer=admin_user)
+
+        response = admin_client.post(
+            f"/projects/foo/bar/metrics/tests/{test.pk}/maintainer",
+            {"action": "clear"},
+        )
+
+        expect(response.status_code) == 302
+        test.refresh_from_db()
+        expect(test.maintainer) == None
 
     @pytest.mark.django_db
     def it_downloads_ai_data_json():

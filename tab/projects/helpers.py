@@ -122,6 +122,8 @@ def build_result_prompt(result: Result) -> str:
     )
     lines.append(f"- Added in branch: {test.original_branch or '—'}")
     lines.append(f"- Added in commit: {test.original_commit or '—'}")
+    maintainer_email = test.maintainer.email if test.maintainer else None
+    lines.append(f"- Maintainer: {maintainer_email or '—'}")
     lines.append("")
     lines.append("## Historical signals")
     lines.append("")
@@ -144,12 +146,8 @@ def build_result_prompt(result: Result) -> str:
         else:
             lines.append("- Reason: —")
         lines.append(f"- Tracker: {test.disabled_tracker or '—'}")
-        updated_by = "—"
-        if user := getattr(test, "disabled_user", None):
-            updated_by = (
-                user.email if getattr(user, "email", None) else user.get_username()
-            )
-        lines.append(f"- Last updated by: {updated_by}")
+        disabled_by = test.disabled_user.email if test.disabled_user else None
+        lines.append(f"- Last updated by: {disabled_by or '—'}")
         lines.append("")
         lines.append(
             "_TAB has a feature to suppress failures in known broken or flaky tests._"
@@ -314,6 +312,7 @@ def build_metrics_json(project: Project, tests: list[Test], limit: int = 10) -> 
                     "suite": test.suite.name if test.suite else None,
                     "original_branch": test.original_branch or None,
                     "original_commit": test.original_commit or None,
+                    "maintainer": test.maintainer.email if test.maintainer else None,
                     "markers": test.markers,
                     "command": interpolated_command(test),
                     "failure_rate": (

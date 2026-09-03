@@ -71,6 +71,11 @@ urlpatterns = [
         name="metrics-export-page",
     ),
     path(
+        "<path:path>/metrics/tests/<int:test_id>/maintainer",
+        views.TestMaintainerView.as_view(),
+        name="test-maintainer",
+    ),
+    path(
         "<path:path>/metrics",
         views.MetricsView.as_view(),
         name="metrics",
