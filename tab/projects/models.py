@@ -26,7 +26,7 @@ from .constants import (
     RESTORATION_THRESHOLD,
     get_default_branches,
 )
-from .enums import Platform, Status, Target
+from .enums import Browser, Platform, Status, Target
 from .helpers import build_result_prompt, humanize_duration, rerun_failed_jobs
 
 
@@ -656,6 +656,7 @@ class Result(models.Model):
     platform = models.CharField(
         max_length=100, null=True, blank=True, choices=Platform.choices, db_index=True
     )
+    browser = models.CharField(max_length=100, null=True, blank=True, db_index=True)
     final = models.BooleanField(
         default=True, help_text="Indicates this was the final retry", db_index=True
     )
@@ -904,6 +905,8 @@ class Result(models.Model):
             self.target = Target.normalize(self.target)
         if self.platform:
             self.platform = Platform.normalize(self.platform)
+        if self.browser:
+            self.browser = Browser.normalize(self.browser)
         self.status = Status.normalize(
             self.status,
             markers=self.markers,
@@ -920,6 +923,7 @@ class Result(models.Model):
                 commit=self.commit,
                 target=self.target,
                 platform=self.platform,
+                browser=self.browser,
                 final=True,
                 id__lt=self.id,
             ).update(final=False)

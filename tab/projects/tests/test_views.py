@@ -515,12 +515,20 @@ def describe_results(expect, admin_client):
             commit="abc123",
             status=Status.PASSED,
             duration=1.0,
+            target="desktop",
+            platform="linux",
+            browser="chromium",
         )
 
         response = admin_client.get(url)
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
         expect(html).contains("(1 result)")
+        expect(html).contains("Environment")
+        expect(html).contains("Desktop, Linux, Chromium")
+        expect(html).excludes(">Target</th>")
+        expect(html).excludes(">Platform</th>")
+        expect(html).excludes(">Browser</th>")
 
     @pytest.mark.django_db
     def it_redirects_platform_search_to_query_param():

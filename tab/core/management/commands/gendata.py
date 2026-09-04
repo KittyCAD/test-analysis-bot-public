@@ -169,6 +169,7 @@ class Command(BaseCommand):
         statuses = [Status.PASSED, Status.FAILED]
         targets = [None, Target.WEB, Target.DESKTOP]
         platforms = [None, Platform.MACOS, Platform.WINDOWS, Platform.LINUX]
+        browsers = [None, "Chromium", "Firefox", "WebKit", "Edge"]
         sample_messages = [
             "",
             "AssertionError: expected 42",
@@ -195,6 +196,7 @@ class Command(BaseCommand):
                     message=random.choice(sample_messages),
                     target=random.choice(targets),
                     platform=random.choice(platforms),
+                    browser=random.choice(browsers),
                     created_at=created_at,
                 )
             )

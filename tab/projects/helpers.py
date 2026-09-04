@@ -170,6 +170,7 @@ def build_result_prompt(result: Result) -> str:
     lines.append(
         f"- Platform: {Platform(result.platform).label if result.platform else '—'}"
     )
+    lines.append(f"- Browser: {result.browser or '—'}")
     lines.append(f"- New failure: {str(result.new_failure).lower()}")
     lines.append("")
     lines.append(
@@ -243,6 +244,7 @@ def build_metrics_json(project: Project, tests: list[Test], limit: int = 10) -> 
             "commit": r.commit or None,
             "target": r.target or None,
             "platform": r.platform or None,
+            "browser": r.browser or None,
             "status": r.status,
             "setup_duration": setup_duration(r),
             "test_duration": r.duration,

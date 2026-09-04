@@ -35,6 +35,7 @@ class ResultRequest(ModelSchema):
             "message",
             "target",
             "platform",
+            "browser",
         ]
 
     @classmethod

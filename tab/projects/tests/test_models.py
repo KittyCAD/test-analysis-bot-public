@@ -363,6 +363,7 @@ def describe_result(expect):
                 duration=12.3,
                 target=Target.DESKTOP.value,
                 platform=Platform.MACOS.value,
+                browser="Chromium",
                 metadata={
                     "logs": logs,
                     "GITHUB_RUN_ID": "99",
@@ -507,6 +508,29 @@ def describe_result(expect):
                 branch="main",
                 commit="a1",
                 target=Target.DESKTOP.value,
+                final=True,
+            )
+
+            expect(test.results.filter(final=True).count()) == 2
+
+        @pytest.mark.django_db
+        def it_keeps_separate_results_per_browser():
+            project = Project.objects.create(repository="https://github.com/foo/bar")
+            test = project.tests.create(name="my-test")
+            Result.objects.create(
+                test=test,
+                status=Status.PASSED,
+                branch="main",
+                commit="a1",
+                browser="chromium",
+                final=True,
+            )
+            Result.objects.create(
+                test=test,
+                status=Status.PASSED,
+                branch="main",
+                commit="a1",
+                browser="firefox",
                 final=True,
             )
 
