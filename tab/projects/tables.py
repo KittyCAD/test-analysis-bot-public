@@ -405,7 +405,7 @@ class ResultTable(TestResultTable):
         accessor="target",
         order_by=("target", "platform", "browser"),
         attrs={
-            "td": {"class": "text-center text-nowrap"},
+            "td": {"class": "text-center"},
             "th": {
                 "class": "text-center",
                 "title": "Target, platform, and browser",
