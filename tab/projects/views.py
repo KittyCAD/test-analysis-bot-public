@@ -690,11 +690,17 @@ class ResultDetailsView(LoginRequiredMixin, TemplateView):
 
 class DataExportMixin:
     def _attachment(
-        self, project: Project, body: str, suffix: str = ""
+        self,
+        project: Project,
+        body: str,
+        suffix: str = "",
+        *,
+        extension: str = "json",
+        content_type: str = "application/json; charset=utf-8",
     ) -> HttpResponse:
         stem = project.path.replace("/", "-").lower()
-        filename = f"tab-ai-data-{stem}{suffix}.json"
-        response = HttpResponse(body, content_type="application/json; charset=utf-8")
+        filename = f"tab-export-{stem}{suffix}.{extension}"
+        response = HttpResponse(body, content_type=content_type)
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
@@ -790,7 +796,11 @@ class MetricsRawView(LeastReliableTestsMixin, LoginRequiredMixin, TemplateView):
         )
         context["project"] = project
         tests = self._least_reliable_tests(project)
-        context["export_json"] = build_metrics_json(project, tests)
+        context["heading"] = "AI Data"
+        context["export_body"] = build_metrics_json(project, tests)
+        context["download_url"] = reverse(
+            "projects:metrics-export", args=[project.path]
+        )
         context["back_url"] = reverse("projects:metrics", args=[project.path])
         context["back_label"] = "Back to Metrics"
         return context
@@ -828,9 +838,50 @@ class TestRawView(SingleTestMixin, LoginRequiredMixin, TemplateView):
         project, test = self._project_and_test()
         context["project"] = project
         context["test"] = test
-        context["export_json"] = build_metrics_json(project, [test], limit=25)
+        context["heading"] = "AI Data"
+        context["export_body"] = build_metrics_json(project, [test], limit=25)
+        context["download_url"] = reverse(
+            "projects:test-export", args=[project.path, test.id]
+        )
         context["back_url"] = reverse(
             "projects:test-results", args=[project.path, test.id]
         )
         context["back_label"] = "Back to Test"
+        return context
+
+
+class ResultDownloadView(DataExportMixin, SingleTestMixin, LoginRequiredMixin, View):
+
+    def get(self, request, *args, **kwargs):
+        project, test = self._project_and_test()
+        result = get_object_or_404(Result, test=test, id=self.kwargs["result_id"])
+        return self._attachment(
+            project,
+            result.prompt,
+            suffix=f"-result-{result.pk}",
+            extension="md",
+            content_type="text/markdown; charset=utf-8",
+        )
+
+
+class ResultRawView(SingleTestMixin, LoginRequiredMixin, TemplateView):
+
+    template_name = "projects/export.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        project, test = self._project_and_test()
+        result = get_object_or_404(Result, test=test, id=self.kwargs["result_id"])
+        context["project"] = project
+        context["test"] = test
+        context["result"] = result
+        context["heading"] = "AI Prompt"
+        context["export_body"] = result.prompt
+        context["download_url"] = reverse(
+            "projects:result-export", args=[project.path, test.id, result.id]
+        )
+        context["back_url"] = reverse(
+            "projects:test-result", args=[project.path, test.id, result.id]
+        )
+        context["back_label"] = "Back to Result"
         return context

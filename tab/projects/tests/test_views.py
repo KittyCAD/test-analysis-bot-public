@@ -326,7 +326,7 @@ def describe_tests(expect):
             expect(response["Content-Type"]).contains("application/json")
             expect(response["Content-Disposition"]).contains("attachment")
             expect(response["Content-Disposition"]).contains(
-                f"tab-ai-data-foo-bar-test-{disabled_test.pk}.json"
+                f"tab-export-foo-bar-test-{disabled_test.pk}.json"
             )
             body = response.content.decode("utf-8")
             expect(body).contains('"name": "test"')
@@ -338,7 +338,40 @@ def describe_tests(expect):
             html = response.content.decode("utf-8")
             expect(html).contains("AI Data")
             expect(html).contains("Back to Test")
+            expect(html).contains("data-copy-prompt")
+            expect(html).contains("/export.json")
             expect(html).contains("&quot;name&quot;: &quot;test&quot;")
+
+        @pytest.mark.django_db
+        def it_renders_ai_prompt_preview():
+            result = disabled_test.results.get()
+            response = admin_client.get(
+                url.format(pk=disabled_test.pk) + f"/results/{result.pk}/export"
+            )
+            expect(response.status_code) == 200
+            html = response.content.decode("utf-8")
+            expect(html).contains("AI Prompt")
+            expect(html).contains("Back to Result")
+            expect(html).contains("data-copy-prompt")
+            expect(html).contains("/export.md")
+            expect(html).contains("## Test identity")
+            expect(html).contains("- Repository: foo/bar")
+
+        @pytest.mark.django_db
+        def it_downloads_ai_prompt_markdown():
+            result = disabled_test.results.get()
+            response = admin_client.get(
+                url.format(pk=disabled_test.pk) + f"/results/{result.pk}/export.md"
+            )
+            expect(response.status_code) == 200
+            expect(response["Content-Type"]).contains("text/markdown")
+            expect(response["Content-Disposition"]).contains("attachment")
+            expect(response["Content-Disposition"]).contains(
+                f"tab-export-foo-bar-result-{result.pk}.md"
+            )
+            body = response.content.decode("utf-8")
+            expect(body).contains("## Test identity")
+            expect(body).contains("- Repository: foo/bar")
 
         @pytest.mark.django_db
         def it_updates_override_behavior(mocker, admin_user):
@@ -624,7 +657,7 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
         expect(response.status_code) == 200
         expect(response["Content-Type"]).contains("application/json")
         expect(response["Content-Disposition"]).contains("attachment")
-        expect(response["Content-Disposition"]).contains("tab-ai-data-foo-bar.json")
+        expect(response["Content-Disposition"]).contains("tab-export-foo-bar.json")
         body = response.content.decode("utf-8")
         expect(body).contains('"name": "foo › bar"')
 
@@ -637,4 +670,6 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
         html = response.content.decode("utf-8")
         expect(html).contains("AI Data")
         expect(html).contains("Back to Metrics")
+        expect(html).contains("data-copy-prompt")
+        expect(html).contains("/metrics/export.json")
         expect(html).contains("&quot;name&quot;: &quot;foo › bar&quot;")
