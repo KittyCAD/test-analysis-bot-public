@@ -3,6 +3,7 @@ from datetime import timedelta
 from datetime import timezone as dt_timezone
 
 from django.conf import settings
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.urls import reverse
 from django.utils import timezone
 
@@ -530,6 +531,36 @@ def describe_tests(expect):
             expect(response.status_code) == 200
             html = response.content.decode("utf-8")
             expect(html).contains("1 Disabled Test")
+            expect(html).contains("Typically Fails")
+            expect(html).contains("Disabled")
+            expect(html).contains("Reason")
+            expect(html).contains("Tracker")
+            expect(html).contains(str(naturaltime(disabled_test.disabled_at)))  # type: ignore [arg-type]
+            expect(html).excludes("Last Updated")
+
+        @pytest.mark.django_db
+        def it_shortens_github_issue_tracker_labels(
+            admin_client, project: Project, disabled_test: Test
+        ):
+            disabled_test.disabled_tracker = f"{project.repository}/issues/1"
+            disabled_test.save()
+            other = Test.objects.create(project=project, name="other disabled")
+            other.results.create(
+                branch="main",
+                commit="abc123",
+                status=Status.PASSED,
+                duration=1.0,
+            )
+            other.disabled_at = timezone.now()
+            other.disabled_tracker = "https://github.com/foo/other/issues/99"
+            other.save()
+
+            response = admin_client.get(url)
+            expect(response.status_code) == 200
+            html = response.content.decode("utf-8")
+            expect(html).contains(">issues/1</a>")
+            expect(html).contains(">other/issues/99</a>")
+            expect(html).excludes(">https://github.com/foo/other/issues/99</a>")
 
         @pytest.mark.django_db
         def it_filters_to_provided_preselect_ids_and_disables_search(

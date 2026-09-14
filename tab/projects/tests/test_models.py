@@ -209,6 +209,35 @@ def describe_test(expect):
             test.save()
             expect(bool(test.disabled_at)) == True
 
+    def describe_disabled_tracker_humanized(expect):
+        def it_shortens_same_repository_issues():
+            project = Project(repository="https://github.com/foo/bar")
+            test = Test(
+                project=project,
+                disabled_tracker=f"{project.repository}/issues/1",
+            )
+            expect(test.disabled_tracker_humanized) == "issues/1"
+
+        def it_shortens_external_github_issues_to_repo_and_number():
+            project = Project(repository="https://github.com/foo/bar")
+            test = Test(
+                project=project,
+                disabled_tracker="https://github.com/foo/other/issues/99",
+            )
+            expect(test.disabled_tracker_humanized) == "other/issues/99"
+
+        def it_keeps_non_github_urls():
+            url = "https://kittycad.slack.com/archives/C0123/p1"
+            test = Test(
+                project=Project(repository="https://github.com/foo/bar"),
+                disabled_tracker=url,
+            )
+            expect(test.disabled_tracker_humanized) == url
+
+        def it_is_empty_without_a_tracker():
+            test = Test(project=Project(repository="https://github.com/foo/bar"))
+            expect(test.disabled_tracker_humanized) == ""
+
     def describe_enabled(expect, project: Project):
         @pytest.mark.django_db
         def it_is_true_if_last_result():

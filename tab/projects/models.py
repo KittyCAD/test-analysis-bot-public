@@ -4,6 +4,7 @@ import json
 import re
 import threading
 from datetime import timedelta
+from urllib.parse import urlparse
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -521,6 +522,22 @@ class Test(models.Model):
         if self.suite and self.suite.skipped_indicators:
             return self.suite.skipped_indicators
         return self.project.skipped_indicators
+
+    @property
+    def disabled_tracker_humanized(self) -> str:
+        value = self.disabled_tracker or ""
+        if not value:
+            return ""
+        label = value.removeprefix(self.project.repository).strip("/")
+        if label != value:
+            return label
+        parsed = urlparse(value)
+        host = (parsed.hostname or "").lower()
+        if host in {"github.com", "www.github.com"}:
+            parts = parsed.path.strip("/").split("/")
+            if len(parts) >= 4 and parts[2] == "issues" and parts[3].isdigit():
+                return f"{parts[1]}/issues/{parts[3]}"
+        return value
 
     @property
     def failure_rate_humanized(self) -> str:
