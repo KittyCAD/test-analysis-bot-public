@@ -4,7 +4,6 @@ import json
 import re
 import threading
 from datetime import timedelta
-from urllib.parse import urlparse
 
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -25,6 +24,7 @@ from .constants import (
     FAILURE_RATE_EPSILON,
     PENDING_THRESHOLD,
     RESTORATION_THRESHOLD,
+    TRACKER_REFERENCE,
     get_default_branches,
 )
 from .enums import Browser, Platform, Status, Target
@@ -531,12 +531,9 @@ class Test(models.Model):
         label = value.removeprefix(self.project.repository).strip("/")
         if label != value:
             return label
-        parsed = urlparse(value)
-        host = (parsed.hostname or "").lower()
-        if host in {"github.com", "www.github.com"}:
-            parts = parsed.path.strip("/").split("/")
-            if len(parts) >= 4 and parts[2] == "issues" and parts[3].isdigit():
-                return f"{parts[1]}/issues/{parts[3]}"
+        path = value.split("?", 1)[0].split("#", 1)[0]
+        if match := TRACKER_REFERENCE.search(path):
+            return match.group("label")
         return value
 
     @property

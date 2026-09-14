@@ -218,15 +218,31 @@ def describe_test(expect):
             )
             expect(test.disabled_tracker_humanized) == "issues/1"
 
-        def it_shortens_external_github_issues_to_repo_and_number():
+        def it_shortens_external_numbered_references():
             project = Project(repository="https://github.com/foo/bar")
             test = Test(
                 project=project,
-                disabled_tracker="https://github.com/foo/other/issues/99",
+                disabled_tracker="https://gitlab.com/foo/other/issues/99",
             )
             expect(test.disabled_tracker_humanized) == "other/issues/99"
 
-        def it_keeps_non_github_urls():
+        def it_shortens_external_pull_requests():
+            project = Project(repository="https://github.com/KittyCAD/engine")
+            test = Test(
+                project=project,
+                disabled_tracker="https://github.com/KittyCAD/modeling-app/pull/13881",
+            )
+            expect(test.disabled_tracker_humanized) == "modeling-app/pull/13881"
+
+        def it_keeps_urls_without_a_numbered_reference():
+            url = "https://github.com/foo/other/actions"
+            test = Test(
+                project=Project(repository="https://github.com/foo/bar"),
+                disabled_tracker=url,
+            )
+            expect(test.disabled_tracker_humanized) == url
+
+        def it_keeps_urls_without_a_numeric_id():
             url = "https://kittycad.slack.com/archives/C0123/p1"
             test = Test(
                 project=Project(repository="https://github.com/foo/bar"),
