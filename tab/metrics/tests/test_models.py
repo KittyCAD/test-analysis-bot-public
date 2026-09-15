@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.core.cache import cache
 from django.utils import timezone
+from django.utils.timesince import timesince
 
 import pytest
 
@@ -144,6 +145,34 @@ def describe_alert(expect):
             )
 
             expect(alert.subscriptions) == [s1, s3, s2]
+
+    def describe_build(expect):
+        @pytest.mark.django_db
+        def it_reminds_when_disabled_in_the_past():
+            project = Project.objects.create(repository="https://github.com/foo/bar")
+            test = Test.objects.create(project=project, name="my-test")
+            test.disabled_at = timezone.now() - timedelta(days=2)
+            alert = Alert(test=test)
+            message = alert.build()
+            age = timesince(test.disabled_at, depth=1)
+            expect(message.text) == (
+                f"Some tests have been disabled for more than {age}. "
+                "Prioritize fixes to restore them"
+            )
+            expect(message.url).contains("/projects/foo/bar/tests/disabled")
+            expect(message.label) == message.url
+
+        @pytest.mark.django_db
+        def it_keeps_the_manual_disabled_copy_when_recent():
+            project = Project.objects.create(repository="https://github.com/foo/bar")
+            test = Test.objects.create(
+                project=project, name="my-test", disabled_reason="flaky"
+            )
+            test.disabled_at = timezone.now() - timedelta(hours=12)
+            alert = Alert(test=test)
+            message = alert.build()
+            expect(message.text) == "Manually disabled from blocking merges"
+            expect(message.extra) == "unknown user: flaky"
 
 
 def describe_suite_history(expect):
