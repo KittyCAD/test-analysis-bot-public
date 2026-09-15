@@ -248,8 +248,10 @@ class Alert(models.Model):
                 "Prioritize fixes to restore them"
             )
             extra = None
-            url = settings.BASE_URL + reverse(
-                "projects:disabled-tests", args=[self.test.project.path]
+            url = (
+                settings.BASE_URL
+                + reverse("projects:disabled-tests", args=[self.test.project.path])
+                + "?sort=disabled_at"
             )
             label = url
         elif self.test.disabled_at:

@@ -100,8 +100,10 @@ def describe_send_disabled_reminders(expect):
         expect(channel_id) == primary_team.slack_channel_id
         expect(unfurl) is False
 
-        url = settings.BASE_URL + reverse(
-            "projects:disabled-tests", args=[project.path]
+        url = (
+            settings.BASE_URL
+            + reverse("projects:disabled-tests", args=[project.path])
+            + "?sort=disabled_at"
         )
         age = timesince(oldest.disabled_at, depth=1)
         expect(message.text) == (

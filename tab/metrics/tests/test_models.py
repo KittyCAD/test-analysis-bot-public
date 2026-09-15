@@ -159,7 +159,9 @@ def describe_alert(expect):
                 f"Some tests have been disabled for more than {age}. "
                 "Prioritize fixes to restore them"
             )
-            expect(message.url).contains("/projects/foo/bar/tests/disabled")
+            expect(message.url).contains(
+                "/projects/foo/bar/tests/disabled?sort=disabled_at"
+            )
             expect(message.label) == message.url
 
         @pytest.mark.django_db
