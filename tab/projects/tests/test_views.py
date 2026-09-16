@@ -321,6 +321,42 @@ def describe_tests(expect):
             expect(html).contains("Copy Agent URL")
             expect(html).contains("data-copy-agent-url")
             expect(html).contains("/export.json?token=")
+            expect(html).contains("Maintainer")
+            expect(html).contains("Assign to me")
+
+        @pytest.mark.django_db
+        def it_assigns_the_current_user_as_maintainer(admin_user):
+            test_url = url.format(pk=disabled_test.pk)
+
+            response = admin_client.post(
+                f"/projects/foo/bar/metrics/tests/{disabled_test.pk}/maintainer",
+                {"action": "assign", "next": test_url},
+            )
+
+            expect(response.status_code) == 302
+            expect(response.url) == test_url
+            disabled_test.refresh_from_db()
+            expect(disabled_test.maintainer) == admin_user
+
+            html = admin_client.get(test_url).content.decode("utf-8")
+            expect(html).contains(admin_user.email)
+            expect(html).contains("Clear maintainer")
+
+        @pytest.mark.django_db
+        def it_clears_the_maintainer(admin_user):
+            disabled_test.maintainer = admin_user
+            disabled_test.save()
+            test_url = url.format(pk=disabled_test.pk)
+
+            response = admin_client.post(
+                f"/projects/foo/bar/metrics/tests/{disabled_test.pk}/maintainer",
+                {"action": "clear", "next": test_url},
+            )
+
+            expect(response.status_code) == 302
+            expect(response.url) == test_url
+            disabled_test.refresh_from_db()
+            expect(disabled_test.maintainer) == None
 
         @pytest.mark.django_db
         def it_downloads_ai_data_json():
@@ -711,6 +747,27 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
         expect(html).contains("/export.json?token=")
 
     @pytest.mark.django_db
+    def it_uses_field_help_text_as_column_tooltips():
+        test = project.tests.create(
+            name="flaky-test", failure_rate=0.5, disabled_user=admin_user
+        )
+        result = test.results.create(
+            branch="main", commit="abc123", status=Status.FAILED, duration=1.0
+        )
+        Test.objects.filter(pk=test.pk).update(
+            created_at=timezone.now() - timedelta(days=8),
+            last_result=result,
+            failure_rate=0.5,
+        )
+
+        html = admin_client.get(url).content.decode("utf-8")
+        expect(html).contains(Test._meta.get_field("maintainer").help_text)
+        expect(html).contains(Test._meta.get_field("failure_rate").help_text)
+        expect(html).contains(Test._meta.get_field("block_rate").help_text)
+        expect(html).contains(Test._meta.get_field("average_duration").help_text)
+        expect(html).contains(Test._meta.get_field("disabled_user").help_text)
+
+    @pytest.mark.django_db
     def it_assigns_the_current_user_as_maintainer():
         test = project.tests.create(name="flaky-test")
 
@@ -720,6 +777,7 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
         )
 
         expect(response.status_code) == 302
+        expect(response.url) == url
         test.refresh_from_db()
         expect(test.maintainer) == admin_user
 
@@ -733,8 +791,21 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
         )
 
         expect(response.status_code) == 302
+        expect(response.url) == url
         test.refresh_from_db()
         expect(test.maintainer) == None
+
+    @pytest.mark.django_db
+    def it_rejects_an_unsafe_maintainer_redirect():
+        test = project.tests.create(name="flaky-test")
+
+        response = admin_client.post(
+            f"/projects/foo/bar/metrics/tests/{test.pk}/maintainer",
+            {"action": "assign", "next": "https://evil.example/phish"},
+        )
+
+        expect(response.status_code) == 302
+        expect(response.url) == url
 
     @pytest.mark.django_db
     def it_downloads_ai_data_json():

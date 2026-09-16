@@ -129,6 +129,11 @@
                         </p>
                     </div>
                     <div class="col d-flex flex-column">
+                        <h5 class="card-title">Maintainer</h5>
+                        <small class="fst-italic text-muted d-block mb-2">{{ maintainer_help }}</small>
+                        <div class="card-text mt-auto">{% include "projects/_maintainer.html" %}</div>
+                    </div>
+                    <div class="col d-flex flex-column">
                         <h5 class="card-title">Failure Rate</h5>
                         <small class="fst-italic text-muted d-block mb-2">{{ failure_rate_help }}</small>
                         <p class="card-text mt-auto">{% colorize test "failure_rate" %}</p>
@@ -137,19 +142,6 @@
                         <h5 class="card-title">Block Rate</h5>
                         <small class="fst-italic text-muted d-block mb-2">{{ block_rate_help }}</small>
                         <p class="card-text mt-auto">{% colorize test "block_rate" %}</p>
-                    </div>
-                    <div class="col d-flex flex-column">
-                        <h5 class="card-title">Test Enabled</h5>
-                        <small class="fst-italic text-muted d-block mb-2">{{ enabled_help }}</small>
-                        <p class="card-text mt-auto">
-                            {% if test.enabled %}
-                                <i class="fa-solid fa-check text-success me-1"></i>
-                                Yes
-                            {% else %}
-                                <i class="fa-solid fa-xmark text-danger me-1"></i>
-                                No
-                            {% endif %}
-                        </p>
                     </div>
                     <div class="col d-flex flex-column">
                         <h5 class="card-title">Average Duration</h5>

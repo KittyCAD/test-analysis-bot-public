@@ -347,7 +347,7 @@ class Test(models.Model):
         null=True,
         blank=True,
         related_name="maintained_tests",
-        help_text="User responsible for maintaining this test",
+        help_text="Person responsible for maintaining this test",
     )
 
     disabled_at = models.DateTimeField(
@@ -373,7 +373,7 @@ class Test(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text="User who disabled the test",
+        help_text="Person who last updated this override behavior",
     )
 
     enabled = models.BooleanField(
