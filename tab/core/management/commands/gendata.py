@@ -130,7 +130,21 @@ class Command(BaseCommand):
                     self._generate_history(test, days)
 
             self._generate_runs(project, suite, num_results, start, end)
-            if suite.update():
+            if SAMPLE_TEST in test_names:
+                if suite.update():
+                    suite.save(
+                        update_fields=[
+                            "average_setup_duration",
+                            "average_tests_duration",
+                            "average_teardown_duration",
+                            "updated_at",
+                        ]
+                    )
+                self._generate_suite_history(suite, days)
+            else:
+                suite.average_setup_duration = -1
+                suite.average_tests_duration = -1
+                suite.average_teardown_duration = -1
                 suite.save(
                     update_fields=[
                         "average_setup_duration",
@@ -139,8 +153,6 @@ class Command(BaseCommand):
                         "updated_at",
                     ]
                 )
-            if SAMPLE_TEST in test_names:
-                self._generate_suite_history(suite, days)
 
     def _generate_suite(self, project, name):
         suite, created = Suite.objects.get_or_create(project=project, name=name)

@@ -162,11 +162,9 @@
         </div>
         <details class="troubleshooting mb-4" {% if expand %}open{% endif %}>
             <summary class="troubleshooting-summary">
-                <h5 class="card-title mb-0">Troubleshooting</h5>
-                <span class="btn btn-sm btn-outline-secondary ms-auto troubleshooting-toggle">
-                    <i class="fa-solid fa-chevron-right troubleshooting-chevron"
-                       aria-hidden="true"></i>
-                </span>
+                <h6 class="card-title mb-0">Troubleshooting</h6>
+                <i class="fa-solid fa-chevron-right fa-sm text-muted ms-auto troubleshooting-chevron"
+                   aria-hidden="true"></i>
             </summary>
             <div class="troubleshooting-body">
                 {% include "projects/_history.html" %}
@@ -305,14 +303,10 @@
         .troubleshooting-summary:hover {
             background-color: var(--bs-secondary-bg);
         }
-        .troubleshooting-summary:hover .troubleshooting-toggle {
-            color: #fff;
-            background-color: var(--bs-secondary);
-            border-color: var(--bs-secondary);
-        }
         .troubleshooting-chevron {
             display: inline-block;
-            width: 1em; /* Keep the button square through the rotation */
+            width: 1em;
+            text-align: center;
             transition: transform 0.15s ease-in-out;
         }
         .troubleshooting[open] .troubleshooting-chevron {

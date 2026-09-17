@@ -38,7 +38,7 @@
                 datasets: series.map(([label, field, color, fillColor], index) => ({
                     label,
                     data: data.map(point => ({x: point.date, y: point[field]})),
-                    borderColor: index === top ? '#212529' : color,
+                    borderColor: color,
                     backgroundColor: fillColor,
                     fill: index === 0 ? 'origin' : '-1',
                     // Only the top of the stack is outlined, marking the total
