@@ -23,21 +23,34 @@
         const data = JSON.parse(document.getElementById('suite-duration-history-data').textContent);
         if (!canvas) return;
 
-        // Stacked from the bottom up, keeping the setup and teardown overhead together
+        // Stacked from the bottom up, keeping the setup and teardown overhead together.
+        // Skip a series with no values: Chart.js cannot fill Tests down to a null Teardown band.
         const series = [
             ['Setup', 'setup_duration', '#6f42c1', 'rgba(111, 66, 193, 0.35)'],
             ['Teardown', 'teardown_duration', '#fd7e14', 'rgba(253, 126, 20, 0.35)'],
             ['Tests', 'tests_duration', '#0dcaf0', 'rgba(13, 202, 240, 0.35)'],
-        ];
+        ].filter(([, field]) => data.some(point => point[field] != null));
         const top = series.length - 1;
         // The legend and tooltip stay in the order the steps run
         const order = ['Setup', 'Tests', 'Teardown'];
+        // Match tab.projects.helpers.humanize_duration
+        const formatDuration = seconds => {
+            if (seconds == null || seconds < 0) return '—';
+            if (seconds >= 100) {
+                return `${Math.floor(seconds / 60)}m${Math.floor(seconds % 60)}s`;
+            }
+            return `${seconds.toFixed(1).replace(/\.0$/, '')}s`;
+        };
         new Chart(canvas, {
             type: 'line',
             data: {
                 datasets: series.map(([label, field, color, fillColor], index) => ({
                     label,
-                    data: data.map(point => ({x: point.date, y: point[field]})),
+                    data: data.map(point => ({
+                        x: point.date,
+                        // Missing values stack as zero so later bands still have a fill target
+                        y: point[field] ?? 0,
+                    })),
                     borderColor: color,
                     backgroundColor: fillColor,
                     fill: index === 0 ? 'origin' : '-1',
@@ -68,13 +81,13 @@
                     tooltip: {
                         // Anchor to the hovered point instead of averaging the stack
                         position: 'nearest',
-                        filter: context => context.parsed.y !== null,
+                        filter: context => data[context.dataIndex][series[context.datasetIndex][1]] != null,
                         itemSort: (a, b) => order.indexOf(a.dataset.label) - order.indexOf(b.dataset.label),
                         callbacks: {
-                            label: context => `${context.dataset.label}: ${context.parsed.y.toFixed(1)}s`,
+                            label: context => `${context.dataset.label}: ${formatDuration(context.parsed.y)}`,
                             footer: contexts => {
                                 const total = contexts.reduce((sum, context) => sum + context.parsed.y, 0);
-                                return `Total: ${total.toFixed(1)}s`;
+                                return `Total: ${formatDuration(total)}`;
                             },
                         },
                     },
@@ -85,7 +98,10 @@
                         stacked: true,
                         title: {
                             display: true,
-                            text: 'Average duration (seconds)',
+                            text: 'Average duration (minutes)',
+                        },
+                        ticks: {
+                            callback: value => (Number(value) / 60).toFixed(1),
                         },
                     },
                     x: {

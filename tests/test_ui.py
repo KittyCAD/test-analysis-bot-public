@@ -147,9 +147,10 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
         ),
     )
     now = timezone.now()
-    setups = [10.0, 11.0, 10.5, 12.0, 13.0, 14.5, 15.0, 14.0, 13.5, 12.5]
-    tests = [40.0, 42.0, 45.0, 48.0, 55.0, 60.0, 58.0, 52.0, 50.0, 47.0]
-    teardowns = [3.0, 3.2, 3.1, 3.5, 4.0, 4.2, 4.0, 3.8, 3.4, 3.2]
+    setups = [12.0, 13.0, 14.0, 16.0, 18.0, 20.0, 19.0, 17.0, 15.0, 14.0]
+    tests = [70.0, 85.0, 100.0, 115.0, 130.0, 145.0, 138.0, 120.0, 105.0, 90.0]
+    # Suites without a teardown step are normal, so some records have no value
+    teardowns = [4.0, 4.5, -1, -1, 7.0, 8.0, 7.5, 6.5, 5.5, 5.0]
     for index, (setup, tests_duration, teardown) in enumerate(
         zip(setups, tests, teardowns)
     ):
@@ -179,9 +180,18 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
     assert page.get_by_text("npm run test:e2e").is_visible()
     assert page.get_by_text("--grep").count() == 0
 
-    # Hover a data point so the snapshot captures the stacked duration tooltip
     canvas = page.locator("#suiteDurationChart")
     wait_for_chart(page, "suiteDurationChart", dataset=2, index=5)
+
+    # A missing teardown stacks as zero so the tests band still fills to setup
+    gap = page.evaluate("""() => {
+            const chart = Chart.getChart('suiteDurationChart');
+            const point = chart.getDatasetMeta(2).data[3];
+            return chart.scales.y.getValueForPixel(point.y);
+        }""")
+    assert gap == pytest.approx(setups[3] + tests[3], abs=1.0)
+
+    # Hover a data point so the snapshot captures the stacked duration tooltip
     box = canvas.bounding_box()
     center = canvas.evaluate(
         "el => Chart.getChart(el).getDatasetMeta(2).data[5].getCenterPoint()"

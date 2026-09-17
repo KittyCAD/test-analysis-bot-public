@@ -1,3 +1,4 @@
+import math
 import random
 from datetime import timedelta
 from pathlib import Path
@@ -249,14 +250,21 @@ class Command(BaseCommand):
 
     def _generate_suite_history(self, suite, days):
         suite.history.all().delete()
-        for hours in range(0, 24 * days, 6):
+        hours_steps = list(range(0, 24 * days, 6))
+        span = max(len(hours_steps) - 1, 1)
+        for index, hours in enumerate(hours_steps):
+            # Rise through the window so some totals format as XmYs (> 2 minutes)
+            peak = math.sin(math.pi * index / span)
             history = SuiteHistory.objects.create(
                 suite=suite,
                 average_setup_duration=max(
                     0.1, suite.average_setup_duration + random.uniform(-2.0, 2.0)
                 ),
                 average_tests_duration=max(
-                    0.1, suite.average_tests_duration + random.uniform(-10.0, 10.0)
+                    0.1,
+                    suite.average_tests_duration
+                    + random.uniform(-10.0, 10.0)
+                    + 50.0 * peak,
                 ),
                 average_teardown_duration=max(
                     0.1, suite.average_teardown_duration + random.uniform(-1.0, 1.0)
@@ -268,11 +276,15 @@ class Command(BaseCommand):
 
     def _generate_runs(self, project, suite, num_results, start, end):
         runs = []
+        long_e2e = suite.name == "e2e"
         for i in range(num_results):
             fraction = (i + 0.5) / num_results
             tests_started_at = start + (end - start) * fraction
             setup_duration = round(random.uniform(8.0, 15.0), 2)
-            tests_duration = round(random.uniform(30.0, 90.0), 2)
+            tests_duration = round(
+                random.uniform(90.0, 150.0) if long_e2e else random.uniform(30.0, 90.0),
+                2,
+            )
             teardown_duration = round(random.uniform(2.0, 8.0), 2)
             tests_finished_at = tests_started_at + timedelta(seconds=tests_duration)
             runs.append(
