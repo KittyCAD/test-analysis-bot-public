@@ -446,7 +446,7 @@ def describe_result(expect):
                 duration=12.3,
                 target=Target.DESKTOP.value,
                 platform=Platform.MACOS.value,
-                browser="Chromium",
+                browser="Chrome",
                 metadata={
                     "logs": logs,
                     "GITHUB_RUN_ID": "99",

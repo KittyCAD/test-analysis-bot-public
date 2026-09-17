@@ -325,6 +325,49 @@ def describe_tests(expect):
             expect(html).contains("Assign to me")
 
         @pytest.mark.django_db
+        def it_renders_target_and_browser_filter_options():
+            html = admin_client.get(url.format(pk=disabled_test.pk)).content.decode(
+                "utf-8"
+            )
+            expect(html).contains("Filter Results")
+            expect(html).contains(">Target</h6>")
+            expect(html).contains(">Browser</h6>")
+            expect(html).contains("target=web")
+            expect(html).contains("target=desktop")
+            expect(html).contains("browser=chrome")
+            expect(html).contains("browser=firefox")
+
+        @pytest.mark.django_db
+        def it_filters_results_by_target_and_browser():
+            disabled_test.results.create(
+                branch="main",
+                commit="web1111",
+                status=Status.PASSED,
+                duration=1.0,
+                target="web",
+                browser="Chrome",
+            )
+            disabled_test.results.create(
+                branch="main",
+                commit="desk222",
+                status=Status.PASSED,
+                duration=1.0,
+                target="desktop",
+                browser="Firefox",
+            )
+            test_url = url.format(pk=disabled_test.pk)
+            html = admin_client.get(
+                f"{test_url}?target=web&browser=chrome"
+            ).content.decode("utf-8")
+            expect(html).contains("web1111")
+            expect(html).excludes("desk222")
+            expect(html).contains("target:web")
+            expect(html).contains("browser:chrome")
+            expect(html).excludes("browser:Chrome")
+            expect(html).contains(f"{test_url}?browser=chrome")
+            expect(html).contains(f"{test_url}?target=web")
+
+        @pytest.mark.django_db
         def it_assigns_the_current_user_as_maintainer(admin_user):
             test_url = url.format(pk=disabled_test.pk)
 
@@ -678,7 +721,7 @@ def describe_results(expect, admin_client):
         html = response.content.decode("utf-8")
         expect(html).contains("(1 result)")
         expect(html).contains("Environment")
-        expect(html).contains("Desktop, Linux, Chromium")
+        expect(html).contains("Desktop, Linux, Chrome")
         expect(html).excludes(">Target</th>")
         expect(html).excludes(">Platform</th>")
         expect(html).excludes(">Browser</th>")

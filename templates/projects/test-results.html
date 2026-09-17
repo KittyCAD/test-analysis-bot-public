@@ -65,20 +65,22 @@
                                     <a class="dropdown-item small {% if branch == 'all' %}active{% endif %}"
                                        href="{{ view_all_branches_url }}">Show All Branches</a>
                                 </li>
-                                {% if platform_filter_links %}
-                                    <li>
-                                        <hr class="dropdown-divider">
-                                    </li>
-                                    <li>
-                                        <h6 class="dropdown-header text-muted mb-0">Platform</h6>
-                                    </li>
-                                    {% for label, platform_href, plat in platform_filter_links %}
+                                {% for section in filter_menu_sections %}
+                                    {% if section.links %}
                                         <li>
-                                            <a class="dropdown-item small {% if platform == plat %}active{% endif %}"
-                                               href="{{ platform_href }}">{{ label }}</a>
+                                            <hr class="dropdown-divider">
                                         </li>
-                                    {% endfor %}
-                                {% endif %}
+                                        <li>
+                                            <h6 class="dropdown-header text-muted mb-0">{{ section.heading }}</h6>
+                                        </li>
+                                        {% for label, href, value in section.links %}
+                                            <li>
+                                                <a class="dropdown-item small {% if section.current == value %}active{% endif %}"
+                                                   href="{{ href }}">{{ label }}</a>
+                                            </li>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
                             </ul>
                         </div>
                     {% endif %}
@@ -231,7 +233,7 @@
                 {% endif %}
             </div>
         </details>
-        {% if branch or platform %}
+        {% if branch or platform or target or browser %}
             <div class="result-filters d-flex flex-wrap align-items-center gap-2 mb-3">
                 <span class="text-muted small">Filtering results by</span>
                 {% if branch %}
@@ -245,6 +247,20 @@
                     <a href="{{ clear_platform_filter_url }}"
                        class="btn btn-sm btn-outline-danger">
                         platform:{{ platform }}
+                        <i class="fa-solid fa-xmark ms-1"></i>
+                    </a>
+                {% endif %}
+                {% if target %}
+                    <a href="{{ clear_target_filter_url }}"
+                       class="btn btn-sm btn-outline-danger">
+                        target:{{ target }}
+                        <i class="fa-solid fa-xmark ms-1"></i>
+                    </a>
+                {% endif %}
+                {% if browser %}
+                    <a href="{{ clear_browser_filter_url }}"
+                       class="btn btn-sm btn-outline-danger">
+                        browser:{{ browser }}
                         <i class="fa-solid fa-xmark ms-1"></i>
                     </a>
                 {% endif %}
