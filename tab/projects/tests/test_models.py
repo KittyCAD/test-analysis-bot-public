@@ -43,6 +43,81 @@ def describe_suite(expect):
             )
             expect(str(suite)) == "MyUser › my_repo"
 
+    def describe_command(expect):
+        def it_is_empty_without_a_local_command():
+            expect(Suite(name="my-suite").command) == []
+
+        def it_trims_arguments_that_need_a_test():
+            suite = Suite(
+                name="my-suite",
+                local_command=(
+                    "npm install"
+                    "\n\n"
+                    "# then"
+                    "\n\n"
+                    'npm run test:e2e -- --grep="{test.regex}"'
+                ),
+            )
+            expect(suite.command) == [
+                ("npm install", True),
+                ("\n", False),
+                ("# then", False),
+                ("\n", False),
+                ("npm run test:e2e", True),
+            ]
+
+        def it_keeps_setup_steps_beside_a_trimmed_line():
+            suite = Suite(
+                name="my-suite",
+                local_command=(
+                    'make test-e2e-desktop E2E_GREP="{test.regex}"'
+                    "\n\n"
+                    "# or"
+                    "\n\n"
+                    "npm install"
+                    "\n"
+                    "npm run build:wasm"
+                    "\n"
+                    "npm run tronb:vite:dev"
+                    "\n"
+                    'npm run test:e2e:desktop -- --grep="{test.regex}"'
+                ),
+            )
+            expect(suite.command) == [
+                ("make test-e2e-desktop", True),
+                ("\n", False),
+                ("# or", False),
+                ("\n", False),
+                ("npm install", True),
+                ("npm run build:wasm", True),
+                ("npm run tronb:vite:dev", True),
+                ("npm run test:e2e:desktop", True),
+            ]
+
+        def it_keeps_quoted_values_together():
+            suite = Suite(
+                name="my-suite",
+                local_command="cargo nextest run -E 'test({test.name}) and slow'",
+            )
+            expect(suite.command) == [("cargo nextest run", True)]
+
+        def it_keeps_comments_alongside_a_command():
+            suite = Suite(
+                name="my-suite",
+                local_command="# install first\nnpm install",
+            )
+            expect(suite.command) == [
+                ("# install first", False),
+                ("npm install", True),
+            ]
+
+        def it_is_empty_when_nothing_is_left_to_run():
+            suite = Suite(
+                name="my-suite",
+                local_command="# run the failing test\n\n{test.command}",
+            )
+            expect(suite.command) == []
+
     def describe_update_average_setup_duration(expect, project: Project):
         @pytest.mark.django_db
         def it_returns_false_if_no_runs():

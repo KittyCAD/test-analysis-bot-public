@@ -309,6 +309,89 @@ def describe_tests(expect):
         expect(response.status_code) == 302
         expect(response.url) == f"{url}?search=foobar&tag=fixme"
 
+    @pytest.fixture
+    def suite(project: Project):
+        suite = Suite.objects.create(
+            project=project,
+            name="e2e",
+            local_command=(
+                'npm install\n\n# then\n\nnpm run test:e2e -- --grep="{test.name}"'
+            ),
+        )
+        suite.history.create(
+            average_setup_duration=12.0,
+            average_tests_duration=40.0,
+            average_teardown_duration=3.0,
+        )
+        return suite
+
+    @pytest.mark.django_db
+    def it_renders_suite_duration_history(admin_client, suite: Suite):
+        response = admin_client.get(f"/projects/foo/bar/suite/{suite.pk}")
+
+        expect(response.status_code) == 200
+        html = response.content.decode("utf-8")
+        expect(html).contains("Troubleshooting")
+        expect(html).contains("Suite Duration History")
+        expect(html).contains('"tests_duration": 40.0')
+
+    @pytest.mark.django_db
+    def it_hides_suite_duration_history_without_data(admin_client, project: Project):
+        suite = Suite.objects.create(project=project, name="e2e")
+
+        html = admin_client.get(f"/projects/foo/bar/suite/{suite.pk}").content.decode(
+            "utf-8"
+        )
+
+        expect(html).contains("Troubleshooting")
+        expect(html).excludes("Suite Duration History")
+
+    @pytest.mark.django_db
+    def it_hides_troubleshooting_when_empty(
+        client, project: Project, django_user_model
+    ):
+        suite = Suite.objects.create(project=project, name="e2e")
+        user = django_user_model.objects.create_user(username="jane")
+        client.force_login(user)
+
+        html = client.get(f"/projects/foo/bar/suite/{suite.pk}").content.decode("utf-8")
+
+        expect(html).excludes("Troubleshooting")
+        expect(html).excludes("Suite Duration History")
+        expect(html).excludes("Rerun Locally")
+
+    @pytest.mark.django_db
+    def it_renders_commands_that_run_without_a_test(admin_client, suite: Suite):
+        html = admin_client.get(f"/projects/foo/bar/suite/{suite.pk}").content.decode(
+            "utf-8"
+        )
+
+        expect(html).contains("Rerun Locally")
+        expect(html).contains("npm run test:e2e")
+        expect(html).excludes("--grep")
+
+    @pytest.mark.django_db
+    def it_hides_local_commands_from_other_users(
+        client, suite: Suite, django_user_model
+    ):
+        user = django_user_model.objects.create_user(username="jane")
+        client.force_login(user)
+
+        html = client.get(f"/projects/foo/bar/suite/{suite.pk}").content.decode("utf-8")
+
+        expect(html).contains("Suite Duration History")
+        expect(html).excludes("Edit in admin")
+
+    @pytest.mark.django_db
+    def it_expands_troubleshooting_on_request(admin_client, suite: Suite):
+        url = f"/projects/foo/bar/suite/{suite.pk}"
+
+        html = admin_client.get(url).content.decode("utf-8")
+        expect(html).excludes('mb-4" open>')
+
+        html = admin_client.get(f"{url}?expand=true").content.decode("utf-8")
+        expect(html).contains('mb-4" open>')
+
     def describe_details(expect, admin_client, disabled_test: Test):
         url = "/projects/foo/bar/tests/{pk}"
 

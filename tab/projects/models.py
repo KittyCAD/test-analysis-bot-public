@@ -19,9 +19,11 @@ from tab.core.models import Organization
 from . import managers
 from .constants import (
     ANSI_ESCAPE,
+    ARGUMENT,
     CHECKOUT_COMMAND,
     DEFAULT_SUITE,
     FAILURE_RATE_EPSILON,
+    INTERPOLATION,
     PENDING_THRESHOLD,
     RESTORATION_THRESHOLD,
     TRACKER_REFERENCE,
@@ -189,6 +191,45 @@ class Suite(models.Model):
         if self.name == DEFAULT_SUITE:
             return str(self.project)
         return f"{self.project} › {self.name}"
+
+    @property
+    def command(self) -> list[tuple[str, bool]]:
+        """Returns a list of (line, copyable) tuples that run without a test."""
+
+        def copyable(line: str) -> bool:
+            line = line.strip()
+            return bool(line) and not line.startswith("#")
+
+        def trim(line: str) -> str:
+            """Cut a line at the first argument that needs a specific test."""
+            arguments = ARGUMENT.findall(line)
+            for index, argument in enumerate(arguments):
+                if INTERPOLATION.search(argument):
+                    arguments = arguments[:index]
+                    # Drop the option the value belonged to, such as "-k" or "--"
+                    while arguments and arguments[-1].startswith("-"):
+                        arguments.pop()
+                    return " ".join(arguments)
+            return line
+
+        blocks: list[list[str]] = []
+        for block in re.split(r"\n\s*\n", self.local_command.strip()):
+            trimmed = [trim(line) for line in block.split("\n")]
+            if remaining := [line for line in trimmed if line.strip()]:
+                blocks.append(remaining)
+
+        # Drop dividers like "# or" that no longer sit between two commands
+        while blocks and not any(map(copyable, blocks[0])):
+            blocks.pop(0)
+        while blocks and not any(map(copyable, blocks[-1])):
+            blocks.pop()
+
+        lines: list[tuple[str, bool]] = []
+        for block in blocks:
+            if lines:
+                lines.append(("\n", False))
+            lines += [(line, copyable(line)) for line in block]
+        return lines
 
     def update_average_setup_duration(self) -> bool:
         return self._update_average_duration(

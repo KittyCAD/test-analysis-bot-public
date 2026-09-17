@@ -9,13 +9,13 @@ import pytest
 from playwright.sync_api import Page
 
 from tab.core.models import Organization
-from tab.metrics.models import TestHistory
+from tab.metrics.models import SuiteHistory, TestHistory
 from tab.projects.enums import Status
-from tab.projects.models import Project, Test
+from tab.projects.models import Project, Suite, Test
 from tab.releases.enums import Type
 from tab.releases.models import Environment, Release
 
-from .utils import force_login, take_snapshot
+from .utils import force_login, take_snapshot, wait_for_chart
 
 
 @pytest.fixture(autouse=True)
@@ -122,6 +122,7 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
 
     # Hover a data point so the snapshot captures the chart tooltip
     canvas = page.locator("#failureRateChart")
+    wait_for_chart(page, "failureRateChart", index=5)
     box = canvas.bounding_box()
     center = canvas.evaluate(
         "el => Chart.getChart(el).getDatasetMeta(0).data[5].getCenterPoint()"
@@ -133,6 +134,69 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
     )
 
     take_snapshot(page, "projects/troubleshooting-expanded")
+
+
+@pytest.mark.django_db
+def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
+    project = Project.objects.get(repository="https://github.com/foo/bar")
+    suite = Suite.objects.create(
+        project=project,
+        name="e2e",
+        local_command=(
+            'npm install\n\n# then\n\nnpm run test:e2e -- --grep="{test.name}"'
+        ),
+    )
+    now = timezone.now()
+    setups = [10.0, 11.0, 10.5, 12.0, 13.0, 14.5, 15.0, 14.0, 13.5, 12.5]
+    tests = [40.0, 42.0, 45.0, 48.0, 55.0, 60.0, 58.0, 52.0, 50.0, 47.0]
+    teardowns = [3.0, 3.2, 3.1, 3.5, 4.0, 4.2, 4.0, 3.8, 3.4, 3.2]
+    for index, (setup, tests_duration, teardown) in enumerate(
+        zip(setups, tests, teardowns)
+    ):
+        history = SuiteHistory.objects.create(
+            suite=suite,
+            average_setup_duration=setup,
+            average_tests_duration=tests_duration,
+            average_teardown_duration=teardown,
+        )
+        history.timestamp = now - timedelta(days=len(setups) - 1 - index)
+        history.save(update_fields=["timestamp"])
+
+    force_login(page, live_server, admin_user)
+    url = f"{live_server.url}{reverse('projects:suite-tests', args=[project.path, suite.id])}"
+
+    page.goto(f"{url}?expand=false")
+    panel = page.locator("details.suite-troubleshooting")
+    summary = page.get_by_text("Troubleshooting", exact=True)
+    assert summary.is_visible()
+    assert not panel.evaluate("el => el.open")
+    take_snapshot(page, "projects/suite-troubleshooting-collapsed")
+
+    summary.click()
+    assert panel.evaluate("el => el.open")
+    assert page.get_by_text("Suite Duration History").is_visible()
+    assert page.get_by_text("Rerun Locally").is_visible()
+    assert page.get_by_text("npm run test:e2e").is_visible()
+    assert page.get_by_text("--grep").count() == 0
+
+    # Hover a data point so the snapshot captures the stacked duration tooltip
+    canvas = page.locator("#suiteDurationChart")
+    wait_for_chart(page, "suiteDurationChart", dataset=2, index=5)
+    box = canvas.bounding_box()
+    center = canvas.evaluate(
+        "el => Chart.getChart(el).getDatasetMeta(2).data[5].getCenterPoint()"
+    )
+    assert box
+    page.mouse.move(box["x"] + center["x"], box["y"] + center["y"])
+    page.wait_for_function(
+        "() => Chart.getChart('suiteDurationChart').tooltip.opacity === 1"
+    )
+
+    # The tooltip anchors to the hovered point rather than the middle of the stack
+    caret = page.evaluate("() => Chart.getChart('suiteDurationChart').tooltip.caretY")
+    assert abs(caret - center["y"]) < 5
+
+    take_snapshot(page, "projects/suite-troubleshooting-expanded")
 
 
 @pytest.mark.django_db

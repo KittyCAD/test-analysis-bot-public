@@ -15,6 +15,12 @@ CHECKOUT_COMMAND = (
     "git fetch origin && git checkout {branch} && git reset --hard origin/{branch}"
 )
 
+# Matches a format placeholder, e.g. the {test.name} in 'pytest -k "{test.name}"'
+INTERPOLATION = re.compile(r"\{[^}]*\}")
+
+# Matches one command argument, keeping quoted values together
+ARGUMENT = re.compile(r"""(?:[^\s"']|"[^"]*"|'[^']*')+""")
+
 # Matches a trailing /<name>/<kind>/<number> path, e.g. modeling-app/pull/13881
 TRACKER_REFERENCE = re.compile(r"/(?P<label>[^/]+/[^/]+/\d+)/?$")
 
