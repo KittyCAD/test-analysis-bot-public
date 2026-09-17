@@ -1,12 +1,15 @@
 import re
+from datetime import timedelta
 from pathlib import Path
 
 from django.urls import reverse
+from django.utils import timezone
 
 import pytest
 from playwright.sync_api import Page
 
 from tab.core.models import Organization
+from tab.metrics.models import TestHistory
 from tab.projects.enums import Status
 from tab.projects.models import Project, Test
 from tab.releases.enums import Type
@@ -80,6 +83,56 @@ def test_releases(page: Page, live_server, admin_user):
     assert not re.search(r"[?&]lines=false", page.url)
     assert review.is_checked()
     take_snapshot(page, "releases/lines-on-review-on")
+
+
+@pytest.mark.django_db
+def test_troubleshooting_panel(page: Page, live_server, admin_user):
+    project = Project.objects.get(repository="https://github.com/foo/bar")
+    test = Test.objects.create(project=project, name="flaky-test")
+    test.results.create(
+        branch="main",
+        commit="abc123",
+        status=Status.FAILED,
+        duration=1.0,
+    )
+    now = timezone.now()
+    rates = [0.05, 0.08, 0.12, 0.18, 0.35, 0.55, 0.72, 0.80, 0.78, 0.82]
+    for index, rate in enumerate(rates):
+        history = TestHistory.objects.create(
+            test=test,
+            failure_rate=rate,
+            block_rate=rate * 0.6,
+            average_duration=1.0 + index * 0.1,
+        )
+        history.timestamp = now - timedelta(days=len(rates) - 1 - index)
+        history.save(update_fields=["timestamp"])
+
+    force_login(page, live_server, admin_user)
+    url = f"{live_server.url}{reverse('projects:test-results', args=[project.path, test.id])}"
+
+    page.goto(f"{url}?expand=false")
+    panel = page.locator("details.troubleshooting")
+    summary = page.get_by_text("Troubleshooting", exact=True)
+    assert summary.is_visible()
+    assert not panel.evaluate("el => el.open")
+    take_snapshot(page, "projects/troubleshooting-collapsed")
+
+    summary.click()
+    assert panel.evaluate("el => el.open")
+
+    # Hover a data point so the snapshot captures the chart tooltip
+    canvas = page.locator("#failureRateChart")
+    box = canvas.bounding_box()
+    center = canvas.evaluate(
+        "el => Chart.getChart(el).getDatasetMeta(0).data[5].getCenterPoint()"
+    )
+    assert box
+    page.mouse.move(box["x"] + center["x"], box["y"] + center["y"])
+    page.wait_for_function(
+        "() => Chart.getChart('failureRateChart').tooltip.opacity === 1"
+    )
+
+    take_snapshot(page, "projects/troubleshooting-expanded")
 
 
 @pytest.mark.django_db
