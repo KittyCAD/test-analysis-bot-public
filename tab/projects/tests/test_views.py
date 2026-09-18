@@ -810,6 +810,19 @@ def describe_results(expect, admin_client):
         expect(html).excludes(">Browser</th>")
 
     @pytest.mark.django_db
+    def it_hides_suite_troubleshooting(admin_client, project: Project):
+        suite = Suite.objects.create(
+            project=project,
+            name="e2e",
+            local_command="npm run test:e2e",
+        )
+        Test.objects.create(project=project, name="test", suite=suite)
+
+        html = admin_client.get(f"{url}/suite/{suite.pk}").content.decode("utf-8")
+        expect(html).excludes("Troubleshooting")
+        expect(html).excludes("Rerun Locally")
+
+    @pytest.mark.django_db
     def it_redirects_platform_search_to_query_param():
         response = admin_client.get(f"{url}?search=foo PLATFORM:Windows bar")
         expect(response.status_code) == 302

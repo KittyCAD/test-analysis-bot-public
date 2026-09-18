@@ -404,18 +404,11 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         if context["suite_id"] and (
             suite := project.suites.filter(id=context["suite_id"]).first()
         ):
-            context["suite"] = suite
-            context["expand"] = self.request.GET.get("expand") == "true"
             context["setup_duration"] = Run.objects.get_setup_duration(suite, branch)
             context["tests_duration"] = Run.objects.get_tests_duration(suite, branch)
             context["teardown_duration"] = Run.objects.get_teardown_duration(
                 suite, branch
             )
-            context["suite_duration_history"] = suite.history.get_data(suite, weeks=26)
-            if self.request.user.is_staff:
-                context["suite_admin_url"] = reverse(
-                    "admin:projects_suite_change", args=[suite.pk]
-                )
         if self.request.user.is_staff:
             if branch != project.default_branch:
                 context["admin_url"] = (
