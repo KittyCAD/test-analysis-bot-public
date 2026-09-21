@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import timedelta
 from datetime import timezone as dt_timezone
 
@@ -422,12 +423,15 @@ def describe_tests(expect):
     @pytest.mark.django_db
     def it_expands_troubleshooting_on_request(admin_client, suite: Suite):
         url = f"/projects/foo/bar/suite/{suite.pk}"
+        open_details = re.compile(
+            r"<details\b[^>]*\bsuite-troubleshooting\b[^>]*\bopen\b"
+        )
 
         html = admin_client.get(url).content.decode("utf-8")
-        expect(html).excludes('mb-4" open>')
+        expect(open_details.search(html)).is_(None)
 
         html = admin_client.get(f"{url}?expand=true").content.decode("utf-8")
-        expect(html).contains('mb-4" open>')
+        expect(open_details.search(html)).is_not(None)
 
     def describe_details(expect, admin_client, disabled_test: Test):
         url = "/projects/foo/bar/tests/{pk}"

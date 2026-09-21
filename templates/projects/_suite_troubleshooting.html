@@ -1,7 +1,7 @@
 {% if suite_duration_history or suite.command or suite_admin_url %}
-    <details class="suite-troubleshooting mb-4" {% if expand %}open{% endif %}>
+    <details class="suite-troubleshooting mb-3" {% if expand %}open{% endif %}>
         <summary class="suite-troubleshooting-summary">
-            <h6 class="card-title mb-0">Troubleshooting</h6>
+            <h6 class="card-title mb-0 suite-troubleshooting-title">Troubleshooting</h6>
             <i class="fa-solid fa-chevron-right fa-sm text-muted ms-auto suite-troubleshooting-chevron"
                aria-hidden="true"></i>
         </summary>
@@ -55,14 +55,21 @@
         align-items: center;
         padding: 0.5rem 0.75rem;
         border-radius: calc(var(--bs-border-radius) - 1px);
-        background-color: var(--bs-tertiary-bg);
+        background-color: #fff;
         cursor: pointer;
         list-style: none;
+    }
+    .suite-troubleshooting-title {
+        color: var(--bs-secondary-color);
     }
     .suite-troubleshooting[open] .suite-troubleshooting-summary {
         border-bottom: 1px solid var(--bs-border-color);
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
+        background-color: var(--bs-tertiary-bg);
+    }
+    .suite-troubleshooting[open] .suite-troubleshooting-title {
+        color: var(--bs-body-color);
     }
     .suite-troubleshooting-body {
         padding: 1rem;
@@ -70,7 +77,7 @@
     .suite-troubleshooting-summary::-webkit-details-marker {
         display: none;
     }
-    .suite-troubleshooting-summary:hover {
+    .suite-troubleshooting[open] .suite-troubleshooting-summary:hover {
         background-color: var(--bs-secondary-bg);
     }
     .suite-troubleshooting-chevron {
