@@ -213,6 +213,30 @@ def parse_junit_xml(
             test_ids |= set(existing_test_ids)
         cache.set(TESTS_CACHE_KEY, test_ids, timeout=TESTS_CACHE_TIMEOUT)
 
+    parent_names = {
+        " › ".join(parts[:index])
+        for result in results
+        for parts in [result.test.name.split(" › ")]
+        for index in range(1, len(parts))
+    }
+    superseded = (
+        Result.objects.filter(
+            suite=suite,
+            branch=branch,
+            commit=commit,
+            final=True,
+            status__in=Status.merge_blocked(),
+            target__isnull=True,
+            platform__isnull=True,
+            browser__isnull=True,
+            test__name__in=parent_names,
+        )
+        .exclude(pk__in=[result.pk for result in results])
+        .update(final=False)
+    )
+    if superseded:
+        log.info(f"Superseded parent failures: {superseded}")
+
     return results
 
 

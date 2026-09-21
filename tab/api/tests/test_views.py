@@ -172,6 +172,36 @@ def describe_bulk_results(expect, client):
         )
 
     @pytest.mark.django_db
+    def it_supersedes_parent_failures_with_later_child_results(payload):
+        failed = """\
+<testsuites name="vitest tests">
+  <testsuite name="src/machine.spec.ts">
+    <testcase name="Deleting segment" time="30">
+      <failure>Hook timed out</failure>
+    </testcase>
+  </testsuite>
+</testsuites>
+"""
+        payload["tests"] = SimpleUploadedFile("failed.xml", failed.encode())
+        post_form(client, url, payload)
+        parent = Result.objects.get()
+
+        passed = """\
+<testsuites name="vitest tests">
+  <testsuite name="src/machine.spec.ts">
+    <testcase name="Deleting segment › should delete xLine" time="1" />
+  </testsuite>
+</testsuites>
+"""
+        payload["tests"] = SimpleUploadedFile("passed.xml", passed.encode())
+        response = post_form(client, url, payload)
+        parent.refresh_from_db()
+
+        expect(response.status_code) == 200
+        expect(response.json()["block"]) == False
+        expect(parent.final) == False
+
+    @pytest.mark.django_db
     def it_requires_tests_as_file_upload(payload):
         del payload["tests"]
         response = post_form(client, url, payload)
