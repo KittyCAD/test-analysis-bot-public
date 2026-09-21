@@ -8,6 +8,7 @@ import pytest
 from redis.exceptions import ConnectionError
 
 from ..constants import EXPIRED_THRESHOLD, PENDING_THRESHOLD
+from ..enums import Target
 from ..managers import safe_get, safe_set
 from ..models import Project, Result, Run, Status, Suite, Test
 
@@ -181,6 +182,35 @@ def describe_result_manager(expect, project: Project):
             expect(health.total) == 1
             expect(health.state) == "pending"
             expect(health.description) == "1 of 1 passing, 1 more result expected"
+
+        @pytest.mark.django_db
+        def it_uses_the_latest_bulk_created_result():
+            test = Test.objects.create(project=project, name="test")
+            results = []
+            for target in (Target.WEB, Target.DESKTOP):
+                results += [
+                    Result(
+                        test=test,
+                        branch="feature",
+                        commit="abc123",
+                        status=Status.FAILED,
+                        target=target,
+                    ),
+                    Result(
+                        test=test,
+                        branch="feature",
+                        commit="abc123",
+                        status=Status.PASSED,
+                        target=target,
+                    ),
+                ]
+            Result.objects.bulk_create(results)
+
+            health = Result.objects.get_health(project, "feature", "abc123")
+
+            expect(health.total) == 2
+            expect(health.state) == "success"
+            expect(health.description) == "2 of 2 passing"
 
         @pytest.mark.django_db
         def it_identifies_new_failures():

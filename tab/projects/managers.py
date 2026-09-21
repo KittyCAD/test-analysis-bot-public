@@ -169,9 +169,18 @@ class ResultManager(models.Manager):
         expected_total = latest_aggregate["total"]
         expected_passed = latest_aggregate["passed"]
 
-        results = self.filter(
-            test__project=project, branch=branch, commit=commit, final=True
+        latest_result_ids = (
+            self.filter(
+                test__project=project,
+                branch=branch,
+                commit=commit,
+                final=True,
+            )
+            .order_by("test_id", "target", "platform", "browser", "-id")
+            .distinct("test_id", "target", "platform", "browser")
+            .values("id")
         )
+        results = self.filter(id__in=latest_result_ids)
         aggregate = results.aggregate(
             total=Count("id"),
             passed=Count("id", filter=Q(status__in=Status.merge_allowed())),
