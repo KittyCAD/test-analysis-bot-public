@@ -1,13 +1,40 @@
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 
 from django.core.cache import cache
 
 import pytest
 
-from tab.projects.models import Project, Suite, Test
+from tab.projects.models import CommitStatusOwner, Project, Suite, Test
+from tab.projects.types import Health
 
 from ..constants import TESTS_CACHE_KEY
-from ..helpers import parse_junit_xml
+from ..helpers import parse_junit_xml, update_status
+
+
+@pytest.mark.django_db(transaction=True)
+def it_claims_status_owner_atomically(expect, mocker):
+    project = Project.objects.create(repository="https://github.com/foo/bar")
+    organization = mocker.Mock()
+    commit = (
+        organization.get_github_client.return_value.get_repo.return_value.get_commit.return_value
+    )
+    start = Barrier(2)
+    health = Health(total=1, state="success", description="1 of 1 passing")
+
+    def publish(branch):
+        start.wait()
+        update_status(organization, project, "abc123", branch, health)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        list(pool.map(publish, ["branch-a", "branch-b"]))
+
+    owner = CommitStatusOwner.objects.get(project=project, commit="abc123")
+    expect(commit.create_status.call_count) == 1
+    expect(commit.create_status.call_args.kwargs["target_url"]).contains(
+        f"branch={owner.branch}"
+    )
 
 
 def describe_parse_junit_xml(expect):

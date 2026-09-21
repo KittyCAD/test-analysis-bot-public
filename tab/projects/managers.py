@@ -145,7 +145,12 @@ class ResultManager(models.Manager):
         return queryset.values_list("commit", flat=True).first()
 
     def get_health(
-        self, project: Project, commit: str | None, *, final: bool = False
+        self,
+        project: Project,
+        branch: str,
+        commit: str | None,
+        *,
+        final: bool = False,
     ) -> Health:
         assert "github.com" in project.repository, "Only GitHub is supported for now"
         if not commit:
@@ -164,7 +169,9 @@ class ResultManager(models.Manager):
         expected_total = latest_aggregate["total"]
         expected_passed = latest_aggregate["passed"]
 
-        results = self.filter(test__project=project, commit=commit, final=True)
+        results = self.filter(
+            test__project=project, branch=branch, commit=commit, final=True
+        )
         aggregate = results.aggregate(
             total=Count("id"),
             passed=Count("id", filter=Q(status__in=Status.merge_allowed())),
@@ -176,7 +183,9 @@ class ResultManager(models.Manager):
         pending = max(0, expected_passed - passed)
 
         if (
-            release_created_at := project.environments.filter(releases__commit=commit)
+            release_created_at := project.environments.filter(
+                releases__branch=branch, releases__commit=commit
+            )
             .values_list("releases__created_at", flat=True)
             .order_by("releases__created_at")
             .first()

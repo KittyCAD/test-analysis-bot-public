@@ -195,7 +195,7 @@ def describe_share(expect, client):
 
     @pytest.mark.parametrize("post", [post_json, post_form], ids=["json", "form"])
     @pytest.mark.django_db
-    def it_updates_status(payload, mocker, post):
+    def it_updates_status_and_preserves_its_owner(payload, mocker, post):
         mock_github = mocker.patch("tab.core.models.Github")
         mock_repo = mock_github.return_value.get_repo.return_value
         mock_commit = mock_repo.get_commit.return_value
@@ -223,6 +223,16 @@ def describe_share(expect, client):
             description="0 of 0 passing",
             context="Test Analysis Bot",
         )
+        expect(post(client, url, payload).status_code) == 200
+        expect(mock_create_status.call_count) == 2
+
+        payload["branch"] = "other-branch"
+        expect(post(client, url, payload).status_code) == 200
+        expect(mock_create_status.call_count) == 2
+
+        payload["branch"] = "main"
+        expect(post(client, url, payload).status_code) == 200
+        expect(mock_create_status.call_count) == 3
 
     @pytest.mark.parametrize(
         "project",

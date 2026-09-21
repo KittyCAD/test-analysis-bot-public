@@ -110,6 +110,21 @@ class Project(models.Model):
         self.repository = managers.ProjectManager.clean_repository(self.repository)
 
 
+class CommitStatusOwner(models.Model):
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name="commit_status_owners"
+    )
+    commit = models.CharField(max_length=100)
+    branch = models.CharField(max_length=500)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "commit"], name="unique_commit_status_owner"
+            )
+        ]
+
+
 class Suite(models.Model):
     project = models.ForeignKey(
         Project, on_delete=models.CASCADE, related_name="suites"
@@ -1027,6 +1042,7 @@ class Result(models.Model):
         if self.final:
             Result.objects.filter(
                 test=self.test,
+                branch=self.branch,
                 commit=self.commit,
                 target=self.target,
                 platform=self.platform,

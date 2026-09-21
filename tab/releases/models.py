@@ -123,7 +123,9 @@ class Release(models.Model):
             repository_index=project.repository_index
         )
 
-        health = Result.objects.get_health(project, self.commit, final=True)
+        health = Result.objects.get_health(
+            project, self.branch, self.commit, final=True
+        )
         update_status(organization, project, self.commit, self.branch, health)
 
         self.finalized_at = timezone.now()

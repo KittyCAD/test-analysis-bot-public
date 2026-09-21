@@ -4,6 +4,7 @@ from urllib.parse import quote
 
 from django.conf import settings
 from django.core.cache import cache
+from django.db import transaction
 
 import log
 from github import GithubException
@@ -11,7 +12,7 @@ from requests.exceptions import RequestException
 
 from tab.core.models import Organization
 from tab.projects.enums import Status
-from tab.projects.models import Project, Result, Suite, Test
+from tab.projects.models import CommitStatusOwner, Project, Result, Suite, Test
 from tab.projects.types import Health
 
 from .constants import (
@@ -228,24 +229,37 @@ def update_status(
         return
 
     try:
-        repo = github.get_repo(project.path)
-        commit = repo.get_commit(sha)
-    except (GithubException, RequestException, OSError) as e:
-        data = getattr(e, "data", e)
-        log.error(f"Unable to update status for {project.path} @ {sha[:7]}: {data}")
-        return
+        with transaction.atomic():
+            if branch:
+                owner, _ = CommitStatusOwner.objects.select_for_update().get_or_create(
+                    project=project, commit=sha, defaults={"branch": branch}
+                )
+                if branch == project.default_branch and owner.branch != branch:
+                    owner.branch = branch
+                    owner.save(update_fields=["branch"])
+                elif owner.branch != branch:
+                    log.info(
+                        f"Skipped status for {project.path} @ {sha[:7]} on {branch!r}; "
+                        f"owned by {owner.branch!r}"
+                    )
+                    return
 
-    try:
-        url = f"{settings.BASE_URL}/projects/{project.path}/results?branch={quote(branch)}"
-        if health.state == "failure":
-            url += "&show=fails"
-        commit.create_status(
-            state=health.state,
-            target_url=url,
-            description=health.description,
-            context="Test Analysis Bot",
-        )
-        log.info(f"Updated status for {project.path} @ {sha[:7]}: {health.state}")
+            repo = github.get_repo(project.path)
+            commit = repo.get_commit(sha)
+            context = "Test Analysis Bot"
+            url = (
+                f"{settings.BASE_URL}/projects/{project.path}/results"
+                f"?branch={quote(branch)}"
+            )
+            if health.state == "failure":
+                url += "&show=fails"
+            commit.create_status(
+                state=health.state,
+                target_url=url,
+                description=health.description,
+                context=context,
+            )
+            log.info(f"Updated status for {project.path} @ {sha[:7]}: {health.state}")
     except (GithubException, RequestException, OSError) as e:
         if isinstance(e, GithubException):
             data = getattr(e, "data", {})

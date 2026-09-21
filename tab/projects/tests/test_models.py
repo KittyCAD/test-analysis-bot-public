@@ -672,6 +672,27 @@ def describe_result(expect):
             expect(test.results.filter(final=True).count()) == 2
 
         @pytest.mark.django_db
+        def it_keeps_separate_results_per_branch():
+            project = Project.objects.create(repository="https://github.com/foo/bar")
+            test = project.tests.create(name="my-test")
+            Result.objects.create(
+                test=test,
+                status=Status.PASSED,
+                branch="branch-a",
+                commit="a1",
+                final=True,
+            )
+            Result.objects.create(
+                test=test,
+                status=Status.FAILED,
+                branch="branch-b",
+                commit="a1",
+                final=True,
+            )
+
+            expect(test.results.filter(final=True).count()) == 2
+
+        @pytest.mark.django_db
         def it_keeps_separate_results_per_browser():
             project = Project.objects.create(repository="https://github.com/foo/bar")
             test = project.tests.create(name="my-test")

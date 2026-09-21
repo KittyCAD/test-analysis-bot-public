@@ -164,6 +164,7 @@ class ReleaseAdmin(admin.ModelAdmin):
     def current_health(self, release: Release):
         health = Result.objects.get_health(
             release.environment.project,
+            release.branch,
             release.commit,
             final=release.finalized_at is not None,
         )
@@ -176,6 +177,7 @@ class ReleaseAdmin(admin.ModelAdmin):
         for upstream_release in release.dependencies.all():
             health = Result.objects.get_health(
                 upstream_release.environment.project,
+                upstream_release.branch,
                 upstream_release.commit,
                 final=upstream_release.finalized_at is not None,
             )
@@ -194,6 +196,7 @@ class ReleaseAdmin(admin.ModelAdmin):
             ).first():
                 health = Result.objects.get_health(
                     downstream_release.environment.project,
+                    downstream_release.branch,
                     downstream_release.commit,
                     final=True,
                 )

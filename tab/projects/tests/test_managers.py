@@ -7,7 +7,7 @@ from django.utils import timezone
 import pytest
 from redis.exceptions import ConnectionError
 
-from ..constants import EXPIRED_THRESHOLD
+from ..constants import EXPIRED_THRESHOLD, PENDING_THRESHOLD
 from ..managers import safe_get, safe_set
 from ..models import Project, Result, Run, Status, Suite, Test
 
@@ -112,7 +112,7 @@ def describe_result_manager(expect, project: Project):
                 final=True,
             )
 
-            health = Result.objects.get_health(project, "abc123")
+            health = Result.objects.get_health(project, "main", "abc123")
 
             expect(health.total) == 2
             expect(health.state) == "failure"
@@ -136,11 +136,51 @@ def describe_result_manager(expect, project: Project):
                 final=True,
             )
 
-            health = Result.objects.get_health(project, "abc123")
+            health = Result.objects.get_health(project, "main", "abc123")
 
             expect(health.total) == 1
             expect(health.state) == "success"
             expect(health.description) == "1 of 1 passing"
+
+        @pytest.mark.django_db
+        def it_scopes_results_and_release_age_to_the_requested_branch():
+            passing = Test.objects.create(project=project, name="passing")
+            missing = Test.objects.create(project=project, name="missing")
+            for test in (passing, missing):
+                Result.objects.create(
+                    test=test,
+                    branch=project.default_branch,
+                    commit="default123",
+                    status=Status.PASSED,
+                    final=True,
+                )
+            Result.objects.create(
+                test=passing,
+                branch="my-branch",
+                commit="abc123",
+                status=Status.PASSED,
+                final=True,
+            )
+            Result.objects.create(
+                test=missing,
+                branch="other-branch",
+                commit="abc123",
+                status=Status.FAILED,
+                final=True,
+            )
+            environment = project.environments.create(name="review")
+            other_release = environment.releases.create(
+                branch="other-branch", commit="abc123"
+            )
+            environment.releases.filter(pk=other_release.pk).update(
+                created_at=timezone.now() - PENDING_THRESHOLD
+            )
+
+            health = Result.objects.get_health(project, "my-branch", "abc123")
+
+            expect(health.total) == 1
+            expect(health.state) == "pending"
+            expect(health.description) == "1 of 1 passing, 1 more result expected"
 
         @pytest.mark.django_db
         def it_identifies_new_failures():
@@ -168,13 +208,15 @@ def describe_result_manager(expect, project: Project):
                     status=status,
                     final=True,
                 )
-            health = Result.objects.get_health(project, "def456")
+            health = Result.objects.get_health(project, "my-branch", "def456")
             expect(health.total) == 3
             expect(health.state) == "pending"
             expect(health.description) == "2 of 3 passing, 1 more result expected"
 
             # Simulate a release being finalized after a timeout
-            health = Result.objects.get_health(project, "def456", final=True)
+            health = Result.objects.get_health(
+                project, "my-branch", "def456", final=True
+            )
             expect(health.total) == 3
             expect(health.state) == "failure"
             expect(health.description) == "2 of 3 passing, 1 new failure"
