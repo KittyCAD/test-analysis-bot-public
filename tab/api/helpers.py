@@ -213,12 +213,17 @@ def parse_junit_xml(
             test_ids |= set(existing_test_ids)
         cache.set(TESTS_CACHE_KEY, test_ids, timeout=TESTS_CACHE_TIMEOUT)
 
-    parent_names = {
-        " › ".join(parts[:index])
-        for result in results
-        for parts in [result.test.name.split(" › ")]
-        for index in range(1, len(parts))
-    }
+    parent_names: set[str] = set()
+    for result in results:
+        parts = result.test.name.split(" › ")
+        parent_names.update(" › ".join(parts[:index]) for index in range(1, len(parts)))
+
+        # Vitest's JUnit reporter uses " > " inside the testcase name for
+        # nested groups. A hook failure can report only the group name, while
+        # a clean rerun reports its child cases with the full nested path.
+        parent_names.update(
+            " › ".join([*parts[:-1], group]) for group in parts[-1].split(" > ")[:-1]
+        )
     superseded = (
         Result.objects.filter(
             suite=suite,

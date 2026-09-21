@@ -189,7 +189,7 @@ def describe_bulk_results(expect, client):
         passed = """\
 <testsuites name="vitest tests">
   <testsuite name="src/machine.spec.ts">
-    <testcase name="Deleting segment › should delete xLine" time="1" />
+    <testcase name="machine.test.ts &gt; machine &gt; Deleting segment &gt; should delete xLine" time="1" />
   </testsuite>
 </testsuites>
 """
