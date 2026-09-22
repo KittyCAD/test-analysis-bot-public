@@ -72,10 +72,12 @@
                     </li>
                 {% endfor %}
             </ul>
-            {% if setup_duration %}
-                <div class="mb-3">
-                    <span class="text-muted small d-inline-flex gap-3">
-                        <span>Suite setup duration: <strong>{{ setup_duration|duration }}</strong></span>
+            {% if setup_duration or tests_duration > 0 or teardown_duration > 0 %}
+                <div class="suite-duration-stats mb-3">
+                    <span class="d-inline-flex flex-wrap gap-3">
+                        {% if setup_duration %}
+                            <span>Suite setup duration: <strong>{{ setup_duration|duration }}</strong></span>
+                        {% endif %}
                         {% if tests_duration > 0 %}
                             <span>Overall tests duration: <strong>{{ tests_duration|duration }}</strong></span>
                         {% endif %}
@@ -83,10 +85,25 @@
                             <span>Suite teardown duration: <strong>{{ teardown_duration|duration }}</strong></span>
                         {% endif %}
                         {% if tests_duration > 0 or teardown_duration > 0 %}
-                            <span>Total duration: <strong>{{ setup_duration|add:tests_duration|add:teardown_duration|duration }}</strong></span>
+                            <span>Total duration: <strong>{{ setup_duration|default:0|add:tests_duration|add:teardown_duration|duration }}</strong></span>
                         {% endif %}
                     </span>
                 </div>
+                <style>
+                .suite-duration-stats {
+                    border: 1px solid var(--bs-border-color);
+                    border-radius: var(--bs-border-radius);
+                    padding: 0.375rem 0.75rem;
+                    background-color: #fff;
+                    color: var(--bs-secondary-color);
+                    font-weight: 400;
+                    line-height: 1.5;
+                }
+                .suite-duration-stats strong {
+                    color: var(--bs-body-color);
+                    font-weight: 500;
+                }
+                </style>
             {% endif %}
         {% endif %}
         <form method="get" class="mb-4">
