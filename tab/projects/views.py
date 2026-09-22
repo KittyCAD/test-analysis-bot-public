@@ -60,6 +60,14 @@ def _filter_menu_section(base: str, params, heading: str, choices):
     }
 
 
+def _environment_filter_menu(base: str, params) -> list[dict]:
+    return [
+        _filter_menu_section(base, params, "Target", Target.choices),
+        _filter_menu_section(base, params, "Platform", Platform.choices),
+        _filter_menu_section(base, params, "Browser", Browser.choices()),
+    ]
+
+
 class IndexView(LoginRequiredMixin, TemplateView):
     template_name = "projects/index.html"
 
@@ -99,7 +107,9 @@ class SearchLabelMixin:
             # Convert certain search terms to dedicated query params
             for label in self.search_labels:
                 if match := re.search(rf"{label}:(\S+)", search, re.IGNORECASE):
-                    value = match.group(1).lower().strip("@")
+                    value = match.group(1).strip("@")
+                    if label != "branch":
+                        value = value.lower()
                     log.info(f"Converting '{label}:{value}' search to query param")
                     search = (
                         re.sub(rf"{label}:\S+", "", search, flags=re.IGNORECASE)
@@ -321,7 +331,7 @@ class DisabledTestsRegexView(DisabledTestsView):
 class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView):
     table_class = ResultTable
     template_name = "projects/results.html"
-    search_labels = ["platform", "tag"]
+    search_labels = ["platform", "target", "browser", "tag"]
 
     def dispatch(self, request, *args, **kwargs):
         if request.GET.get("branch") == ALL_BRANCHES:
@@ -340,6 +350,8 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         suite_id = self.kwargs.get("suite_id")
         search = self.request.GET.get("search")
         platform = self.request.GET.get("platform")
+        target = self.request.GET.get("target")
+        browser = self.request.GET.get("browser")
         tag = self.request.GET.get("tag")
         show = self.request.GET.get("show", "all")
 
@@ -359,6 +371,10 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
             )
         if platform:
             queryset = queryset.filter(platform=platform)
+        if target:
+            queryset = queryset.filter(target=target)
+        if browser:
+            queryset = queryset.filter(browser__iexact=browser)
         if tag == "disabled":
             queryset = queryset.filter(test__disabled_at__isnull=False)
         elif tag:
@@ -394,6 +410,8 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         context["suite_id"] = self.kwargs.get("suite_id")
         context["search"] = self.request.GET.get("search", "").strip()
         context["platform"] = self.request.GET.get("platform", "").strip()
+        context["target"] = self.request.GET.get("target", "").strip()
+        context["browser"] = self.request.GET.get("browser", "").strip()
         context["tag"] = self.request.GET.get("tag", "").strip()
         context["show"] = self.request.GET.get("show", "all")
         context["base_url"] = settings.BASE_URL
@@ -417,6 +435,29 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
                     reverse("admin:projects_result_changelist")
                     + f"?test__project__repository={project.repository}"
                 )
+
+        results_base = self.request.path
+        params = self.request.GET.copy()
+        context["clear_platform_filter_url"] = _query_url(
+            results_base, params, drop="platform"
+        )
+        context["clear_target_filter_url"] = _query_url(
+            results_base, params, drop="target"
+        )
+        context["clear_browser_filter_url"] = _query_url(
+            results_base, params, drop="browser"
+        )
+        context["clear_tag_filter_url"] = _query_url(results_base, params, drop="tag")
+        context["clear_search_filter_url"] = _query_url(
+            results_base, params, drop="search"
+        )
+        context["filter_menu_sections"] = _environment_filter_menu(results_base, params)
+        context["show_filter_results_menu"] = any(
+            section["links"] for section in context["filter_menu_sections"]
+        )
+        context["filter_menu_active"] = bool(
+            context["platform"] or context["target"] or context["browser"]
+        )
 
         return context
 
@@ -473,10 +514,11 @@ class ResultsRegexView(ResultsView):
         return HttpResponse(f"'{regex}'", content_type="text/plain")
 
 
-class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
+class TestResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, FormView):
     table_class = TestResultTable
     template_name = "projects/test-results.html"
     form_class = UpdateTestForm
+    search_labels = ["platform", "target", "browser", "branch", "tag"]
 
     def get_queryset(self):
         project = get_object_or_404(
@@ -488,6 +530,8 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         platform = self.request.GET.get("platform")
         target = self.request.GET.get("target")
         browser = self.request.GET.get("browser")
+        tag = self.request.GET.get("tag")
+        search = self.request.GET.get("search")
 
         queryset = Result.objects.filter_with_default_branches(test, branch)
         if platform:
@@ -496,6 +540,15 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             queryset = queryset.filter(target=target)
         if browser:
             queryset = queryset.filter(browser__iexact=browser)
+        if tag:
+            queryset = queryset.filter(
+                Q(metadata__tags__icontains=tag)
+                | Q(metadata__tags__icontains=f"@{tag}")
+            )
+        if search:
+            queryset = queryset.filter(
+                Q(branch__icontains=search) | Q(commit__icontains=search)
+            )
 
         return queryset
 
@@ -537,10 +590,12 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             Test.objects.get_parent_and_child_tests(test)
         )
         context["expand"] = expand
-        context["branch"] = self.request.GET.get("branch")
+        context["branch"] = self.request.GET.get("branch") or ""
         context["platform"] = self.request.GET.get("platform", "").strip()
         context["target"] = self.request.GET.get("target", "").strip()
         context["browser"] = self.request.GET.get("browser", "").strip()
+        context["tag"] = self.request.GET.get("tag", "").strip()
+        context["search"] = self.request.GET.get("search", "").strip()
         context["history_data"] = test.history.get_data(test, weeks)
 
         for field in test._meta.get_fields():
@@ -562,9 +617,6 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
             },
         )
         params = self.request.GET.copy()
-        context["view_all_branches_url"] = _query_url(
-            test_results_base, params, branch="all"
-        )
         context["clear_branch_filter_url"] = _query_url(
             test_results_base, params, drop="branch"
         )
@@ -577,22 +629,23 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, FormView):
         context["clear_browser_filter_url"] = _query_url(
             test_results_base, params, drop="browser"
         )
-
-        context["filter_menu_sections"] = [
-            _filter_menu_section(
-                test_results_base, params, "Platform", Platform.choices
-            ),
-            _filter_menu_section(test_results_base, params, "Target", Target.choices),
-            _filter_menu_section(
-                test_results_base, params, "Browser", Browser.choices()
-            ),
-        ]
-        context["show_filter_results_menu"] = (
-            context["branch"] != ALL_BRANCHES
-            or any(section["links"] for section in context["filter_menu_sections"])
-            or bool(context["platform"])
-            or bool(context["target"])
-            or bool(context["browser"])
+        context["clear_tag_filter_url"] = _query_url(
+            test_results_base, params, drop="tag"
+        )
+        context["clear_search_filter_url"] = _query_url(
+            test_results_base, params, drop="search"
+        )
+        context["filter_menu_sections"] = _environment_filter_menu(
+            test_results_base, params
+        )
+        context["show_filter_results_menu"] = any(
+            section["links"] for section in context["filter_menu_sections"]
+        )
+        context["filter_menu_active"] = bool(
+            context["platform"]
+            or context["target"]
+            or context["browser"]
+            or context["branch"]
         )
         context["download_url"] = tokenize(
             self.request,

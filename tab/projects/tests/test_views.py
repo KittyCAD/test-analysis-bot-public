@@ -449,17 +449,19 @@ def describe_tests(expect):
             expect(html).contains("Assign to me")
 
         @pytest.mark.django_db
-        def it_renders_target_and_browser_filter_options():
+        def it_renders_a_search_filter_below_troubleshooting():
             html = admin_client.get(url.format(pk=disabled_test.pk)).content.decode(
                 "utf-8"
             )
-            expect(html).contains("Filter Results")
+            expect(html).contains('name="search"')
+            expect(html).contains("Filter by branch, commit, or tag:LABEL...")
+            expect(html).contains("Show results from all branches")
+            expect(html).contains('aria-label="Filter results"')
+            expect(html).contains("fa-filter")
             expect(html).contains(">Target</h6>")
             expect(html).contains(">Browser</h6>")
             expect(html).contains("target=web")
-            expect(html).contains("target=desktop")
             expect(html).contains("browser=chrome")
-            expect(html).contains("browser=firefox")
 
         @pytest.mark.django_db
         def it_filters_results_by_target_and_browser():
@@ -490,6 +492,17 @@ def describe_tests(expect):
             expect(html).excludes("browser:Chrome")
             expect(html).contains(f"{test_url}?browser=chrome")
             expect(html).contains(f"{test_url}?target=web")
+
+        @pytest.mark.django_db
+        def it_redirects_filter_search_to_query_params():
+            test_url = url.format(pk=disabled_test.pk)
+            response = admin_client.get(
+                f"{test_url}?search=abc123+platform:Windows+target:Web+browser:Chrome"
+            )
+            expect(response.status_code) == 302
+            expect(response.url) == (
+                f"{test_url}?search=abc123&platform=windows&target=web&browser=chrome"
+            )
 
         @pytest.mark.django_db
         def it_assigns_the_current_user_as_maintainer(admin_user):
@@ -849,6 +862,38 @@ def describe_results(expect, admin_client):
         expect(html).excludes(">Target</th>")
         expect(html).excludes(">Platform</th>")
         expect(html).excludes(">Browser</th>")
+        expect(html).contains('aria-label="Filter results"')
+        expect(html).contains("fa-filter")
+        expect(html).contains(">Target</h6>")
+        expect(html).contains(">Platform</h6>")
+        expect(html).contains(">Browser</h6>")
+        expect(html).contains("Filter tests by name or tag:LABEL...")
+
+    @pytest.mark.django_db
+    def it_filters_results_by_target_and_browser(project: Project):
+        test = Test.objects.create(project=project, name="env test")
+        test.results.create(
+            branch="main",
+            commit="abc123",
+            status=Status.PASSED,
+            duration=1.0,
+            target="web",
+            browser="Chrome",
+        )
+        test.results.create(
+            branch="main",
+            commit="abc123",
+            status=Status.PASSED,
+            duration=1.0,
+            target="desktop",
+            browser="Firefox",
+        )
+        html = admin_client.get(f"{url}?target=web&browser=chrome").content.decode(
+            "utf-8"
+        )
+        expect(html).contains("target:web")
+        expect(html).contains("browser:chrome")
+        expect(html).contains("(1 result)")
 
     @pytest.mark.django_db
     def it_hides_suite_troubleshooting(admin_client, project: Project):

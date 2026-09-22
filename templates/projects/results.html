@@ -112,24 +112,43 @@
                        name="search"
                        value="{{ search }}"
                        class="form-control"
-                       placeholder="Filter tests by name{% if not platform and not tag %}, platform:LABEL, or tag:LABEL{% endif %}..."
+                       placeholder="Filter tests by name{% if not tag %} or tag:LABEL{% endif %}..."
                        required>
-                {% if platform or tag %}
-                    <a href="{{ request.path }}?branch={{ branch }}{% if show != 'all' %}&show={{ show }}{% endif %}"
-                       class="btn btn-outline-danger">
-                        {% if platform %}platform:{{ platform }}{% endif %}
-                        {% if tag %}tag:{{ tag }}{% endif %}
+                {% if platform %}
+                    <a href="{{ clear_platform_filter_url }}" class="btn btn-outline-danger">
+                        platform:{{ platform }}
                         <i class="fa-solid fa-xmark ms-1"></i>
                     </a>
-                {% elif search %}
-                    <a href="{{ request.path }}?branch={{ branch }}{% if show != 'all' %}&show={{ show }}{% endif %}"
+                {% endif %}
+                {% if target %}
+                    <a href="{{ clear_target_filter_url }}" class="btn btn-outline-danger">
+                        target:{{ target }}
+                        <i class="fa-solid fa-xmark ms-1"></i>
+                    </a>
+                {% endif %}
+                {% if browser %}
+                    <a href="{{ clear_browser_filter_url }}" class="btn btn-outline-danger">
+                        browser:{{ browser }}
+                        <i class="fa-solid fa-xmark ms-1"></i>
+                    </a>
+                {% endif %}
+                {% if tag %}
+                    <a href="{{ clear_tag_filter_url }}" class="btn btn-outline-danger">
+                        tag:{{ tag }}
+                        <i class="fa-solid fa-xmark ms-1"></i>
+                    </a>
+                {% elif search and not platform and not target and not browser %}
+                    <a href="{{ clear_search_filter_url }}"
                        class="btn btn-outline-danger"
                        type="button"><i class="fa-solid fa-xmark"></i></a>
                 {% endif %}
+                {% include "projects/_search_filter_menu.html" %}
                 <button class="btn btn-outline-primary" type="submit">Search</button>
             </div>
             <input type="hidden" name="branch" value="{{ branch }}">
             <input type="hidden" name="platform" value="{{ platform }}">
+            <input type="hidden" name="target" value="{{ target }}">
+            <input type="hidden" name="browser" value="{{ browser }}">
             <input type="hidden" name="tag" value="{{ tag }}">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="form-check">

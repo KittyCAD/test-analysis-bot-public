@@ -1,0 +1,31 @@
+{% if show_filter_results_menu %}
+    <button class="btn btn-outline-secondary"
+            type="button"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            aria-label="Filter results"
+            title="Filter results">
+        <i class="fa-solid fa-filter{% if filter_menu_active %} text-primary{% endif %}"
+           aria-hidden="true"></i>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        {% for section in filter_menu_sections %}
+            {% if section.links %}
+                {% if not forloop.first %}
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                {% endif %}
+                <li>
+                    <h6 class="dropdown-header text-muted mb-0">{{ section.heading }}</h6>
+                </li>
+                {% for label, href, value in section.links %}
+                    <li>
+                        <a class="dropdown-item small {% if section.current == value %}active{% endif %}"
+                           href="{{ href }}">{{ label }}</a>
+                    </li>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </ul>
+{% endif %}

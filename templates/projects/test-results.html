@@ -23,67 +23,34 @@
             <h2 class="mb-0">
                 {% include "projects/_markers.html" with label=test.label|wrap markers=test.markers nowrap=True %}
             </h2>
-            {% if show_filter_results_menu or parent_test or child_tests %}
-                <div class="d-flex flex-column align-items-end gap-2 ms-3">
-                    {% if parent_test or child_tests %}
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                    type="button"
-                                    data-bs-toggle="dropdown">Switch Project&nbsp;</button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item active">
-                                        {% if parent_suite %}
-                                            Child:
-                                        {% else %}
-                                            Parent:
-                                        {% endif %}
-                                    {{ project.name }}</a>
-                                </li>
-                                {% if parent_test %}
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="{% url 'projects:test-results' parent_test.project.path parent_test.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">Parent: {{ parent_test.project.name }}</a>
-                                    </li>
+            {% if parent_test or child_tests %}
+                <div class="dropdown ms-3">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                            type="button"
+                            data-bs-toggle="dropdown">Switch Project&nbsp;</button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item active">
+                                {% if parent_suite %}
+                                    Child:
+                                {% else %}
+                                    Parent:
                                 {% endif %}
-                                {% for other_test in child_tests %}
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="{% url 'projects:test-results' other_test.project.path other_test.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">Child: {{ other_test.project.name }}</a>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                    {% if show_filter_results_menu %}
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle"
-                                    type="button"
-                                    data-bs-toggle="dropdown">Filter Results&nbsp;</button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item small {% if branch == 'all' %}active{% endif %}"
-                                       href="{{ view_all_branches_url }}">Show All Branches</a>
-                                </li>
-                                {% for section in filter_menu_sections %}
-                                    {% if section.links %}
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li>
-                                            <h6 class="dropdown-header text-muted mb-0">{{ section.heading }}</h6>
-                                        </li>
-                                        {% for label, href, value in section.links %}
-                                            <li>
-                                                <a class="dropdown-item small {% if section.current == value %}active{% endif %}"
-                                                   href="{{ href }}">{{ label }}</a>
-                                            </li>
-                                        {% endfor %}
-                                    {% endif %}
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
+                            {{ project.name }}</a>
+                        </li>
+                        {% if parent_test %}
+                            <li>
+                                <a class="dropdown-item"
+                                   href="{% url 'projects:test-results' parent_test.project.path parent_test.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">Parent: {{ parent_test.project.name }}</a>
+                            </li>
+                        {% endif %}
+                        {% for other_test in child_tests %}
+                            <li>
+                                <a class="dropdown-item"
+                                   href="{% url 'projects:test-results' other_test.project.path other_test.id %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}">Child: {{ other_test.project.name }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
                 </div>
             {% endif %}
         </div>
@@ -160,9 +127,9 @@
                 </div>
             </div>
         </div>
-        <details class="troubleshooting mb-4" {% if expand %}open{% endif %}>
+        <details class="troubleshooting mb-3" {% if expand %}open{% endif %}>
             <summary class="troubleshooting-summary">
-                <h6 class="card-title mb-0">Troubleshooting</h6>
+                <h6 class="card-title mb-0 troubleshooting-title">Troubleshooting</h6>
                 <i class="fa-solid fa-chevron-right fa-sm text-muted ms-auto troubleshooting-chevron"
                    aria-hidden="true"></i>
             </summary>
@@ -231,39 +198,70 @@
                 {% endif %}
             </div>
         </details>
-        {% if branch or platform or target or browser %}
-            <div class="result-filters d-flex flex-wrap align-items-center gap-2 mb-3">
-                <span class="text-muted small">Filtering results by</span>
-                {% if branch %}
-                    <a href="{{ clear_branch_filter_url }}"
-                       class="btn btn-sm btn-outline-danger">
+        <form method="get" class="mb-4">
+            <div class="input-group mb-3">
+                <input type="text"
+                       name="search"
+                       value="{{ search }}"
+                       class="form-control"
+                       placeholder="Filter by branch, commit{% if not tag %}, or tag:LABEL{% endif %}..."
+                       required>
+                {% if branch and branch != 'all' %}
+                    <a href="{{ clear_branch_filter_url }}" class="btn btn-outline-danger">
                         branch:{{ branch }}
                         <i class="fa-solid fa-xmark ms-1"></i>
                     </a>
                 {% endif %}
                 {% if platform %}
-                    <a href="{{ clear_platform_filter_url }}"
-                       class="btn btn-sm btn-outline-danger">
+                    <a href="{{ clear_platform_filter_url }}" class="btn btn-outline-danger">
                         platform:{{ platform }}
                         <i class="fa-solid fa-xmark ms-1"></i>
                     </a>
                 {% endif %}
                 {% if target %}
-                    <a href="{{ clear_target_filter_url }}"
-                       class="btn btn-sm btn-outline-danger">
+                    <a href="{{ clear_target_filter_url }}" class="btn btn-outline-danger">
                         target:{{ target }}
                         <i class="fa-solid fa-xmark ms-1"></i>
                     </a>
                 {% endif %}
                 {% if browser %}
-                    <a href="{{ clear_browser_filter_url }}"
-                       class="btn btn-sm btn-outline-danger">
+                    <a href="{{ clear_browser_filter_url }}" class="btn btn-outline-danger">
                         browser:{{ browser }}
                         <i class="fa-solid fa-xmark ms-1"></i>
                     </a>
                 {% endif %}
+                {% if tag %}
+                    <a href="{{ clear_tag_filter_url }}" class="btn btn-outline-danger">
+                        tag:{{ tag }}
+                        <i class="fa-solid fa-xmark ms-1"></i>
+                    </a>
+                {% elif search and not platform and not target and not browser %}
+                    {% if not branch or branch == 'all' %}
+                        <a href="{{ clear_search_filter_url }}"
+                           class="btn btn-outline-danger"
+                           type="button"><i class="fa-solid fa-xmark"></i></a>
+                    {% endif %}
+                {% endif %}
+                {% include "projects/_search_filter_menu.html" %}
+                <button class="btn btn-outline-primary" type="submit">Search</button>
             </div>
-        {% endif %}
+            <input type="hidden" name="platform" value="{{ platform }}">
+            <input type="hidden" name="target" value="{{ target }}">
+            <input type="hidden" name="browser" value="{{ browser }}">
+            <input type="hidden" name="tag" value="{{ tag }}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="form-check">
+                    <input type="hidden" name="branch" value="{{ branch }}">
+                    <input class="form-check-input border-dark"
+                           type="checkbox"
+                           id="all_branches_checkbox"
+                           {% if branch == 'all' %}checked{% endif %}
+                           onchange="document.querySelector('input[name=branch]').value = this.checked ? 'all' : ''; this.form.submit()">
+                    <label class="form-check-label" for="all_branches_checkbox">Show results from all branches</label>
+                </div>
+                <div class="text-muted">({{ table.rows|length }} result{{ table.rows|length|pluralize }})</div>
+            </div>
+        </form>
         {% render_table table %}
     </div>
 {% endblock content %}
@@ -285,14 +283,22 @@
             align-items: center;
             padding: 0.5rem 0.75rem;
             border-radius: calc(var(--bs-border-radius) - 1px);
-            background-color: var(--bs-tertiary-bg);
+            background-color: #fff;
             cursor: pointer;
             list-style: none;
+        }
+        .troubleshooting-title {
+            color: var(--bs-secondary-color);
+            font-weight: 400;
         }
         .troubleshooting[open] .troubleshooting-summary {
             border-bottom: 1px solid var(--bs-border-color);
             border-bottom-left-radius: 0;
             border-bottom-right-radius: 0;
+            background-color: var(--bs-tertiary-bg);
+        }
+        .troubleshooting[open] .troubleshooting-title {
+            color: var(--bs-body-color);
         }
         .troubleshooting-body {
             padding: 1rem;
@@ -300,7 +306,7 @@
         .troubleshooting-summary::-webkit-details-marker {
             display: none;
         }
-        .troubleshooting-summary:hover {
+        .troubleshooting[open] .troubleshooting-summary:hover {
             background-color: var(--bs-secondary-bg);
         }
         .troubleshooting-chevron {
