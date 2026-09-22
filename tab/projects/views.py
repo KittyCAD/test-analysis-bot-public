@@ -186,8 +186,14 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView
             suite := project.suites.filter(id=context["suite_id"]).first()
         ):
             context["suite"] = suite
-            context["expand"] = self.request.GET.get("expand") == "true"
-            context["suite_duration_history"] = suite.history.get_data(suite, weeks=26)
+            if "weeks" in self.request.GET:
+                weeks = float(self.request.GET["weeks"])
+                expand = True
+            else:
+                weeks = 1.5
+                expand = self.request.GET.get("expand") == "true"
+            context["expand"] = expand
+            context["suite_duration_history"] = suite.history.get_data(suite, weeks)
             if self.request.user.is_staff:
                 context["suite_admin_url"] = reverse(
                     "admin:projects_suite_change", args=[suite.pk]

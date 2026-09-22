@@ -433,6 +433,29 @@ def describe_tests(expect):
         html = admin_client.get(f"{url}?expand=true").content.decode("utf-8")
         expect(open_details.search(html)).is_not(None)
 
+        html = admin_client.get(f"{url}?weeks=6").content.decode("utf-8")
+        expect(open_details.search(html)).is_not(None)
+
+    @pytest.mark.django_db
+    def it_limits_suite_duration_history_by_weeks(admin_client, suite: Suite):
+        recent = suite.history.get()
+        older = suite.history.create(
+            average_setup_duration=5.0,
+            average_tests_duration=99.0,
+            average_teardown_duration=1.0,
+        )
+        suite.history.filter(pk=older.pk).update(
+            timestamp=timezone.now() - timedelta(weeks=8)
+        )
+
+        url = f"/projects/foo/bar/suite/{suite.pk}"
+        html = admin_client.get(f"{url}?weeks=6").content.decode("utf-8")
+        expect(html).contains(f'"tests_duration": {recent.average_tests_duration}')
+        expect(html).excludes('"tests_duration": 99.0')
+
+        html = admin_client.get(f"{url}?weeks=10").content.decode("utf-8")
+        expect(html).contains('"tests_duration": 99.0')
+
     def describe_details(expect, admin_client, disabled_test: Test):
         url = "/projects/foo/bar/tests/{pk}"
 
