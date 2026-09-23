@@ -14,7 +14,6 @@ import log
 from .constants import (
     ACTIVE_BRANCHES_CACHE_KEY,
     ACTIVE_BRANCHES_CACHE_TIMEOUT,
-    ALL_BRANCHES,
     DURATION_CACHE_KEY,
     DURATION_CACHE_TIMEOUT,
     EXPIRED_THRESHOLD,
@@ -111,8 +110,10 @@ class TestManager(models.Manager):
 
 
 class ResultManager(models.Manager):
-    def filter_with_default_branches(self, test: Test, branch: str | None):
-        if branch == ALL_BRANCHES:
+    def filter_with_default_branches(
+        self, test: Test, branch: str | None, *, all_branches: bool = False
+    ):
+        if all_branches:
             results = self.filter(test=test)
         elif branch:
             branches = [branch] + test.significant_branches

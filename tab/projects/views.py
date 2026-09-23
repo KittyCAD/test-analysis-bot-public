@@ -22,7 +22,7 @@ from tab.core.helpers import get_or_create_user, organization_for_email
 from tab.metrics.constants import DELTA_THRESHOLD
 from tab.metrics.models import Alert
 
-from .constants import ALL_BRANCHES, FAILURE_RATE_EPSILON
+from .constants import FAILURE_RATE_EPSILON
 from .enums import Browser, Platform, Target
 from .forms import BulkUpdateTestForm, UpdateTestForm
 from .helpers import (
@@ -339,14 +339,6 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
     template_name = "projects/results.html"
     search_labels = ["platform", "target", "browser", "tag"]
 
-    def dispatch(self, request, *args, **kwargs):
-        if request.GET.get("branch") == ALL_BRANCHES:
-            params = request.GET.copy()
-            params.pop("branch", None)
-            path = f"{request.path}?{params.urlencode()}".strip("?")
-            return redirect(path)
-        return super().dispatch(request, *args, **kwargs)
-
     def get_queryset(self):
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
@@ -539,7 +531,9 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, Fo
         tag = self.request.GET.get("tag")
         search = self.request.GET.get("search")
 
-        queryset = Result.objects.filter_with_default_branches(test, branch)
+        queryset = Result.objects.filter_with_default_branches(
+            test, branch, all_branches=self.request.GET.get("branches") == "all"
+        )
         if platform:
             queryset = queryset.filter(platform=platform)
         if target:
@@ -597,6 +591,7 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, Fo
         )
         context["expand"] = expand
         context["branch"] = self.request.GET.get("branch") or ""
+        context["branches"] = self.request.GET.get("branches") or ""
         context["platform"] = self.request.GET.get("platform", "").strip()
         context["target"] = self.request.GET.get("target", "").strip()
         context["browser"] = self.request.GET.get("browser", "").strip()

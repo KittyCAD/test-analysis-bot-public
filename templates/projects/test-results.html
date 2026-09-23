@@ -206,7 +206,7 @@
                        class="form-control"
                        placeholder="Filter by branch, commit{% if not tag %}, or tag:LABEL{% endif %}..."
                        required>
-                {% if branch and branch != 'all' %}
+                {% if branch %}
                     <a href="{{ clear_branch_filter_url }}" class="btn btn-outline-danger">
                         branch:{{ branch }}
                         <i class="fa-solid fa-xmark ms-1"></i>
@@ -236,7 +236,7 @@
                         <i class="fa-solid fa-xmark ms-1"></i>
                     </a>
                 {% elif search and not platform and not target and not browser %}
-                    {% if not branch or branch == 'all' %}
+                    {% if not branch %}
                         <a href="{{ clear_search_filter_url }}"
                            class="btn btn-outline-danger"
                            type="button"><i class="fa-solid fa-xmark"></i></a>
@@ -252,11 +252,12 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div class="form-check">
                     <input type="hidden" name="branch" value="{{ branch }}">
+                    <input type="hidden" name="branches" value="{{ branches }}">
                     <input class="form-check-input border-dark"
                            type="checkbox"
                            id="all_branches_checkbox"
-                           {% if branch == 'all' %}checked{% endif %}
-                           onchange="document.querySelector('input[name=branch]').value = this.checked ? 'all' : ''; this.form.submit()">
+                           {% if branches == 'all' %}checked{% endif %}
+                           onchange="document.querySelector('input[name=branches]').value = this.checked ? 'all' : ''; this.form.submit()">
                     <label class="form-check-label" for="all_branches_checkbox">Show results from all branches</label>
                 </div>
                 <div class="text-muted">({{ table.rows|length }} result{{ table.rows|length|pluralize }})</div>

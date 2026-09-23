@@ -487,6 +487,23 @@ def describe_tests(expect):
             expect(html).contains("browser=chrome")
 
         @pytest.mark.django_db
+        def it_preserves_branch_when_showing_all_branches():
+            test_url = url.format(pk=disabled_test.pk)
+            html = admin_client.get(
+                f"{test_url}?branch=sample-branch&branches=all"
+            ).content.decode("utf-8")
+            expect(html).contains('name="branch" value="sample-branch"')
+            expect(html).contains('name="branches" value="all"')
+            expect(html).contains('id="all_branches_checkbox"')
+            expect(html).contains("branch:sample-branch")
+
+            html = admin_client.get(f"{test_url}?branch=sample-branch").content.decode(
+                "utf-8"
+            )
+            expect(html).contains('name="branch" value="sample-branch"')
+            expect(html).contains('name="branches" value=""')
+
+        @pytest.mark.django_db
         def it_filters_results_by_target_and_browser():
             disabled_test.results.create(
                 branch="main",
@@ -942,12 +959,6 @@ def describe_results(expect, admin_client):
         response = admin_client.get(f"{url}?search=foobar tag:@FIXME")
         expect(response.status_code) == 302
         expect(response.url) == f"{url}?search=foobar&tag=fixme"
-
-    @pytest.mark.django_db
-    def it_redirects_branch_all_to_default():
-        response = admin_client.get(f"{url}?branch=all&show=fails")
-        expect(response.status_code) == 302
-        expect(response.url) == f"{url}?show=fails"
 
     def describe_regex(expect):
         url = "/projects/foo/bar/results/regex"

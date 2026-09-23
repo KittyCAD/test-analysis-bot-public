@@ -1,7 +1,6 @@
 import re
 from datetime import timedelta
 
-ALL_BRANCHES = "all"
 DEFAULT_SUITE = "default"
 
 ANSI_ESCAPE = re.compile(r"\x1B[@-_][0-?]*[ -/]*[@-~]")
