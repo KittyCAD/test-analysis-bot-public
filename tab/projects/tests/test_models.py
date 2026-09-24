@@ -145,6 +145,32 @@ def describe_suite(expect):
             expect(suite.update_average_setup_duration()) == True
             expect(suite.average_setup_duration) == 4.0
 
+        @pytest.mark.django_db
+        def it_biases_average_to_recent_runs():
+            project.save()
+            suite: Suite = project.suites.create(name="my-suite")
+            now = timezone.now()
+            for i in range(40):
+                suite.runs.create(
+                    project=project,
+                    branch="main",
+                    commit=f"old{i}",
+                    setup_started_at=now - timedelta(days=7, seconds=300),
+                    tests_started_at=now - timedelta(days=7),
+                )
+            for i in range(20):
+                suite.runs.create(
+                    project=project,
+                    branch="main",
+                    commit=f"new{i}",
+                    setup_started_at=now - timedelta(minutes=i, seconds=60),
+                    tests_started_at=now - timedelta(minutes=i),
+                )
+
+            suite.average_setup_duration = -1
+            expect(suite.update_average_setup_duration()) == True
+            expect(suite.average_setup_duration) == pytest.approx(60.0, abs=0.5)
+
     def describe_update_average_tests_duration(expect, project: Project):
         @pytest.mark.django_db
         def it_computes_average_tests_duration():

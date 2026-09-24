@@ -292,7 +292,7 @@ class Suite(models.Model):
             branch__in=self.project.default_branches,
             **filters,
         ).order_by(order_by)
-        runs = list(queryset[:150])
+        runs = self._bias_to_recent(queryset, timestamp_attr=order_by.lstrip("-"))
         durations = [getattr(run, attr) for run in runs if getattr(run, attr) > 0]
         if not durations:
             return False
@@ -304,6 +304,30 @@ class Suite(models.Model):
         log.debug(f"Suite has new {field.replace('_', ' ')}: {old} => {new} seconds")
         setattr(self, field, new)
         return True
+
+    def _bias_to_recent(
+        self,
+        runs: QuerySet[Run],
+        *,
+        timestamp_attr: str,
+        min_samples: int = 20,
+        max_samples: int = 60,
+    ) -> list[Run]:
+        """Limit runs to the past day, backfilling with older runs if needed."""
+        candidates = list(runs[:max_samples])
+        if not candidates:
+            return []
+
+        lookback_window = timezone.now() - timedelta(days=1)
+        recent = [
+            run
+            for run in candidates
+            if (timestamp := getattr(run, timestamp_attr))
+            and timestamp >= lookback_window
+        ]
+        if len(recent) >= min_samples:
+            return recent
+        return candidates[:min_samples]
 
     def update(self, run: Run | None = None) -> bool:
         if not any(
