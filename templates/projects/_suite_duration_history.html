@@ -33,6 +33,11 @@
         const top = series.length - 1;
         // The legend and tooltip stay in the order the steps run
         const order = ['Setup', 'Tests', 'Teardown'];
+        const legendTooltips = {
+            Setup: 'Shared time spent on caches/installs/builds before tests run',
+            Tests: 'Total duration from setup completion to the last test run',
+            Teardown: 'Shared time spent on reports/archives after tests finish',
+        };
         // Match tab.projects.helpers.humanize_duration
         const formatDuration = seconds => {
             if (seconds == null || seconds < 0) return '—';
@@ -70,6 +75,18 @@
                 },
                 plugins: {
                     legend: {
+                        onHover: (event, legendItem) => {
+                            const target = event.native?.target;
+                            if (target) {
+                                target.title = legendTooltips[legendItem.text] || '';
+                            }
+                        },
+                        onLeave: event => {
+                            const target = event.native?.target;
+                            if (target) {
+                                target.title = '';
+                            }
+                        },
                         labels: {
                             sort: (a, b) => order.indexOf(a.text) - order.indexOf(b.text),
                             // Drop the outlines so each swatch is only the shade used in the chart
