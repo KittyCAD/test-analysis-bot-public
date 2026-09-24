@@ -224,9 +224,9 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
         search = self.request.GET.get("search", "").strip()
         tracker = self.request.GET.get("tracker", "").strip()
 
-        queryset = project.tests.filter(
-            enabled=False, last_result__isnull=False
-        ).select_related("suite", "last_result", "disabled_user")
+        queryset = project.tests.disabled().select_related(
+            "suite", "last_result", "disabled_user"
+        )
         if search:
             queryset = queryset.filter(
                 Q(suite__name__icontains=search)
@@ -239,10 +239,6 @@ class DisabledTestsView(LoginRequiredMixin, SingleTableMixin, FormView):
             queryset = queryset.exclude(disabled_tracker__isnull=True)
         elif tracker == "false":
             queryset = queryset.filter(disabled_tracker__isnull=True)
-        if project.test_inactive_threshold:
-            queryset = queryset.filter(
-                updated_at__gte=timezone.now() - project.test_inactive_threshold
-            )
 
         return queryset
 

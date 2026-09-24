@@ -77,6 +77,15 @@ class SuiteManager(models.Manager):
 
 
 class TestManager(models.Manager):
+    def disabled(self):
+        queryset = self.filter(enabled=False, last_result__isnull=False)
+        project = getattr(self, "instance", None)
+        if project is not None and project.test_inactive_threshold:
+            queryset = queryset.filter(
+                updated_at__gte=timezone.now() - project.test_inactive_threshold
+            )
+        return queryset
+
     def get_parent_and_child_tests(self, test: Test) -> tuple[Test | None, list[Test]]:
         parent_suite = test.suite.parent if test.suite else None
         parent_test: Test | None = (

@@ -43,6 +43,50 @@ def describe_safe_set(expect):
         mock_set.assert_called_once_with("test", "value", timeout=60)
 
 
+def describe_test_manager(expect, project: Project):
+    def describe_disabled(expect):
+        def _make_disabled(*, name: str = "disabled", with_result: bool = True):
+            test = Test.objects.create(project=project, name=name)
+            if with_result:
+                test.results.create(
+                    branch="main",
+                    commit="abc123",
+                    status=Status.PASSED,
+                    duration=1.0,
+                )
+            test.disabled_at = timezone.now()
+            test.failure_rate = 0.25
+            test.save()
+            return test
+
+        @pytest.mark.django_db
+        def it_includes_disabled_tests_with_a_last_result():
+            included = _make_disabled(name="included")
+            _make_disabled(name="no-result", with_result=False)
+            enabled = Test.objects.create(project=project, name="enabled")
+            enabled.results.create(
+                branch="main",
+                commit="abc123",
+                status=Status.PASSED,
+                duration=1.0,
+            )
+            enabled.save()
+
+            expect(list(project.tests.disabled())) == [included]
+
+        @pytest.mark.django_db
+        def it_excludes_tests_past_the_inactive_threshold():
+            project.test_inactive_threshold = timedelta(days=7)
+            project.save()
+            recent = _make_disabled(name="recent")
+            stale = _make_disabled(name="stale")
+            Test.objects.filter(pk=stale.pk).update(
+                updated_at=timezone.now() - timedelta(days=14)
+            )
+
+            expect(list(project.tests.disabled())) == [recent]
+
+
 def describe_result_manager(expect, project: Project):
     def describe_get_active_branches(expect):
         @pytest.mark.django_db

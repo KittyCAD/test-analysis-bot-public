@@ -10,7 +10,8 @@ import pytest
 from tab.core.management.commands.sendalerts import Command
 from tab.core.models import Organization
 from tab.metrics.models import Alert, Subscription, Team
-from tab.projects.models import Project, Suite
+from tab.projects.enums import Status
+from tab.projects.models import Project, Suite, Test
 
 
 @pytest.fixture
@@ -47,7 +48,14 @@ def _disable(
     project: Project, *, weeks: float, name: str = "my-test", suite: Suite | None = None
 ):
     test = project.tests.create(name=name, suite=suite)
+    test.results.create(
+        branch="main",
+        commit="abc123",
+        status=Status.PASSED,
+        duration=1.0,
+    )
     test.disabled_at = timezone.now() - timedelta(weeks=weeks)
+    test.failure_rate = 0.25
     test.save()
     return test
 
@@ -65,6 +73,33 @@ def describe_send_disabled_reminders(expect):
         project: Project, primary_team, mocker
     ):
         _disable(project, weeks=0.5)
+        send = _patch_send(mocker)
+
+        Command().send_disabled_reminders(project, dry_run=False)
+
+        expect(send.called) is False
+        expect(Alert.objects.count()) == 0
+
+    def it_skips_disabled_tests_without_a_last_result(
+        project: Project, primary_team, mocker
+    ):
+        test = project.tests.create(name="no-result")
+        test.disabled_at = timezone.now() - timedelta(weeks=2)
+        test.save()
+        send = _patch_send(mocker)
+
+        Command().send_disabled_reminders(project, dry_run=False)
+
+        expect(send.called) is False
+        expect(Alert.objects.count()) == 0
+
+    def it_skips_inactive_disabled_tests(project: Project, primary_team, mocker):
+        project.test_inactive_threshold = timedelta(days=7)
+        project.save()
+        test = _disable(project, weeks=2)
+        Test.objects.filter(pk=test.pk).update(
+            updated_at=timezone.now() - timedelta(days=14)
+        )
         send = _patch_send(mocker)
 
         Command().send_disabled_reminders(project, dry_run=False)

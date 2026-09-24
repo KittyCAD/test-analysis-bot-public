@@ -30,7 +30,8 @@ class Command(BaseCommand):
     def send_disabled_reminders(self, project: Project, dry_run: bool):
         cutoff = timezone.now() - DISABLED_REMINDER_THRESHOLD
         test = (
-            project.tests.filter(disabled_at__isnull=False, disabled_at__lte=cutoff)
+            project.tests.disabled()
+            .filter(disabled_at__lte=cutoff)
             .order_by("disabled_at")
             .first()
         )
