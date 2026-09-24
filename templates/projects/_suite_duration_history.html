@@ -34,9 +34,9 @@
         // The legend and tooltip stay in the order the steps run
         const order = ['Setup', 'Tests', 'Teardown'];
         const legendTooltips = {
-            Setup: 'Shared time spent on caches/installs/builds before tests run',
-            Tests: 'Total duration from setup completion to the last test run',
-            Teardown: 'Shared time spent on reports/archives after tests finish',
+            Setup: 'Shared time spent on cache downloads, installs, and builds before tests run',
+            Tests: 'Total duration from setup completion to the final test reporting results',
+            Teardown: 'Shared time spent on reports, archives, and cleanup after tests finish',
         };
         // Match tab.projects.helpers.humanize_duration
         const formatDuration = seconds => {
