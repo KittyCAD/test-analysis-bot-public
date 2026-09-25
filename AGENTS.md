@@ -6,8 +6,8 @@
 - Load project env first (`direnv allow`, or `source .envrc` in a direnv shell). Plain `source .envrc` may warn about `source_up_if_exists`; that is fine if `DATABASE_URL` and `REDIS_URL` are set.
 - Integration / Django DB + Playwright UI: `make test-integration`
 - Unit: `make test-unit`
-- Do not invent custom database drop/terminate sequences or one-off pytest flags unless the Makefile path is broken.
-- The user may have `make dev` running, which holds the test database. If pytest fails because `test_test_analysis_bot` already exists or is being accessed by other users, wait for `make dev` to stop using it and retry. Do not kill sessions or drop the database yourself.
+- Do not invent custom database drop/terminate sequences or one-off pytest flags (e.g. `--reuse-db`) unless the Makefile path is broken.
+- The user may have `make dev` (or its watchmedo test loop) holding `test_test_analysis_bot`. If pytest fails because that database already exists or is being accessed by other users: wait, then retry the same Makefile target. Do not investigate or terminate Postgres sessions, run `lsof`/`psql` diagnostics, drop/recreate the database, or invent alternate pytest/DB workarounds. Just wait and retry.
 
 ## UI snapshots
 

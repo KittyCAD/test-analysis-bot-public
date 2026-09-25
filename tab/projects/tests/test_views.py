@@ -64,7 +64,16 @@ def describe_build_metrics_json(expect, admin_user, project: Project):
         )
         payload = json.loads(build_metrics_json(project, [test]))
         expect(payload["message"]).contains("Test Analysis Bot")
-        expect(payload["tests"][0]) == METRICS_JSON_TEST_META
+        expect(payload["tests"][0]).contains(METRICS_JSON_TEST_META)
+        expect(payload["tests"][0]).contains(
+            Test._meta.get_field("failure_rate").help_text
+        )
+        expect(payload["tests"][0]).contains(
+            Test._meta.get_field("block_rate").help_text
+        )
+        expect(payload["tests"][0]).contains(
+            Test._meta.get_field("average_duration").help_text
+        )
         expect(len(payload["tests"])) == 2
         expect(len(payload["tests"][1]["results"])) == 2
         expect(payload["tests"][1]["results"][0]) == METRICS_JSON_RESULT_META
@@ -219,7 +228,7 @@ def describe_build_metrics_json(expect, admin_user, project: Project):
         payload = json.loads(build_metrics_json(project, [test]))
         row = payload["tests"][1]
         res = row["results"][1]
-        expect(payload["tests"][0]) == METRICS_JSON_TEST_META
+        expect(payload["tests"][0]).contains(METRICS_JSON_TEST_META)
         expect(row["results"][0]) == METRICS_JSON_RESULT_META
         expect(row["markers"]) == ["slow"]
         expect(row["command"]) == "pytest my-test"

@@ -27,8 +27,9 @@ if TYPE_CHECKING:
 
 
 METRICS_JSON_ROOT_META = "The following is exported from the Test Analysis Bot (TAB)."
-METRICS_JSON_TEST_META = "These are the least-reliable and slowest tests in this project. Use this information to triage and suggest fixes. Durations are in seconds."
-METRICS_JSON_RESULT_META = "These are recent results for this test including at least one pass and one fail, if available. Durations are in seconds."
+METRICS_JSON_TEST_META = "These are the least-reliable and slowest tests in this project. Use this information to triage and suggest fixes."
+METRICS_JSON_RESULT_META = "These are recent results for this test including at least one pass and one fail, if available."
+METRICS_JSON_TEST_HELP_FIELDS = ("failure_rate", "block_rate", "average_duration")
 
 
 def insert_breaks(text: str) -> str:
@@ -210,6 +211,18 @@ def build_result_prompt(result: Result) -> str:
     return "\n".join(lines).strip() + "\n"
 
 
+def _metrics_json_test_meta() -> str:
+    from .models import Test
+
+    parts = [METRICS_JSON_TEST_META]
+    for name in METRICS_JSON_TEST_HELP_FIELDS:
+        field = Test._meta.get_field(name)
+        if help_text := getattr(field, "help_text", ""):
+            label = str(field.verbose_name).capitalize()  # type: ignore[union-attr]
+            parts.append(f"{label}: {help_text}.")
+    return " ".join(parts)
+
+
 def build_metrics_json(project: Project, tests: list[Test], limit: int = 10) -> str:
 
     def interpolated_command(test: Test) -> str | None:
@@ -302,7 +315,7 @@ def build_metrics_json(project: Project, tests: list[Test], limit: int = 10) -> 
 
     test_rows: list = []
     if tests:
-        test_rows.append(METRICS_JSON_TEST_META)
+        test_rows.append(_metrics_json_test_meta())
         for test in tests:
             selected = recent_results(test)
             result_rows = (
