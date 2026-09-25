@@ -28,6 +28,49 @@ document.addEventListener("DOMContentLoaded", function () {
     const DAY_MS = 24 * HOUR_MS;
     // Extra vertical space (on top of TIMELINE_MIN_GAP) when inserting a break marker.
     const BREAK_EXTRA_PX = 32;
+    // Trailing affordance on linked label lines; only this glyph is clickable.
+    // Gap via U+2800 (braille blank): has space-like width but is not in
+    // Cytoscape's wrap separators /[\s\u200b]/, so the icon cannot orphan.
+    // Word joiners keep the gap+icon glued to the preceding text.
+    const LINK_ICON = "↗";
+    const LINK_ICON_SUFFIX = "\u2060\u2800\u2060" + LINK_ICON;
+    // Extra hit slack around the glyph (model px at zoom=1); keeps the
+    // arrow easy to click/tap without covering most of the label text.
+    const LINK_ICON_HIT_PAD = 8;
+    const LINK_ICON_MIN_HIT = 22;
+
+    function cardLinkCount(node) {
+        let count = 0;
+        if (node.projectHref) {
+            count += 1;
+        }
+        if (node.href) {
+            count += 1;
+        }
+        if (node.urlHref && node.urlHref !== node.href) {
+            count += 1;
+        }
+        return count;
+    }
+
+    // Append a link icon after each non-empty label line that maps to a href.
+    function decorateLabelWithLinkIcons(label, linkCount) {
+        if (!linkCount) {
+            return label;
+        }
+        const lines = String(label || "").split("\n");
+        let ordinal = 0;
+        return lines
+            .map(function (line) {
+                if (!line.trim()) {
+                    return line;
+                }
+                const withIcon = ordinal < linkCount;
+                ordinal += 1;
+                return withIcon ? line + LINK_ICON_SUFFIX : line;
+            })
+            .join("\n");
+    }
 
     // Column x positions depend only on container width + column count — never on nodes.
     function computeColumnLayout(container, columnCount, options) {
@@ -271,13 +314,17 @@ document.addEventListener("DOMContentLoaded", function () {
                         : row % 2 === 0
                           ? -layout.stagger
                           : layout.stagger;
+                const rawLabel = node.subtitle
+                    ? node.label + "\n\n" + node.subtitle
+                    : node.label;
                 elements.push({
                     group: "nodes",
                     data: {
                         id: node.id,
-                        label: node.subtitle
-                            ? node.label + "\n\n" + node.subtitle
-                            : node.label,
+                        label: decorateLabelWithLinkIcons(
+                            rawLabel,
+                            cardLinkCount(node)
+                        ),
                         subtitle: node.subtitle,
                         color: node.color,
                         href: node.href || "",
@@ -538,9 +585,14 @@ document.addEventListener("DOMContentLoaded", function () {
                           : row % 2 === 0
                             ? -layout.stagger
                             : layout.stagger;
-                const label = node.subtitle
+                const rawLabel = node.subtitle
                     ? node.label + "\n\n" + node.subtitle
                     : node.label;
+                const nodeData = {
+                    href: node.href || "",
+                    projectHref: node.projectHref || "",
+                    urlHref: node.urlHref || node.subtitle || "",
+                };
                 const x = Math.max(
                     layout.columnX(column) + stagger,
                     layout.minCardCenterX || 0
@@ -549,12 +601,15 @@ document.addEventListener("DOMContentLoaded", function () {
                     group: "nodes",
                     data: {
                         id: node.id,
-                        label: label,
+                        label: decorateLabelWithLinkIcons(
+                            rawLabel,
+                            cardLinkCount(nodeData)
+                        ),
                         subtitle: node.subtitle,
                         color: node.color,
-                        href: node.href || "",
-                        projectHref: node.projectHref || "",
-                        urlHref: node.urlHref || node.subtitle || "",
+                        href: nodeData.href,
+                        projectHref: nodeData.projectHref,
+                        urlHref: nodeData.urlHref,
                         column: column,
                         isHeader: false,
                         isTimeline: false,
@@ -629,6 +684,21 @@ document.addEventListener("DOMContentLoaded", function () {
             x: layout.panX,
             y: GRAPH_PADDING - bb.y1,
         });
+    }
+
+    // Pin the timeline axis end to the bottom edge of the gray card so the
+    // line never stops short of the container (extra GRAPH_PADDING, fade, etc.).
+    function extendTimelineAxisToBottom(cy, container) {
+        const axisEnd = cy.getElementById("timeline-axis-end");
+        if (!axisEnd.nonempty()) {
+            return;
+        }
+        const zoom = cy.zoom();
+        const pan = cy.pan();
+        const bottomY = (container.clientHeight - pan.y) / zoom;
+        if (bottomY > axisEnd.position("y")) {
+            axisEnd.position("y", bottomY);
+        }
     }
 
     function buildElements(data, layout, options) {
@@ -1063,6 +1133,9 @@ document.addEventListener("DOMContentLoaded", function () {
             clearTimelineOverlaps();
             // Positions may shift slightly after fit — recompute taxi clearance.
             assignTaxiCorridors();
+            if (data.layout === "columns-timeline") {
+                extendTimelineAxisToBottom(cy, container);
+            }
         }
 
         const CARD_PADDING = 14;
@@ -1105,8 +1178,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return links;
         }
 
-        // Map pointer to a link only when it sits on the label text itself
-        // (per line, centered), not the full card padding/width.
+        // Map pointer to a link only when it sits on the trailing link icon
+        // of a label line — not the label text or card padding.
         function cardLinkBandAt(node, renderedX, renderedY) {
             const links = cardLinks(node);
             if (!links.length) {
@@ -1136,18 +1209,67 @@ document.addEventListener("DOMContentLoaded", function () {
             const lines = String(node.data("label") || "").split("\n");
             const lineCount = Math.max(lines.length, 1);
             const lineHeight = content.h / lineCount;
-            const lineIndex = Math.min(
+            const hitYPad = LINK_ICON_HIT_PAD * zoom;
+            let lineIndex = Math.min(
                 lineCount - 1,
                 Math.max(0, Math.floor((renderedY - content.y1) / lineHeight))
             );
+            // If the pointer is on a blank gap (or just off an icon line),
+            // snap to the nearest line that actually has a link icon.
+            if (
+                !(lines[lineIndex] || "").trim() ||
+                !(lines[lineIndex] || "").endsWith(LINK_ICON_SUFFIX)
+            ) {
+                let nearest = -1;
+                let nearestDist = Infinity;
+                lines.forEach(function (line, index) {
+                    if (!line.trim() || !line.endsWith(LINK_ICON_SUFFIX)) {
+                        return;
+                    }
+                    const mid =
+                        content.y1 + index * lineHeight + lineHeight / 2;
+                    const dist = Math.abs(renderedY - mid);
+                    if (dist < nearestDist) {
+                        nearestDist = dist;
+                        nearest = index;
+                    }
+                });
+                if (
+                    nearest < 0 ||
+                    nearestDist > lineHeight / 2 + hitYPad
+                ) {
+                    return null;
+                }
+                lineIndex = nearest;
+            }
             const lineText = lines[lineIndex] || "";
-            if (!lineText.trim()) {
+            if (
+                !lineText.trim() ||
+                !lineText.endsWith(LINK_ICON_SUFFIX)
+            ) {
                 return null;
             }
 
             const textWidth = measureLabelTextWidth(lineText) * zoom;
+            const iconWidth = measureLabelTextWidth(LINK_ICON_SUFFIX) * zoom;
             const centerX = (content.x1 + content.x2) / 2;
-            if (Math.abs(renderedX - centerX) > textWidth / 2 + 1 * zoom) {
+            const iconRight = centerX + textWidth / 2;
+            const iconLeft = iconRight - iconWidth;
+            const iconCenter = (iconLeft + iconRight) / 2;
+            const hitWidth = Math.max(
+                iconWidth + LINK_ICON_HIT_PAD * 2 * zoom,
+                LINK_ICON_MIN_HIT * zoom
+            );
+            const hitLeft = iconCenter - hitWidth / 2;
+            const hitRight = iconCenter + hitWidth / 2;
+            const lineTop = content.y1 + lineIndex * lineHeight;
+            const lineBottom = lineTop + lineHeight;
+            if (
+                renderedX < hitLeft ||
+                renderedX > hitRight ||
+                renderedY < lineTop - hitYPad ||
+                renderedY > lineBottom + hitYPad
+            ) {
                 return null;
             }
 

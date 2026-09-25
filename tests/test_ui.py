@@ -27,19 +27,46 @@ def organization():
     )
 
     project = Project.objects.create(repository="https://github.com/foo/bar")
+    # Long unbroken URL wider than card text-max-width — the link icon must
+    # stay glued (no \\s before it) or Cytoscape wraps the glyph alone.
     staging = Environment.objects.create(
-        project=project, name=Type.STAGING, url="https://staging.example.com"
+        project=project,
+        name=Type.STAGING,
+        url="wss://api.dev.zoo.dev/ws/modeling/commands",
     )
     production = Environment.objects.create(
         project=project, name=Type.PRODUCTION, url="https://api.example.com"
     )
+    review = Environment.objects.create(
+        project=project,
+        name=Type.REVIEW,
+        url="https://app-pr-1.example.com",
+    )
     staging.dependencies.add(production)
 
-    app = Release.objects.create(environment=staging, branch="main", commit="aaa1111")
-    api = Release.objects.create(
-        environment=production, branch="main", commit="bbb2222"
-    )
-    app.dependencies.add(api)
+    now = timezone.now()
+    # Several close releases plus one older outlier so the change-history
+    # timeline inserts a break marker (gap > max(median×5, 7 days)).
+    release_specs = [
+        (staging, "main", "aaa1111", timedelta(days=0)),
+        (production, "main", "bbb2222", timedelta(days=1)),
+        (staging, "main", "ccc3333", timedelta(days=2)),
+        (production, "main", "ddd4444", timedelta(days=3)),
+        (staging, "main", "eee5555", timedelta(days=4)),
+        (production, "main", "fff6666", timedelta(days=18)),
+        # One review release for the include-review snapshots.
+        (review, "feature", "rev7777", timedelta(hours=12)),
+    ]
+    releases = []
+    for environment, branch, commit, age in release_specs:
+        release = Release.objects.create(
+            environment=environment, branch=branch, commit=commit
+        )
+        Release.objects.filter(pk=release.pk).update(created_at=now - age)
+        releases.append(release)
+    releases[0].dependencies.add(releases[1])
+    # Review → production so include-review snapshots show a dependency line.
+    releases[-1].dependencies.add(releases[1])
     return organization
 
 
@@ -52,11 +79,132 @@ def test_releases(page: Page, live_server, admin_user):
     environment_graph = page.locator("#environment-graph-data").evaluate(
         "el => el.textContent"
     )
-    assert "https://staging.example.com" in environment_graph
+    assert "wss://api.dev.zoo.dev/ws/modeling/commands" in environment_graph
 
     assert page.get_by_text("Change History").is_visible()
     release_graph = page.locator("#release-graph-data").evaluate("el => el.textContent")
     assert "aaa1111" in release_graph
+
+    env_graph = page.locator('.releases-graph[data-graph="environment-graph-data"]')
+    page.wait_for_function(
+        "() => !!document.querySelector"
+        "('.releases-graph[data-graph=\\'environment-graph-data\\']')._cy"
+    )
+    # Link icons must stay on the same visual line as their label. Cytoscape
+    # wraps on /[\s\u200b]/ (NBSP included), so the suffix uses U+2060.
+    link_icon_layout = env_graph.evaluate("""el => {
+            const LINK_ICON = "↗";
+            const labels = [];
+            const orphanIconLines = [];
+            const whitespaceBeforeIcon = [];
+            el._cy
+                .nodes()
+                .filter(
+                    (node) =>
+                        !node.data("isHeader") &&
+                        !node.data("isSpacer") &&
+                        !node.data("isTimelineDot")
+                )
+                .forEach((node) => {
+                    const label = String(node.data("label") || "");
+                    labels.push(label);
+                    if (/\\s↗/.test(label) || /\\u200b↗/.test(label)) {
+                        whitespaceBeforeIcon.push(label);
+                    }
+                    const cached =
+                        (node._private &&
+                            node._private.rscratch &&
+                            node._private.rscratch.labelWrapCachedLines) ||
+                        null;
+                    const visualLines = Array.isArray(cached)
+                        ? cached
+                        : label.split("\\n");
+                    visualLines.forEach((visual) => {
+                        if (String(visual).trim() === LINK_ICON) {
+                            orphanIconLines.push(label);
+                        }
+                    });
+                });
+            return {
+                labelCount: labels.length,
+                withIcon: labels.filter((label) => label.includes(LINK_ICON))
+                    .length,
+                gluedWithJoiner: labels.filter((label) =>
+                    label.includes("\\u2060" + LINK_ICON)
+                ).length,
+                orphanIconLines,
+                whitespaceBeforeIcon,
+            };
+        }""")
+    assert link_icon_layout["labelCount"] > 0
+    assert link_icon_layout["withIcon"] > 0
+    assert link_icon_layout["gluedWithJoiner"] == link_icon_layout["withIcon"]
+    assert link_icon_layout["whitespaceBeforeIcon"] == []
+    assert link_icon_layout["orphanIconLines"] == []
+
+    release_graph_el = page.locator('.releases-graph[data-graph="release-graph-data"]')
+    page.wait_for_function(
+        "() => !!document.querySelector"
+        "('.releases-graph[data-graph=\\'release-graph-data\\']')._cy"
+    )
+    release_link_icons = release_graph_el.evaluate("""el => {
+            const LINK_ICON = "↗";
+            const orphanIconLines = [];
+            el._cy
+                .nodes()
+                .filter(
+                    (node) =>
+                        !node.data("isHeader") &&
+                        !node.data("isSpacer") &&
+                        !node.data("isTimelineDot") &&
+                        !node.data("isTimelineHour") &&
+                        !node.data("isTimelineEndpoint") &&
+                        !node.data("isTimelineBreak")
+                )
+                .forEach((node) => {
+                    const label = String(node.data("label") || "");
+                    const cached =
+                        (node._private &&
+                            node._private.rscratch &&
+                            node._private.rscratch.labelWrapCachedLines) ||
+                        null;
+                    const visualLines = Array.isArray(cached)
+                        ? cached
+                        : label.split("\\n");
+                    visualLines.forEach((visual) => {
+                        if (String(visual).trim() === LINK_ICON) {
+                            orphanIconLines.push(label);
+                        }
+                    });
+                });
+            return { orphanIconLines };
+        }""")
+    assert release_link_icons["orphanIconLines"] == []
+
+    # Timeline axis reaches the bottom of the gray card, not just the last tick.
+    axis_to_bottom = release_graph_el.evaluate("""el => {
+            const cy = el._cy;
+            const axisEnd = cy.getElementById("timeline-axis-end");
+            if (!axisEnd.nonempty()) {
+                return { ok: false, reason: "missing axis end" };
+            }
+            const zoom = cy.zoom();
+            const pan = cy.pan();
+            const bottomY = (el.clientHeight - pan.y) / zoom;
+            const axisY = axisEnd.position("y");
+            return {
+                ok: Math.abs(bottomY - axisY) <= 1.5,
+                bottomY,
+                axisY,
+                height: el.clientHeight,
+            };
+        }""")
+    assert axis_to_bottom["ok"], axis_to_bottom
+
+    timeline_breaks = release_graph_el.evaluate(
+        """el => el._cy.nodes().filter(node => node.data("isTimelineBreak")).length"""
+    )
+    assert timeline_breaks > 0
 
     lines = page.locator("#show-dependency-lines")
     review = page.locator("#show-review-releases")
@@ -77,11 +225,52 @@ def test_releases(page: Page, live_server, admin_user):
     assert review.is_checked()
     assert re.search(r"[?&]lines=false", page.url)
     assert re.search(r"[?&]review=true", page.url)
+    assert "rev7777" in page.locator("#release-graph-data").evaluate(
+        "el => el.textContent"
+    )
     take_snapshot(page, "releases/lines-off-review-on")
 
     lines.check()
     assert not re.search(r"[?&]lines=false", page.url)
     assert review.is_checked()
+    page.wait_for_function(
+        "() => !!document.querySelector"
+        "('.releases-graph[data-graph=\\'release-graph-data\\']')._cy"
+    )
+    review_dependency = page.locator(
+        '.releases-graph[data-graph="release-graph-data"]'
+    ).evaluate(
+        """el => {
+            const data = el._graphData || {};
+            const reviewNode = (data.nodes || []).find(node =>
+                String(node.label || "").includes("rev7777")
+            );
+            const cyEdges = el._cy
+                .edges()
+                .filter(edge => !edge.data("isTimeline")).length;
+            if (!reviewNode) {
+                return { dataEdges: 0, cyEdges, reviewId: null };
+            }
+            const dataEdges = (data.edges || []).filter(
+                edge => edge.source === reviewNode.id
+            ).length;
+            const cyReviewEdges = el._cy
+                .edges()
+                .filter(
+                    edge =>
+                        !edge.data("isTimeline") &&
+                        edge.source().id() === reviewNode.id
+                ).length;
+            return {
+                dataEdges,
+                cyEdges,
+                cyReviewEdges,
+                reviewId: reviewNode.id,
+            };
+        }"""
+    )
+    assert review_dependency["dataEdges"] > 0, review_dependency
+    assert review_dependency["cyReviewEdges"] > 0, review_dependency
     take_snapshot(page, "releases/lines-on-review-on")
 
 
