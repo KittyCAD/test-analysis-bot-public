@@ -297,7 +297,7 @@ class Suite(models.Model):
         if not durations:
             return False
 
-        new = round(sum(durations) / len(durations), 3)
+        new = round(sum(durations) / len(durations), 1)
         if old == new:
             return False
 
