@@ -545,6 +545,38 @@ def describe_tests(expect):
             )
 
         @pytest.mark.django_db
+        def it_skips_auto_expand_when_a_filter_is_provided(project: Project):
+            test = Test.objects.create(project=project, name="flaky-filtered")
+            result = test.results.create(
+                branch="main",
+                commit="abc123",
+                status=Status.FAILED,
+                duration=1.0,
+                platform="macos",
+            )
+            Test.objects.filter(pk=test.pk).update(last_result=result, failure_rate=0.5)
+            test_url = url.format(pk=test.pk)
+            open_details = re.compile(
+                r"<details\b[^>]*\btroubleshooting\b[^>]*\bopen\b"
+            )
+
+            html = admin_client.get(test_url).content.decode("utf-8")
+            expect(open_details.search(html)).is_not(None)
+
+            html = admin_client.get(f"{test_url}?platform=macos").content.decode(
+                "utf-8"
+            )
+            expect(open_details.search(html)).is_(None)
+
+            html = admin_client.get(f"{test_url}?branches=all").content.decode("utf-8")
+            expect(open_details.search(html)).is_(None)
+
+            html = admin_client.get(
+                f"{test_url}?platform=macos&expand=true"
+            ).content.decode("utf-8")
+            expect(open_details.search(html)).is_not(None)
+
+        @pytest.mark.django_db
         def it_assigns_the_current_user_as_maintainer(admin_user):
             test_url = url.format(pk=disabled_test.pk)
 

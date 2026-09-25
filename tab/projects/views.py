@@ -567,17 +567,21 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, Fo
 
         if "weeks" in self.request.GET:
             weeks = float(self.request.GET["weeks"])
-            expand = True
         else:
             weeks = 1.5
-            if "expand" in self.request.GET:
-                expand = self.request.GET["expand"] == "true"
-            elif test.last_result:
-                expand = test.failure_rate >= DELTA_THRESHOLD
-            elif result := test.results.first():
-                expand = result.status in Status.merge_blocked()
-            else:
-                expand = False
+
+        if "expand" in self.request.GET:
+            expand = self.request.GET["expand"] == "true"
+        elif self._has_result_filter(self.request.GET):
+            expand = False
+        elif "weeks" in self.request.GET:
+            expand = True
+        elif test.last_result:
+            expand = test.failure_rate >= DELTA_THRESHOLD
+        elif result := test.results.first():
+            expand = result.status in Status.merge_blocked()
+        else:
+            expand = False
 
         context["project"] = project
         context["test"] = test
@@ -710,6 +714,21 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, Fo
             redirect_url += f"?branch={branch}"
 
         return redirect(redirect_url)
+
+    @staticmethod
+    def _has_result_filter(params) -> bool:
+        return any(
+            (params.get(key) or "").strip()
+            for key in (
+                "platform",
+                "target",
+                "browser",
+                "branch",
+                "branches",
+                "tag",
+                "search",
+            )
+        )
 
     def _update_override_behavior(
         self,
