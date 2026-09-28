@@ -24,7 +24,7 @@ django-debug-toolbar = "^8.0"
 django-tables2 = "^3.0.1"
 
 # API
-django-ninja = "^1.7.0"
+django-ninja = "^1.7.1"
 pydantic = "^2.13.5"
 
 # Storage
@@ -57,7 +57,7 @@ djlint = "^1.44.2"
 
 # Linting
 mypy = "^2.3"
-django-stubs = { version = "^6.1.0", extras = ["compatible-mypy"] }
+django-stubs = { version = "^6.1.1", extras = ["compatible-mypy"] }
 types-markdown = "*"
 types-requests = "*"
 
