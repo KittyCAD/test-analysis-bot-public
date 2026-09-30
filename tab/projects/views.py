@@ -22,7 +22,12 @@ from tab.core.helpers import get_or_create_user, organization_for_email
 from tab.metrics.constants import DELTA_THRESHOLD
 from tab.metrics.models import Alert
 
-from .constants import FAILURE_RATE_EPSILON
+from .constants import (
+    FAILURE_RATE_EPSILON,
+    SETUP_DURATION_TIP,
+    TEARDOWN_DURATION_TIP,
+    TESTS_DURATION_TIP,
+)
 from .enums import Browser, Platform, Target
 from .forms import BulkUpdateTestForm, UpdateTestForm
 from .helpers import (
@@ -194,6 +199,11 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView
                 expand = self.request.GET.get("expand") == "true"
             context["expand"] = expand
             context["suite_duration_history"] = suite.history.get_data(suite, weeks)
+            context["suite_duration_tips"] = {
+                "Setup": SETUP_DURATION_TIP,
+                "Tests": TESTS_DURATION_TIP,
+                "Teardown": TEARDOWN_DURATION_TIP,
+            }
             if self.request.user.is_staff:
                 context["suite_admin_url"] = reverse(
                     "admin:projects_suite_change", args=[suite.pk]
@@ -418,6 +428,9 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
             context["teardown_duration"] = Run.objects.get_teardown_duration(
                 suite, branch
             )
+            context["setup_duration_tip"] = SETUP_DURATION_TIP
+            context["tests_duration_tip"] = TESTS_DURATION_TIP
+            context["teardown_duration_tip"] = TEARDOWN_DURATION_TIP
         if self.request.user.is_staff:
             if branch != project.default_branch:
                 context["admin_url"] = (

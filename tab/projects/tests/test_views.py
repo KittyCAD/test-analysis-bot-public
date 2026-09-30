@@ -13,7 +13,12 @@ import pytest
 
 from tab.core.models import Organization
 
-from ..constants import DEFAULT_SUITE
+from ..constants import (
+    DEFAULT_SUITE,
+    SETUP_DURATION_TIP,
+    TEARDOWN_DURATION_TIP,
+    TESTS_DURATION_TIP,
+)
 from ..helpers import (
     METRICS_JSON_RESULT_META,
     METRICS_JSON_TEST_META,
@@ -381,6 +386,9 @@ def describe_tests(expect):
         expect(html).contains("Troubleshooting")
         expect(html).contains("Suite Duration History")
         expect(html).contains('"tests_duration": 40.0')
+        expect(html).contains(SETUP_DURATION_TIP)
+        expect(html).contains(TESTS_DURATION_TIP)
+        expect(html).contains(TEARDOWN_DURATION_TIP)
 
     @pytest.mark.django_db
     def it_hides_suite_duration_history_without_data(admin_client, project: Project):
@@ -988,6 +996,27 @@ def describe_results(expect, admin_client):
         html = admin_client.get(f"{url}/suite/{suite.pk}").content.decode("utf-8")
         expect(html).excludes("Troubleshooting")
         expect(html).excludes("Rerun Locally")
+
+    @pytest.mark.django_db
+    def it_tooltips_suite_duration_labels(admin_client, project: Project):
+        suite = Suite.objects.create(project=project, name="e2e")
+        Test.objects.create(project=project, name="test", suite=suite)
+        started = timezone.now() - timedelta(seconds=100)
+        project.runs.create(
+            suite=suite,
+            branch="main",
+            commit="abc123",
+            setup_started_at=started,
+            tests_started_at=started + timedelta(seconds=12),
+            tests_finished_at=started + timedelta(seconds=80),
+            teardown_finished_at=started + timedelta(seconds=90),
+        )
+
+        html = admin_client.get(f"{url}/suite/{suite.pk}").content.decode("utf-8")
+        expect(html).contains("Suite setup duration")
+        expect(html).contains(f'title="{SETUP_DURATION_TIP}"')
+        expect(html).contains(f'title="{TESTS_DURATION_TIP}"')
+        expect(html).contains(f'title="{TEARDOWN_DURATION_TIP}"')
 
     @pytest.mark.django_db
     def it_redirects_platform_search_to_query_param():

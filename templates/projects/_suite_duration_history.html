@@ -10,6 +10,7 @@
             <canvas id="suiteDurationChart"></canvas>
         </div>
         {{ suite_duration_history|json_script:"suite-duration-history-data" }}
+        {{ suite_duration_tips|json_script:"suite-duration-tips" }}
     </div>
 </div>
 <style>
@@ -21,6 +22,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const canvas = document.getElementById('suiteDurationChart');
         const data = JSON.parse(document.getElementById('suite-duration-history-data').textContent);
+        const legendTooltips = JSON.parse(document.getElementById('suite-duration-tips').textContent);
         if (!canvas) return;
 
         // Stacked from the bottom up, keeping the setup and teardown overhead together.
@@ -33,11 +35,6 @@
         const top = series.length - 1;
         // The legend and tooltip stay in the order the steps run
         const order = ['Setup', 'Tests', 'Teardown'];
-        const legendTooltips = {
-            Setup: 'Shared time spent on cache downloads, installs, and builds before tests run',
-            Tests: 'Total duration from setup completion to the final test reporting results',
-            Teardown: 'Shared time spent on reports, archives, and cleanup after tests finish',
-        };
         // Match tab.projects.helpers.humanize_duration
         const formatDuration = seconds => {
             if (seconds == null || seconds < 0) return '—';

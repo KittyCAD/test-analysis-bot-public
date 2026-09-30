@@ -31,6 +31,17 @@ RESTORATION_THRESHOLD = timedelta(days=3)  # minimum duration to keep tests disa
 DURATION_CACHE_KEY = "projects:duration"
 DURATION_CACHE_TIMEOUT = timedelta(minutes=1).total_seconds()
 
+# Shared hover tips for suite setup / tests / teardown (results box + history chart)
+SETUP_DURATION_TIP = (
+    "Shared time spent on cache downloads, installs, and builds before tests run"
+)
+TESTS_DURATION_TIP = (
+    "Total duration from setup completion to the final test reporting results"
+)
+TEARDOWN_DURATION_TIP = (
+    "Shared time spent on reports, archives, and cleanup after tests finish"
+)
+
 ACTIVE_BRANCHES_CACHE_KEY = "projects:active_branches"
 ACTIVE_BRANCHES_CACHE_TIMEOUT = int(timedelta(hours=1).total_seconds())
 

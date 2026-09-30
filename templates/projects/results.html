@@ -76,13 +76,13 @@
                 <div class="suite-duration-stats mb-3">
                     <span class="d-inline-flex flex-wrap gap-3">
                         {% if setup_duration %}
-                            <span>Suite setup duration: <strong>{{ setup_duration|duration }}</strong></span>
+                            <span title="{{ setup_duration_tip }}">Suite setup duration: <strong>{{ setup_duration|duration }}</strong></span>
                         {% endif %}
                         {% if tests_duration > 0 %}
-                            <span>Overall tests duration: <strong>{{ tests_duration|duration }}</strong></span>
+                            <span title="{{ tests_duration_tip }}">Overall tests duration: <strong>{{ tests_duration|duration }}</strong></span>
                         {% endif %}
                         {% if teardown_duration > 0 %}
-                            <span>Suite teardown duration: <strong>{{ teardown_duration|duration }}</strong></span>
+                            <span title="{{ teardown_duration_tip }}">Suite teardown duration: <strong>{{ teardown_duration|duration }}</strong></span>
                         {% endif %}
                         {% if tests_duration > 0 or teardown_duration > 0 %}
                             <span>Total duration: <strong>{{ setup_duration|default:0|add:tests_duration|add:teardown_duration|duration }}</strong></span>
