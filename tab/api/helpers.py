@@ -20,6 +20,11 @@ from .constants import (
     TESTS_CACHE_TIMEOUT,
 )
 
+NONBLOCKING_GITHUB_ERRORS = (
+    "maximum number of statuses",
+    "No commit found for SHA",
+)
+
 
 def parse_junit_xml(
     content: str,
@@ -292,7 +297,8 @@ def update_status(
     except (GithubException, RequestException, OSError) as e:
         if isinstance(e, GithubException):
             data = getattr(e, "data", {})
-            if "maximum number of statuses" in str(data):
+            message = str(data)
+            if any(error in message for error in NONBLOCKING_GITHUB_ERRORS):
                 log.warning(
                     f"Unable to update status for {project.path} @ {sha[:7]}: {data}"
                 )
