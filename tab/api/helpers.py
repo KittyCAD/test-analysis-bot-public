@@ -26,6 +26,16 @@ NONBLOCKING_GITHUB_ERRORS = (
 )
 
 
+def validate_test_name(name: str) -> None:
+    max_length = Test._meta.get_field("name").max_length
+    assert max_length is not None
+    if len(name) > max_length:
+        preview = name if len(name) <= 120 else f"{name[:117]}..."
+        raise ValueError(
+            f"Test name exceeds {max_length} characters (got {len(name)}): {preview!r}"
+        )
+
+
 def parse_junit_xml(
     content: str,
     project: Project,
@@ -86,6 +96,7 @@ def parse_junit_xml(
                     name_components.append(value)
             name = " › ".join(name_components)
             name = re.sub(r"(\S)\[", r"\1 [", name)  # pytest parametrized tests
+            validate_test_name(name)
 
             if deferred:
                 # Prepare bulk data

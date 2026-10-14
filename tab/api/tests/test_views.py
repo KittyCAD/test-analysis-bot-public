@@ -97,6 +97,19 @@ def describe_results(expect, client):
         }
 
     @pytest.mark.django_db
+    def it_rejects_oversized_test_names(payload):
+        max_length = Test._meta.get_field("name").max_length
+        assert max_length is not None
+        payload["test"] = "x" * (max_length + 1)
+        response = post_json(client, url, payload)
+
+        expect(response.status_code) == 422
+        expect(response.json()["detail"]).startswith(
+            f"Test name exceeds {max_length} characters (got {max_length + 1}):"
+        )
+        expect(Test.objects.count()) == 0
+
+    @pytest.mark.django_db
     def it_updates_existing_test(payload):
         payload2 = payload.copy()
         payload2["branch"] = ""
@@ -209,6 +222,26 @@ def describe_bulk_results(expect, client):
         expect(response.json()) == {
             "detail": "Include 'tests' as a JUnit XML file upload.",
         }
+
+    @pytest.mark.django_db
+    def it_rejects_oversized_test_names(payload):
+        max_length = Test._meta.get_field("name").max_length
+        assert max_length is not None
+        long_name = "x" * (max_length + 1)
+        content = (
+            "<testsuites><testsuite>"
+            f'<testcase name="{long_name}" />'
+            "</testsuite></testsuites>"
+        )
+        payload["tests"] = SimpleUploadedFile("junit.xml", content.encode())
+
+        response = post_form(client, url, payload)
+
+        expect(response.status_code) == 422
+        expect(response.json()["detail"]).startswith(
+            f"Test name exceeds {max_length} characters (got {max_length + 1}):"
+        )
+        expect(Test.objects.count()) == 0
 
 
 def describe_share(expect, client):

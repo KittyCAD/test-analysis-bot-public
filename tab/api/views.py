@@ -14,7 +14,7 @@ from tab.projects.enums import Status
 from tab.projects.models import Project, Result, Run, Suite, Test
 from tab.releases.models import Environment, Release
 
-from .helpers import parse_junit_xml, update_status
+from .helpers import parse_junit_xml, update_status, validate_test_name
 from .schemas import (
     ApiKey,
     BulkResultRequest,
@@ -90,6 +90,11 @@ def results(request, payload: ResultRequest):
         log.info(f"Created suite: {suite}")
     else:
         log.info(f"Found suite: {suite}")
+
+    try:
+        validate_test_name(payload.test)
+    except ValueError as e:
+        return 422, {"detail": str(e)}
 
     metadata = ResultRequest.get_metadata(json.loads(request.body))
     Run.objects.track_step(
@@ -188,14 +193,17 @@ def bulk_results(request, payload: Form[BulkResultRequest]):
             step="start",
             metadata=metadata,
         )
-        results = parse_junit_xml(
-            content,
-            project,
-            suite,
-            payload.branch,
-            payload.commit,
-            metadata,
-        )
+        try:
+            results = parse_junit_xml(
+                content,
+                project,
+                suite,
+                payload.branch,
+                payload.commit,
+                metadata,
+            )
+        except ValueError as e:
+            return 422, {"detail": str(e)}
         Environment.objects.process(project, payload.url, results)
         Run.objects.track_step(
             suite=suite,
