@@ -30,9 +30,8 @@ def validate_test_name(name: str) -> None:
     max_length = Test._meta.get_field("name").max_length
     assert max_length is not None
     if len(name) > max_length:
-        preview = name if len(name) <= 120 else f"{name[:117]}..."
         raise ValueError(
-            f"Test name exceeds {max_length} characters (got {len(name)}): {preview!r}"
+            f"Test name exceeds {max_length} characters (got {len(name)}): {name[:999]}..."
         )
 
 
