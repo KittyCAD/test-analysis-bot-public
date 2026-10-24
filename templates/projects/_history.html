@@ -1,8 +1,8 @@
 <div class="card border-info">
     <div class="card-header py-3 bg-info text-white">
         <h6 class="m-0 font-weight-bold">
-            <i class="fa-solid fa-chart-line me-2"></i>
-            Past Failure Rate
+            <i class="fa-solid fa-chart-line me-2" aria-hidden="true"></i>
+            Metrics History
         </h6>
     </div>
     <div class="card-body">
@@ -17,12 +17,26 @@
         if (ctx) {
             const chartData = {
                 datasets: [{
+                    label: 'Failure Rate',
+                    yAxisID: 'y',
                     data: [{% for point in history_data %}{x: '{{ point.date }}', y: parseFloat('{{ point.failure_rate|slice:":-1" }}')}{% if not forloop.last %}, {% endif %}{% endfor %}],
                     borderColor: '#0dcaf0',
+                    backgroundColor: '#0dcaf0',
                     borderWidth: 2,
                     fill: false,
                     pointRadius: 2,
                     pointHoverRadius: 4,
+                }, {
+                    label: 'Duration',
+                    yAxisID: 'y1',
+                    data: [{% for point in history_data %}{x: '{{ point.date }}', y: {% if point.average_duration == "?" %}null{% else %}{{ point.average_duration|slice:":-1" }}{% endif %}}{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    borderColor: '#dee2e6',
+                    backgroundColor: '#dee2e6',
+                    borderWidth: 2,
+                    fill: false,
+                    pointRadius: 2,
+                    pointHoverRadius: 4,
+                    spanGaps: true,
                 }]
             };
 
@@ -32,9 +46,13 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
                     plugins: {
                         legend: {
-                            display: false
+                            display: true,
                         },
                         tooltip: {
                             callbacks: {
@@ -48,11 +66,13 @@
                                     const dayIndex = context.dataIndex;
                                     const dayData = {{ history_data|safe }};
                                     const data = dayData[dayIndex];
-                                    return [
-                                        `Failure Rate: ${data.failure_rate}`,
-                                        `Block Rate: ${data.block_rate}`,
-                                        `Avg Duration: ${data.average_duration}`
-                                    ];
+                                    if (context.datasetIndex === 0) {
+                                        return [
+                                            `Failure Rate: ${data.failure_rate}`,
+                                            `Block Rate: ${data.block_rate}`,
+                                        ];
+                                    }
+                                    return `Avg Duration: ${data.average_duration}`;
                                 }
                             }
                         }
@@ -69,6 +89,18 @@
                             grid: {
                                 color: 'rgba(0, 0, 0, 0.1)'
                             }
+                        },
+                        y1: {
+                            position: 'right',
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + 's';
+                                }
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
                         },
                         x: {
                             type: 'time',

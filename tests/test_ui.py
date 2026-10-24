@@ -308,10 +308,21 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
 
     summary.click()
     assert panel.evaluate("el => el.open")
+    assert page.get_by_text("Metrics History").is_visible()
 
     # Hover a data point so the snapshot captures the chart tooltip
     canvas = page.locator("#failureRateChart")
     wait_for_chart(page, "failureRateChart", index=5)
+    duration = page.evaluate(
+        "() => Chart.getChart('failureRateChart').data.datasets[1].data[5].y"
+    )
+    assert duration == pytest.approx(1.5)
+    legend = page.evaluate(
+        """() => Chart.getChart('failureRateChart').legend.legendItems.map(
+            item => item.fillStyle
+        )"""
+    )
+    assert legend == ["#0dcaf0", "#dee2e6"]
     box = canvas.bounding_box()
     center = canvas.evaluate(
         "el => Chart.getChart(el).getDatasetMeta(0).data[5].getCenterPoint()"
@@ -364,7 +375,7 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
 
     summary.click()
     assert panel.evaluate("el => el.open")
-    assert page.get_by_text("Suite Duration History").is_visible()
+    assert page.get_by_text("Duration History").is_visible()
     assert page.get_by_text("Rerun Locally").is_visible()
     assert page.get_by_text("npm run test:e2e").is_visible()
     assert page.get_by_text("--grep").count() == 0

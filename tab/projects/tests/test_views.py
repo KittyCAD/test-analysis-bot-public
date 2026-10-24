@@ -384,7 +384,7 @@ def describe_tests(expect):
         expect(response.status_code) == 200
         html = response.content.decode("utf-8")
         expect(html).contains("Troubleshooting")
-        expect(html).contains("Suite Duration History")
+        expect(html).contains("Duration History")
         expect(html).contains('"tests_duration": 40.0')
         expect(html).contains(SETUP_DURATION_TIP)
         expect(html).contains(TESTS_DURATION_TIP)
@@ -399,7 +399,7 @@ def describe_tests(expect):
         )
 
         expect(html).contains("Troubleshooting")
-        expect(html).excludes("Suite Duration History")
+        expect(html).excludes("Duration History")
 
     @pytest.mark.django_db
     def it_hides_troubleshooting_when_empty(
@@ -412,7 +412,7 @@ def describe_tests(expect):
         html = client.get(f"/projects/foo/bar/suite/{suite.pk}").content.decode("utf-8")
 
         expect(html).excludes("Troubleshooting")
-        expect(html).excludes("Suite Duration History")
+        expect(html).excludes("Duration History")
         expect(html).excludes("Rerun Locally")
 
     @pytest.mark.django_db
@@ -434,7 +434,7 @@ def describe_tests(expect):
 
         html = client.get(f"/projects/foo/bar/suite/{suite.pk}").content.decode("utf-8")
 
-        expect(html).contains("Suite Duration History")
+        expect(html).contains("Duration History")
         expect(html).excludes("Edit in admin")
 
     @pytest.mark.django_db
