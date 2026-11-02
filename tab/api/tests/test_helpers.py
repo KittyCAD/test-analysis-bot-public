@@ -5,6 +5,7 @@ from threading import Barrier
 from django.core.cache import cache
 
 import pytest
+from github import GithubException
 
 from tab.projects.models import CommitStatusOwner, Project, Suite, Test
 from tab.projects.types import Health
@@ -35,6 +36,36 @@ def it_claims_status_owner_atomically(expect, mocker):
     expect(commit.create_status.call_args.kwargs["target_url"]).contains(
         f"branch={owner.branch}"
     )
+
+
+@pytest.mark.django_db
+def describe_update_status(expect, mocker):
+    @pytest.fixture
+    def setup():
+        project = Project.objects.create(repository="https://github.com/foo/bar")
+        organization = mocker.Mock()
+        commit = (
+            organization.get_github_client.return_value.get_repo.return_value.get_commit.return_value
+        )
+        health = Health(total=1, state="success", description="1 of 1 passing")
+        return project, organization, commit, health
+
+    def it_swallows_github_server_errors(setup):
+        project, organization, commit, health = setup
+        commit.create_status.side_effect = GithubException(
+            500, {"message": "Internal Server Error"}, {}
+        )
+
+        update_status(organization, project, "abc123", "main", health)
+
+    def it_reraises_unexpected_github_client_errors(setup):
+        project, organization, commit, health = setup
+        commit.create_status.side_effect = GithubException(
+            403, {"message": "Resource not accessible by integration"}, {}
+        )
+
+        with pytest.raises(GithubException):
+            update_status(organization, project, "abc123", "main", health)
 
 
 def describe_parse_junit_xml(expect):

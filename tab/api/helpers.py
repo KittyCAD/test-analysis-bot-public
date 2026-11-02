@@ -306,9 +306,14 @@ def update_status(
             log.info(f"Updated status for {project.path} @ {sha[:7]}: {health.state}")
     except (GithubException, RequestException, OSError) as e:
         if isinstance(e, GithubException):
+            status = getattr(e, "status", None)
             data = getattr(e, "data", {})
             message = str(data)
-            if any(error in message for error in NONBLOCKING_GITHUB_ERRORS):
+            if status is not None and status >= 500:
+                log.error(
+                    f"Unable to update status for {project.path} @ {sha[:7]}: {e}"
+                )
+            elif any(error in message for error in NONBLOCKING_GITHUB_ERRORS):
                 log.warning(
                     f"Unable to update status for {project.path} @ {sha[:7]}: {data}"
                 )
