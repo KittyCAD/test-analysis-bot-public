@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
+from django.db.models import F, Q
 from django.utils import timezone
 
 import log
@@ -26,8 +27,8 @@ class Command(BaseCommand):
 
     def finalize_releases(self):
         cutoff = timezone.now() - RESULTS_TIMEOUT
-        releases = Release.objects.filter(
-            created_at__lt=cutoff, finalized_at__isnull=True
+        releases = Release.objects.filter(created_at__lt=cutoff).filter(
+            Q(finalized_at__isnull=True) | Q(tested_at__gt=F("finalized_at"))
         )
         for release in releases:
             release.finalize()

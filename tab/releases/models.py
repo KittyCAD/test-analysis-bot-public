@@ -117,6 +117,8 @@ class Release(models.Model):
 
     def finalize(self):
         log.info(f"Finalizing release: {self}")
+        # Keep results arriving during publication eligible for another refresh.
+        self.finalized_at = timezone.now()
 
         project: Project = self.environment.project
         organization = Organization.objects.get(
@@ -128,5 +130,4 @@ class Release(models.Model):
         )
         update_status(organization, project, self.commit, self.branch, health)
 
-        self.finalized_at = timezone.now()
-        self.save()
+        self.save(update_fields=["finalized_at"])
