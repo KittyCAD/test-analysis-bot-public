@@ -39,9 +39,11 @@ class Command(BaseCommand):
     def update_bulk_tests(self):
         if test_ids := cache.get(TESTS_CACHE_KEY):
             cache.delete(TESTS_CACHE_KEY)
-            tests = Test.objects.filter(id__in=test_ids)
-            log.info(f"Updating tests: {tests.count()} (multiple projects)")
-            for test in tests:
+            log.info(f"Updating tests: {len(test_ids)} (multiple projects)")
+            for test_id in test_ids:
+                test = Test.objects.filter(pk=test_id).first()
+                if test is None:
+                    continue
                 if test.update():
                     log.info(f"Updated test: {test}")
                 test.save()
