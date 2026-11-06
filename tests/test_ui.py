@@ -295,6 +295,16 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
         )
         history.timestamp = now - timedelta(days=len(rates) - 1 - index)
         history.save(update_fields=["timestamp"])
+    # Dense recent cluster so raw shows more markers than sample
+    for minutes in range(10, 120, 10):
+        history = TestHistory.objects.create(
+            test=test,
+            failure_rate=0.84,
+            block_rate=0.5,
+            average_duration=1.95,
+        )
+        history.timestamp = now - timedelta(minutes=minutes)
+        history.save(update_fields=["timestamp"])
 
     force_login(page, live_server, admin_user)
     url = f"{live_server.url}{reverse('projects:test-results', args=[project.path, test.id])}"
@@ -309,6 +319,9 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
     summary.click()
     assert panel.evaluate("el => el.open")
     assert page.get_by_text("Metrics History").is_visible()
+    density = page.locator(".history-chart-density")
+    assert density.get_by_text("sample", exact=True).is_visible()
+    assert density.get_by_text("raw", exact=True).is_visible()
 
     # Hover a data point so the snapshot captures the chart tooltip
     canvas = page.locator("#failureRateChart")
@@ -334,6 +347,25 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
     )
 
     take_snapshot(page, "projects/troubleshooting-expanded")
+
+    density.get_by_text("raw", exact=True).click()
+    assert page.locator("details.troubleshooting").evaluate("el => el.open")
+    canvas = page.locator("#failureRateChart")
+    wait_for_chart(page, "failureRateChart", index=5)
+    raw_count = page.evaluate(
+        "() => Chart.getChart('failureRateChart').data.datasets[0].data.length"
+    )
+    assert raw_count > 10
+    box = canvas.bounding_box()
+    center = canvas.evaluate(
+        "el => Chart.getChart(el).getDatasetMeta(0).data[5].getCenterPoint()"
+    )
+    assert box
+    page.mouse.move(box["x"] + center["x"], box["y"] + center["y"])
+    page.wait_for_function(
+        "() => Chart.getChart('failureRateChart').tooltip.opacity === 1"
+    )
+    take_snapshot(page, "projects/troubleshooting-expanded-raw")
 
 
 @pytest.mark.django_db
@@ -362,6 +394,16 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
         )
         history.timestamp = now - timedelta(days=len(setups) - 1 - index)
         history.save(update_fields=["timestamp"])
+    # Dense recent cluster so raw shows more markers than sample
+    for minutes in range(10, 120, 10):
+        history = SuiteHistory.objects.create(
+            suite=suite,
+            average_setup_duration=14.5,
+            average_tests_duration=92.0,
+            average_teardown_duration=5.0,
+        )
+        history.timestamp = now - timedelta(minutes=minutes)
+        history.save(update_fields=["timestamp"])
 
     force_login(page, live_server, admin_user)
     url = f"{live_server.url}{reverse('projects:suite-tests', args=[project.path, suite.id])}"
@@ -379,6 +421,9 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
     assert page.get_by_text("Rerun Locally").is_visible()
     assert page.get_by_text("npm run test:e2e").is_visible()
     assert page.get_by_text("--grep").count() == 0
+    density = page.locator(".history-chart-density")
+    assert density.get_by_text("sample", exact=True).is_visible()
+    assert density.get_by_text("raw", exact=True).is_visible()
 
     canvas = page.locator("#suiteDurationChart")
     wait_for_chart(page, "suiteDurationChart", dataset=2, index=5)
@@ -407,6 +452,25 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
     assert abs(caret - center["y"]) < 5
 
     take_snapshot(page, "projects/suite-troubleshooting-expanded")
+
+    density.get_by_text("raw", exact=True).click()
+    assert page.locator("details.suite-troubleshooting").evaluate("el => el.open")
+    canvas = page.locator("#suiteDurationChart")
+    wait_for_chart(page, "suiteDurationChart", dataset=2, index=5)
+    raw_count = page.evaluate(
+        "() => Chart.getChart('suiteDurationChart').data.datasets[0].data.length"
+    )
+    assert raw_count > 10
+    box = canvas.bounding_box()
+    center = canvas.evaluate(
+        "el => Chart.getChart(el).getDatasetMeta(2).data[5].getCenterPoint()"
+    )
+    assert box
+    page.mouse.move(box["x"] + center["x"], box["y"] + center["y"])
+    page.wait_for_function(
+        "() => Chart.getChart('suiteDurationChart').tooltip.opacity === 1"
+    )
+    take_snapshot(page, "projects/suite-troubleshooting-expanded-raw")
 
 
 @pytest.mark.django_db

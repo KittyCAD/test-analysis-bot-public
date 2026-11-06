@@ -15,6 +15,40 @@ from ..models import Alert, Subscription, SuiteHistory, Team, TestHistory
 
 def describe_test_history(expect):
 
+    def describe_get_data(expect):
+        @pytest.fixture
+        def test():
+            project = Project.objects.create(repository="https://github.com/foo/bar")
+            return Test.objects.create(project=project, name="my-test")
+
+        @pytest.mark.django_db
+        def it_downsamples_to_last_point_per_bucket(test):
+            base = timezone.now().replace(minute=0, second=0, microsecond=0)
+            base -= timedelta(hours=base.hour % 3)
+            samples = (
+                (base + timedelta(hours=0, minutes=10), 0.10),
+                (base + timedelta(hours=1, minutes=20), 0.20),  # last in first bucket
+                (base + timedelta(hours=3, minutes=10), 0.30),
+                (base + timedelta(hours=4, minutes=50), 0.40),  # last in second bucket
+            )
+            for timestamp, failure_rate in samples:
+                history = TestHistory.objects.create(
+                    test=test,
+                    failure_rate=failure_rate,
+                    block_rate=0.0,
+                    average_duration=10.0,
+                )
+                TestHistory.objects.filter(pk=history.pk).update(timestamp=timestamp)
+
+            data = test.history.get_data(test, weeks=1, bucket_hours=3)
+
+            # Padding inserts a leading point when fewer than 10 samples remain
+            expect([point["failure_rate"] for point in data]) == [
+                "20.0%",
+                "20.0%",
+                "40.0%",
+            ]
+
     def describe_evaluate(expect):
         def it_skips_alert_if_the_test_is_disabled():
             test = Test(enabled=False)
@@ -260,3 +294,27 @@ def describe_suite_history(expect):
             suite.average_tests_duration = -1
 
             expect(suite.history.get_data(suite, weeks=1)) == []
+
+        @pytest.mark.django_db
+        def it_downsamples_to_last_point_per_bucket():
+            # Align to a 3-hour grid so bucket membership does not depend on wall clock
+            base = timezone.now().replace(minute=0, second=0, microsecond=0)
+            base -= timedelta(hours=base.hour % 3)
+            samples = (
+                (base + timedelta(hours=0, minutes=10), 10.0),
+                (base + timedelta(hours=1, minutes=20), 20.0),  # last in first bucket
+                (base + timedelta(hours=3, minutes=10), 30.0),
+                (base + timedelta(hours=4, minutes=50), 40.0),  # last in second bucket
+            )
+            for timestamp, tests in samples:
+                history = SuiteHistory.objects.create(
+                    suite=suite,
+                    average_setup_duration=1.0,
+                    average_tests_duration=tests,
+                    average_teardown_duration=1.0,
+                )
+                SuiteHistory.objects.filter(pk=history.pk).update(timestamp=timestamp)
+
+            data = suite.history.get_data(suite, weeks=1, bucket_hours=3)
+
+            expect([point["tests_duration"] for point in data]) == [20.0, 40.0]

@@ -1,0 +1,29 @@
+<div class="btn-group btn-group-sm history-chart-density"
+     role="group"
+     aria-label="History chart density">
+    <a class="btn py-0 px-2 {% if not history_chart_all_points %}active{% endif %}"
+       href="{{ history_chart_sampled_url }}"
+       {% if not history_chart_all_points %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>sample</a>
+    <a class="btn py-0 px-2 {% if history_chart_all_points %}active{% endif %}"
+       href="{{ history_chart_all_points_url }}"
+       {% if history_chart_all_points %}aria-pressed="true"{% else %}aria-pressed="false"{% endif %}>raw</a>
+</div>
+<style>
+    .history-chart-density .btn {
+        font-size: 0.75rem;
+        line-height: 1.4;
+        color: rgba(255, 255, 255, 0.65);
+        border-color: rgba(255, 255, 255, 0.35);
+        background: transparent;
+    }
+    .history-chart-density .btn:hover {
+        color: rgba(255, 255, 255, 0.9);
+        border-color: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.08);
+    }
+    .history-chart-density .btn.active {
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.55);
+        background: rgba(255, 255, 255, 0.18);
+    }
+</style>

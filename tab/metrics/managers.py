@@ -8,6 +8,8 @@ import log
 
 from tab.projects.models import Result, Run, Suite, Test
 
+from .constants import HISTORY_CHART_TARGET_POINTS
+
 if TYPE_CHECKING:
     from .models import SuiteHistory, TestHistory
 
@@ -22,6 +24,23 @@ def format_duration(value: float, decimals: int = 1) -> str:
     if value < 0:
         return "?"
     return f"{round(value, decimals)}s"
+
+
+def chart_bucket_hours(weeks: float) -> float:
+    """Hours per bucket so a weeks window yields ~HISTORY_CHART_TARGET_POINTS."""
+    return max(1.0, (weeks * 7 * 24) / HISTORY_CHART_TARGET_POINTS)
+
+
+def downsample_histories(histories: list, bucket_hours: float) -> list:
+    """Keep the last sample in each time bucket (histories must be ascending)."""
+    if bucket_hours <= 0:
+        return histories
+    bucket_seconds = bucket_hours * 3600
+    buckets = {}
+    for history in histories:
+        key = int(history.timestamp.timestamp() // bucket_seconds)
+        buckets[key] = history
+    return [buckets[key] for key in sorted(buckets)]
 
 
 class TestHistoryManager(models.Manager):
@@ -49,19 +68,23 @@ class TestHistoryManager(models.Manager):
 
         return history
 
-    def get_data(self, test: Test, weeks: float) -> list[dict]:
-        data = []
+    def get_data(
+        self, test: Test, weeks: float, *, bucket_hours: float | None = None
+    ) -> list[dict]:
         cutoff = timezone.now() - timedelta(weeks=weeks)
-        histories = self.filter(timestamp__gte=cutoff).order_by("timestamp")
-        for history in cast(list["TestHistory"], histories):
-            data.append(
-                {
-                    "date": history.timestamp.strftime("%Y-%m-%d %H:%M"),
-                    "failure_rate": format_percentage(history.failure_rate),
-                    "block_rate": format_percentage(history.block_rate),
-                    "average_duration": format_duration(history.average_duration),
-                }
-            )
+        histories = list(self.filter(timestamp__gte=cutoff).order_by("timestamp"))
+        if bucket_hours is None:
+            bucket_hours = chart_bucket_hours(weeks)
+        histories = downsample_histories(histories, bucket_hours)
+        data = [
+            {
+                "date": history.timestamp.strftime("%Y-%m-%d %H:%M"),
+                "failure_rate": format_percentage(history.failure_rate),
+                "block_rate": format_percentage(history.block_rate),
+                "average_duration": format_duration(history.average_duration),
+            }
+            for history in cast(list["TestHistory"], histories)
+        ]
         if not data:
             data.append(
                 {
@@ -119,11 +142,18 @@ class SuiteHistoryManager(models.Manager):
 
         return history
 
-    def get_data(self, suite: Suite, weeks: float) -> list[dict]:
+    def get_data(
+        self, suite: Suite, weeks: float, *, bucket_hours: float | None = None
+    ) -> list[dict]:
         cutoff = timezone.now() - timedelta(weeks=weeks)
-        histories = self.filter(
-            timestamp__gte=cutoff, average_tests_duration__gte=0
-        ).order_by("timestamp")
+        histories = list(
+            self.filter(timestamp__gte=cutoff, average_tests_duration__gte=0).order_by(
+                "timestamp"
+            )
+        )
+        if bucket_hours is None:
+            bucket_hours = chart_bucket_hours(weeks)
+        histories = downsample_histories(histories, bucket_hours)
         data = [
             self._point(history.timestamp, history)
             for history in cast(list["SuiteHistory"], histories)

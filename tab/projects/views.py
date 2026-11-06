@@ -19,7 +19,7 @@ import log
 from django_tables2 import SingleTableMixin
 
 from tab.core.helpers import get_or_create_user, organization_for_email
-from tab.metrics.constants import DELTA_THRESHOLD
+from tab.metrics.constants import DELTA_THRESHOLD, HISTORY_CHART_ALL_POINTS_PARAM
 from tab.metrics.models import Alert
 
 from .constants import (
@@ -49,6 +49,26 @@ def _query_url(base: str, params, *, drop: str | None = None, **updates) -> str:
         query[key] = value
     encoded = query.urlencode()
     return f"{base}?{encoded}" if encoded else base
+
+
+def _history_chart_points_context(request) -> dict:
+    all_points = request.GET.get(HISTORY_CHART_ALL_POINTS_PARAM) == "1"
+    return {
+        "history_chart_all_points": all_points,
+        "history_chart_bucket_hours": 0 if all_points else None,
+        "history_chart_all_points_url": _query_url(
+            "",
+            request.GET,
+            expand="true",
+            **{HISTORY_CHART_ALL_POINTS_PARAM: "1"},
+        ),
+        "history_chart_sampled_url": _query_url(
+            "",
+            request.GET,
+            drop=HISTORY_CHART_ALL_POINTS_PARAM,
+            expand="true",
+        ),
+    }
 
 
 def _filter_menu_section(base: str, params, heading: str, choices):
@@ -198,7 +218,12 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView
                 weeks = 1.5
                 expand = self.request.GET.get("expand") == "true"
             context["expand"] = expand
-            context["suite_duration_history"] = suite.history.get_data(suite, weeks)
+            context.update(_history_chart_points_context(self.request))
+            context["suite_duration_history"] = suite.history.get_data(
+                suite,
+                weeks,
+                bucket_hours=context["history_chart_bucket_hours"],
+            )
             context["suite_duration_tips"] = {
                 "Setup": SETUP_DURATION_TIP,
                 "Tests": TESTS_DURATION_TIP,
@@ -610,7 +635,12 @@ class TestResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, Fo
         context["browser"] = self.request.GET.get("browser", "").strip()
         context["tag"] = self.request.GET.get("tag", "").strip()
         context["search"] = self.request.GET.get("search", "").strip()
-        context["history_data"] = test.history.get_data(test, weeks)
+        context.update(_history_chart_points_context(self.request))
+        context["history_data"] = test.history.get_data(
+            test,
+            weeks,
+            bucket_hours=context["history_chart_bucket_hours"],
+        )
 
         for field in test._meta.get_fields():
             if hasattr(field, "help_text") and field.help_text:

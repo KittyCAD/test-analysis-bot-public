@@ -473,6 +473,39 @@ def describe_tests(expect):
         html = admin_client.get(f"{url}?weeks=10").content.decode("utf-8")
         expect(html).contains('"tests_duration": 99.0')
 
+    @pytest.mark.django_db
+    def it_downsamples_dense_suite_duration_history(admin_client, suite: Suite):
+        suite.history.all().delete()
+        now = timezone.now()
+        # Several samples inside one default downsample bucket (~4h at 1.5 weeks)
+        for minutes_ago, tests in ((50, 11.0), (40, 22.0), (30, 33.0), (20, 44.0)):
+            history = suite.history.create(
+                average_setup_duration=1.0,
+                average_tests_duration=tests,
+                average_teardown_duration=1.0,
+            )
+            suite.history.filter(pk=history.pk).update(
+                timestamp=now - timedelta(minutes=minutes_ago)
+            )
+
+        url = f"/projects/foo/bar/suite/{suite.pk}"
+        html = admin_client.get(f"{url}?weeks=1.5").content.decode("utf-8")
+
+        expect(html).contains('"tests_duration": 44.0')
+        expect(html).excludes('"tests_duration": 11.0')
+        expect(html).excludes('"tests_duration": 22.0')
+        expect(html).excludes('"tests_duration": 33.0')
+        expect(html).contains(">sample<")
+        expect(html).contains(">raw<")
+        expect(html).contains("btn-group")
+
+        html = admin_client.get(f"{url}?weeks=1.5&all_points=1").content.decode("utf-8")
+        expect(html).contains('"tests_duration": 11.0')
+        expect(html).contains('"tests_duration": 22.0')
+        expect(html).contains('"tests_duration": 33.0')
+        expect(html).contains('"tests_duration": 44.0')
+        expect(html).contains('aria-pressed="true"')
+
     def describe_details(expect, admin_client, disabled_test: Test):
         url = "/projects/foo/bar/tests/{pk}"
 

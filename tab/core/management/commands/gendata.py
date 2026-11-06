@@ -116,7 +116,8 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.WARNING("Sample project already exists"))
 
-        days = 8
+        # Match the default suite Duration History window (~1.5 weeks)
+        days = 11
         num_results = 500
         end = timezone.now()
         start = end - timedelta(days=days)
@@ -250,29 +251,89 @@ class Command(BaseCommand):
 
     def _generate_suite_history(self, suite, days):
         suite.history.all().delete()
-        hours_steps = list(range(0, 24 * days, 6))
-        span = max(len(hours_steps) - 1, 1)
-        for index, hours in enumerate(hours_steps):
-            # Rise through the window so some totals format as XmYs (> 2 minutes)
-            peak = math.sin(math.pi * index / span)
+        now = timezone.now()
+        hours_ago = self._suite_history_hours(days)
+        span = max(len(hours_ago) - 1, 1)
+        # Magnitudes closer to a long e2e suite (minutes on the chart axis)
+        setup_base = 480.0
+        tests_base = 900.0
+        latest = None
+        for index, hours in enumerate(hours_ago):
+            progress = index / span
+            # Broad rise/fall with a couple of sharper spikes, like the live chart
+            peak = math.sin(math.pi * progress)
+            spike = 0.55 * math.exp(
+                -((progress - 0.35) ** 2) / 0.008
+            ) + 0.35 * math.exp(-((progress - 0.72) ** 2) / 0.006)
+            setup = max(
+                60.0,
+                setup_base + 180.0 * peak + 120.0 * spike + random.uniform(-40.0, 40.0),
+            )
+            tests = max(
+                120.0,
+                tests_base + 900.0 * peak + 700.0 * spike + random.uniform(-80.0, 80.0),
+            )
+            # Teardown is often absent; when present it stays a thin band
+            if random.random() < 0.65:
+                teardown = -1.0
+            else:
+                teardown = max(1.0, random.uniform(5.0, 45.0))
             history = SuiteHistory.objects.create(
                 suite=suite,
-                average_setup_duration=max(
-                    0.1, suite.average_setup_duration + random.uniform(-2.0, 2.0)
-                ),
-                average_tests_duration=max(
-                    0.1,
-                    suite.average_tests_duration
-                    + random.uniform(-10.0, 10.0)
-                    + 50.0 * peak,
-                ),
-                average_teardown_duration=max(
-                    0.1, suite.average_teardown_duration + random.uniform(-1.0, 1.0)
-                ),
+                average_setup_duration=setup,
+                average_tests_duration=tests,
+                average_teardown_duration=teardown,
             )
-            history.timestamp = timezone.now() - timedelta(hours=hours)
+            history.timestamp = now - timedelta(hours=hours)
             history.save(update_fields=["timestamp"])
-        self.stdout.write(self.style.SUCCESS("Generated sample suite duration history"))
+            if latest is None or hours < latest[0]:
+                latest = (hours, setup, tests, teardown)
+        if latest is not None:
+            _, setup, tests, teardown = latest
+            suite.average_setup_duration = setup
+            suite.average_tests_duration = tests
+            suite.average_teardown_duration = teardown
+            suite.save(
+                update_fields=[
+                    "average_setup_duration",
+                    "average_tests_duration",
+                    "average_teardown_duration",
+                    "updated_at",
+                ]
+            )
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Generated sample suite duration history ({len(hours_ago)} points)"
+            )
+        )
+
+    def _suite_history_hours(self, days: int) -> list[float]:
+        """Irregular ages-in-hours with randomly denser clusters for the chart."""
+        window = 24 * days
+        hours_ago: list[float] = []
+        hour = 0.0
+        while hour < window:
+            if random.random() < 0.28:
+                # Busy stretch: several samples within a few hours (marker crowding)
+                cluster_size = random.randint(5, 12)
+                cluster_span = random.uniform(2.0, 7.0)
+                for index in range(cluster_size):
+                    fraction = index / max(cluster_size - 1, 1)
+                    jitter = random.uniform(-0.15, 0.15)
+                    point = hour + fraction * cluster_span + jitter
+                    if 0 <= point < window:
+                        hours_ago.append(point)
+                hour += cluster_span + random.uniform(3.0, 16.0)
+            else:
+                hours_ago.append(hour)
+                hour += random.uniform(5.0, 16.0)
+        # Dedupe near-collisions while keeping cluster density
+        hours_ago = sorted(hours_ago)
+        trimmed: list[float] = []
+        for point in hours_ago:
+            if not trimmed or point - trimmed[-1] >= 0.2:
+                trimmed.append(point)
+        return trimmed
 
     def _generate_runs(self, project, suite, num_results, start, end):
         runs = []
