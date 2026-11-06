@@ -212,12 +212,13 @@ def _render_stat_card(
     secondary_color: tuple[int, int, int] | None = None,
     statuses: list[str] | None = None,
     primary_size: int = 120,
+    label_size: int = 44,
 ) -> bytes:
     image = Image.new("RGB", (SIZE, SIZE), BACKGROUND)
     draw = ImageDraw.Draw(image)
 
     rate_font = _font("DejaVuSans-Bold.ttf", primary_size)
-    label_font = _font("DejaVuSans.ttf", 36)
+    label_font = _font("DejaVuSans.ttf", label_size)
     secondary_font = _font("DejaVuSans-Bold.ttf", 34)
     max_width = SIZE - 48
 
@@ -303,21 +304,26 @@ def render_result_preview_png(result: Result) -> bytes:
     label = status.label
     _, label_w, label_h = _fit_text(draw, label, badge_font)
 
-    pad_x, pad_y = 56, 32
+    # Match Bootstrap .badge (≈ .35em / .65em padding, ~0.375rem radius)
+    pad_x, pad_y = int(label_h * 0.65), int(label_h * 0.35)
     badge_w = label_w + pad_x * 2
     badge_h = label_h + pad_y * 2
     badge_left = (SIZE - badge_w) // 2
     badge_top = (SIZE - badge_h) // 2
     draw.rounded_rectangle(
         (badge_left, badge_top, badge_left + badge_w, badge_top + badge_h),
-        radius=24,
+        radius=10,
         fill=badge_color,
     )
+    # text-bg-warning / secondary use dark foreground in Bootstrap
+    text_color = INK if status.color in ("warning", "secondary") else WHITE
+    # Slight downward nudge: FreeType bbox center sits optically high for caps
     draw.text(
-        (badge_left + pad_x, badge_top + pad_y - 6),
+        (badge_left + badge_w // 2, badge_top + badge_h // 2 + 2),
         label,
         font=badge_font,
-        fill=WHITE,
+        fill=text_color,
+        anchor="mm",
     )
     return _save_png(image)
 
@@ -351,7 +357,28 @@ def render_suite_preview_png(suite: Suite) -> bytes:
     return _render_stat_card(
         primary=str(test_count),
         primary_color=INK,
-        label=_pluralize(test_count, "Suite test"),
+        label=_pluralize(test_count, "Test"),
+        label_size=56,
+        statuses=statuses,
+    )
+
+
+def render_results_preview_png(
+    project: Project, *, suite: Suite | None = None
+) -> bytes:
+    """Slack preview for project or suite results pages."""
+    tests = project.tests.all()
+    if suite is not None:
+        tests = tests.filter(suite=suite)
+    test_count = tests.count()
+    statuses = _recent_statuses_for_project(project, suite=suite)
+    if test_count == 0 and not statuses:
+        return render_logo_preview_png()
+    return _render_stat_card(
+        primary=str(test_count),
+        primary_color=INK,
+        label=_pluralize(test_count, "Result"),
+        label_size=56,
         statuses=statuses,
     )
 

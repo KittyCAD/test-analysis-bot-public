@@ -16,6 +16,7 @@ from tab.core.previews import (
     render_metrics_preview_png,
     render_project_preview_png,
     render_result_preview_png,
+    render_results_preview_png,
     render_suite_preview_png,
     render_test_preview_png,
 )
@@ -131,6 +132,8 @@ def describe_preview_pngs(expect):
     def it_renders_suite_and_project_counts(project, suite):
         Test.objects.create(project=project, suite=suite, name="t")
         _assert_square_png(render_suite_preview_png(suite), expect)
+        _assert_square_png(render_results_preview_png(project), expect)
+        _assert_square_png(render_results_preview_png(project, suite=suite), expect)
         _assert_square_png(render_project_preview_png(project, is_org=False), expect)
 
     @pytest.mark.django_db

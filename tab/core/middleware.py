@@ -23,6 +23,7 @@ from tab.core.previews import (
     render_metrics_preview_png,
     render_project_preview_png,
     render_result_preview_png,
+    render_results_preview_png,
     render_suite_preview_png,
     render_test_preview_png,
 )
@@ -181,11 +182,14 @@ class CrawlerPreviewMiddleware(MiddlewareMixin):
             _project, suite = suite_match
             return render_suite_preview_png(suite)
 
-        # Pattern: projects/<path>/results[/suite/<suite_id>] — logo fallback
-        if self._match_suite_results(path_parts) or self._match_project_suffix(
-            path_parts, "results"
-        ):
-            return render_logo_preview_png()
+        # Pattern: projects/<path>/results/suite/<suite_id>
+        if suite_results := self._match_suite_results(path_parts):
+            project, suite = suite_results
+            return render_results_preview_png(project, suite=suite)
+
+        # Pattern: projects/<path>/results
+        if results := self._match_project_suffix(path_parts, "results"):
+            return render_results_preview_png(results)
 
         # Pattern: projects/<path>/metrics
         if metrics := self._match_project_suffix(path_parts, "metrics"):

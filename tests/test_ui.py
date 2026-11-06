@@ -481,6 +481,8 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
 @pytest.mark.django_db
 def test_preview_images(page: Page, live_server):
     project = Project.objects.get(repository="https://github.com/foo/bar")
+    # Org pages resolve a Project whose repository ends with the org path
+    Project.objects.get_or_create(repository="https://github.com/foo")
     suite = Suite.objects.create(project=project, name="e2e-preview")
     test = Test.objects.create(
         project=project,
@@ -535,15 +537,39 @@ def test_preview_images(page: Page, live_server):
         )
         results.append(result)
 
+    disabled = Test.objects.create(
+        project=project,
+        suite=suite,
+        name="disabled-preview-test",
+        failure_rate=0.4,
+        disabled_at=now,
+    )
+    disabled_result = disabled.results.create(
+        branch="main",
+        commit="disabled001",
+        status=Status.FAILED,
+        duration=1.0,
+    )
+    Test.objects.filter(pk=disabled.pk).update(
+        last_result=disabled_result, enabled=False
+    )
+
     snapshots = [
         (f"/projects/foo/bar/tests/{test.id}.png", "core/preview/test"),
         (
             f"/projects/foo/bar/tests/{test.id}/results/{results[-1].id}.png",
             "core/preview/result",
         ),
+        ("/projects/foo/bar/tests/disabled.png", "core/preview/disabled"),
         ("/projects/foo/bar/metrics.png", "core/preview/metrics"),
         (f"/projects/foo/bar/suite/{suite.id}.png", "core/preview/suite"),
+        (
+            f"/projects/foo/bar/results/suite/{suite.id}.png",
+            "core/preview/suite-results",
+        ),
+        ("/projects/foo/bar/results.png", "core/preview/results"),
         ("/projects/foo/bar.png", "core/preview/project"),
+        ("/projects/foo.png", "core/preview/org"),
         ("/projects.png", "core/preview/default"),
     ]
     for path, snapshot_name in snapshots:
