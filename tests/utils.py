@@ -50,10 +50,10 @@ def wait_for_chart(page: Page, canvas_id: str, *, dataset: int = 0, index: int =
     )
 
 
-def take_snapshot(page: Page, name: str):
+def _update_snapshot_baseline(actual_bytes: bytes, name: str):
+    """Compare image bytes to a baseline, rewriting on meaningful drift."""
     baseline_path = SNAPSHOT_DIR / f"{name}.png"
     baseline_path.parent.mkdir(parents=True, exist_ok=True)
-    actual_bytes = page.screenshot(full_page=True, animations="disabled")
 
     if not baseline_path.exists():
         baseline_path.write_bytes(actual_bytes)
@@ -70,3 +70,16 @@ def take_snapshot(page: Page, name: str):
     mismatched = pixelmatch(expected, actual)
     if total and mismatched / total > SNAPSHOT_DIFF_RATIO:
         baseline_path.write_bytes(actual_bytes)
+
+
+def take_preview_snapshot(actual_bytes: bytes, name: str):
+    """Snapshot a generated preview PNG (e.g. crawler og:image)."""
+    _update_snapshot_baseline(actual_bytes, name)
+
+
+def take_page_snapshot(page: Page, name: str):
+    """Snapshot a full Playwright page."""
+    _update_snapshot_baseline(
+        page.screenshot(full_page=True, animations="disabled"),
+        name,
+    )

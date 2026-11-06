@@ -42,6 +42,7 @@ django-extensions = "*"
 django-user-agents = "^0.4"
 markdown = "^3.11"
 minilog = "*"
+pillow = "^13.0"
 unidecode = "^1.4"
 
 # Deployment
@@ -75,7 +76,6 @@ pytest-cov = "*"
 coveragespace = "^6.2"
 
 # Utilities
-pillow = "^13"
 pixelmatch = "^0.4"
 watchdog = "^6"
 

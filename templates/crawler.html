@@ -1,11 +1,19 @@
 {% extends "base.html" %}
 
 {% block title %}
-    {% if og_title %}{{ og_title }}{% endif %}
+    {% if og_title %}
+        {{ og_title }}
+    {% else %}
+        {{ block.super }}
+    {% endif %}
 {% endblock title %}
 
 {% block og_title %}
-    {% if og_title %}{{ block.super }} | {{ og_title }}{% endif %}
+    {% if og_title %}
+        {{ block.super }} | {{ og_title }}
+    {% else %}
+        {{ block.super }}
+    {% endif %}
 {% endblock og_title %}
 
 {% block og_description %}

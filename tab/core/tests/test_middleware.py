@@ -101,6 +101,8 @@ def _extract_og_tags(html: str) -> dict[str, str]:
         tags["og:type"] = match.group(1).strip()
     if match := re.search(r'<meta property="og:url" content="([^"]+)"', html):
         tags["og:url"] = match.group(1).strip()
+    if match := re.search(r'<meta property="og:image" content="([^"]+)"', html):
+        tags["og:image"] = match.group(1).strip()
     if match := re.search(r"<title>([^<]+)</title>", html):
         tags["title"] = match.group(1).strip()
     return tags
@@ -117,11 +119,17 @@ def describe_crawler_preview_middleware(expect):
         req.method = "GET"
         req.path = "/projects/test-org/test-repo"
         req.GET = QueryDict()
-        mocker.patch.object(
-            req,
-            "build_absolute_uri",
-            return_value="http://testserver.com/projects/test-org/test-repo",
-        )
+
+        def build_absolute_uri(location=None):
+            if location is None:
+                location = req.path
+            if location.startswith("http://") or location.startswith("https://"):
+                return location
+            if not location.startswith("/"):
+                location = f"/{location}"
+            return f"http://testserver.com{location}"
+
+        mocker.patch.object(req, "build_absolute_uri", side_effect=build_absolute_uri)
         return req
 
     @pytest.fixture
@@ -147,6 +155,9 @@ def describe_crawler_preview_middleware(expect):
             branch="main",
             commit="abc123",
         )
+        from tab.projects.models import Suite
+
+        suite = Suite.objects.create(project=project, name="unit")
 
         return {
             "project": project,
@@ -155,6 +166,7 @@ def describe_crawler_preview_middleware(expect):
             "test": test,
             "nested_test": nested_test,
             "result": result,
+            "suite": suite,
         }
 
     @pytest.mark.django_db
@@ -166,6 +178,7 @@ def describe_crawler_preview_middleware(expect):
                 {
                     "og:title": "Test Analysis Bot | test-org",
                     "og:description": "Keep tabs on unreliable tests by exploring all projects for this organization.",
+                    "og:image": "http://testserver.com/projects/test-org.png",
                 },
             ),
             (
@@ -173,6 +186,7 @@ def describe_crawler_preview_middleware(expect):
                 {
                     "og:title": "Test Analysis Bot | test-org › test-repo",
                     "og:description": "Keep tabs on unreliable tests by exploring all tests reported for this project.",
+                    "og:image": "http://testserver.com/projects/test-org/test-repo.png",
                 },
             ),
             (
@@ -180,6 +194,7 @@ def describe_crawler_preview_middleware(expect):
                 {
                     "og:title": "Test Analysis Bot | test-org › test-repo",
                     "og:description": "Keep tabs on unreliable tests by viewing metrics for this project.",
+                    "og:image": "http://testserver.com/projects/test-org/test-repo/metrics.png",
                 },
             ),
             (
@@ -187,6 +202,7 @@ def describe_crawler_preview_middleware(expect):
                 {
                     "og:title": "Test Analysis Bot | test-org › test-repo",
                     "og:description": "Keep tabs on unreliable tests by browsing the latest results for this project.",
+                    "og:image": "http://testserver.com/projects/test-org/test-repo/results.png",
                 },
             ),
             (
@@ -194,6 +210,7 @@ def describe_crawler_preview_middleware(expect):
                 {
                     "og:title": "Test Analysis Bot | test-org › test-repo",
                     "og:description": "Keep tabs on unreliable tests by viewing disabled tests for this project.",
+                    "og:image": "http://testserver.com/projects/test-org/test-repo/tests/disabled.png",
                 },
             ),
             (
@@ -201,6 +218,7 @@ def describe_crawler_preview_middleware(expect):
                 {
                     "og:title": "Test Analysis Bot | test-org › test-repo",
                     "og:description": "Test result history for: my-test",
+                    "og:image": "http://testserver.com/projects/test-org/test-repo/tests/{test_id}.png",
                 },
             ),
             (
@@ -208,6 +226,47 @@ def describe_crawler_preview_middleware(expect):
                 {
                     "og:title": "Test Analysis Bot | test-org › test-repo",
                     "og:description": "Failed test result for: my-test",
+                    "og:image": "http://testserver.com/projects/test-org/test-repo/tests/{test_id}/results/{result_id}.png",
+                },
+            ),
+            (
+                "projects/test-org/test-repo/suite/{suite_id}",
+                {
+                    "og:title": "Test Analysis Bot | test-org › test-repo",
+                    "og:description": "Suite tests for: unit",
+                    "og:image": "http://testserver.com/projects/test-org/test-repo/suite/{suite_id}.png",
+                },
+            ),
+            (
+                "projects/test-org/test-repo/results/suite/{suite_id}",
+                {
+                    "og:title": "Test Analysis Bot | test-org › test-repo",
+                    "og:description": "Latest results for suite: unit",
+                    "og:image": "http://testserver.com/projects/test-org/test-repo/results/suite/{suite_id}.png",
+                },
+            ),
+            (
+                "projects",
+                {
+                    "og:title": "Test Analysis Bot",
+                    "og:description": "Keep tabs on unreliable tests by exploring all projects.",
+                    "og:image": "http://testserver.com/projects.png",
+                },
+            ),
+            (
+                "releases",
+                {
+                    "og:title": "Test Analysis Bot | Releases",
+                    "og:description": "Keep tabs on unreliable tests by exploring release history.",
+                    "og:image": "http://testserver.com/releases.png",
+                },
+            ),
+            (
+                "projects/test-org/test-repo/tests/{test_id}/export",
+                {
+                    "og:title": "Test Analysis Bot",
+                    "og:description": "Keep tabs on unreliable tests.",
+                    "og:image": "http://testserver.com/projects/test-org/test-repo/tests/{test_id}/export.png",
                 },
             ),
         ],
@@ -224,10 +283,9 @@ def describe_crawler_preview_middleware(expect):
         format_kwargs = {
             "test_id": test_data["test"].id,
             "nested_test_id": test_data["nested_test"].id,
+            "suite_id": test_data["suite"].id,
+            "result_id": test_data["result"].id,
         }
-        if "{result_id}" in path_template:
-            format_kwargs["result_id"] = test_data["result"].id
-
         path = path_template.format(**format_kwargs)
 
         # Generate HTML
@@ -239,17 +297,62 @@ def describe_crawler_preview_middleware(expect):
         # Check expected tags, handling placeholders
         for key, expected_value in expected_tags.items():
             # Replace placeholders with actual values
-            if "{result_id}" in expected_value:
-                expected_value = expected_value.format(result_id=test_data["result"].id)
+            if any(
+                token in expected_value
+                for token in ("{result_id}", "{test_id}", "{suite_id}")
+            ):
+                expected_value = expected_value.format(
+                    test_id=test_data["test"].id,
+                    result_id=test_data["result"].id,
+                    suite_id=test_data["suite"].id,
+                )
             elif "{default_branch}" in expected_value:
                 expected_value = expected_value.format(
                     default_branch=test_data["project"].default_branch
                 )
-            elif "{test_id}" in expected_value:
-                expected_value = expected_value.format(test_id=test_data["test"].id)
             elif "{nested_test_id}" in expected_value:
                 expected_value = expected_value.format(
                     nested_test_id=test_data["nested_test"].id
                 )
 
             expect(tags[key]) == expected_value
+
+    @pytest.mark.django_db
+    @pytest.mark.parametrize(
+        "path_template",
+        [
+            "projects",
+            "releases",
+            "projects/test-org",
+            "projects/test-org/test-repo",
+            "projects/test-org/test-repo/metrics",
+            "projects/test-org/test-repo/results",
+            "projects/test-org/test-repo/tests/disabled",
+            "projects/test-org/test-repo/tests/{test_id}",
+            "projects/test-org/test-repo/tests/{test_id}/results/{result_id}",
+            "projects/test-org/test-repo/suite/{suite_id}",
+            "projects/test-org/test-repo/results/suite/{suite_id}",
+            "projects/test-org/test-repo/tests/{test_id}/export",
+        ],
+    )
+    def it_serves_preview_png_for_crawler_paths(test_data, client, path_template):
+        from io import BytesIO
+
+        from PIL import Image
+
+        test = test_data["test"]
+        test.failure_rate = 0.42
+        test.save(update_fields=["failure_rate"])
+        path = path_template.format(
+            test_id=test.id,
+            result_id=test_data["result"].id,
+            suite_id=test_data["suite"].id,
+        )
+
+        response = client.get(f"/{path}.png")
+
+        expect(response.status_code) == 200
+        expect(response["Content-Type"]) == "image/png"
+        image = Image.open(BytesIO(response.content))
+        expect(image.size) == (512, 512)
+        expect(image.format) == "PNG"

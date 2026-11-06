@@ -15,7 +15,12 @@ from tab.projects.models import Project, Suite, Test
 from tab.releases.enums import Type
 from tab.releases.models import Environment, Release
 
-from .utils import force_login, take_snapshot, wait_for_chart
+from .utils import (
+    force_login,
+    take_page_snapshot,
+    take_preview_snapshot,
+    wait_for_chart,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -210,12 +215,12 @@ def test_releases(page: Page, live_server, admin_user):
     review = page.locator("#show-review-releases")
     assert lines.is_checked()
     assert not review.is_checked()
-    take_snapshot(page, "releases/lines-on-review-off")
+    take_page_snapshot(page, "releases/lines-on-review-off")
 
     lines.uncheck()
     assert re.search(r"[?&]lines=false", page.url)
     assert not review.is_checked()
-    take_snapshot(page, "releases/lines-off-review-off")
+    take_page_snapshot(page, "releases/lines-off-review-off")
 
     with page.expect_navigation():
         review.check()
@@ -228,7 +233,7 @@ def test_releases(page: Page, live_server, admin_user):
     assert "rev7777" in page.locator("#release-graph-data").evaluate(
         "el => el.textContent"
     )
-    take_snapshot(page, "releases/lines-off-review-on")
+    take_page_snapshot(page, "releases/lines-off-review-on")
 
     lines.check()
     assert not re.search(r"[?&]lines=false", page.url)
@@ -271,7 +276,7 @@ def test_releases(page: Page, live_server, admin_user):
     )
     assert review_dependency["dataEdges"] > 0, review_dependency
     assert review_dependency["cyReviewEdges"] > 0, review_dependency
-    take_snapshot(page, "releases/lines-on-review-on")
+    take_page_snapshot(page, "releases/lines-on-review-on")
 
 
 @pytest.mark.django_db
@@ -314,7 +319,7 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
     summary = page.get_by_text("Troubleshooting", exact=True)
     assert summary.is_visible()
     assert not panel.evaluate("el => el.open")
-    take_snapshot(page, "projects/troubleshooting-collapsed")
+    take_page_snapshot(page, "projects/troubleshooting-collapsed")
 
     summary.click()
     assert panel.evaluate("el => el.open")
@@ -346,7 +351,7 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
         "() => Chart.getChart('failureRateChart').tooltip.opacity === 1"
     )
 
-    take_snapshot(page, "projects/troubleshooting-expanded")
+    take_page_snapshot(page, "projects/troubleshooting-expanded")
 
     density.get_by_text("raw", exact=True).click()
     assert page.locator("details.troubleshooting").evaluate("el => el.open")
@@ -365,7 +370,7 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
     page.wait_for_function(
         "() => Chart.getChart('failureRateChart').tooltip.opacity === 1"
     )
-    take_snapshot(page, "projects/troubleshooting-expanded-raw")
+    take_page_snapshot(page, "projects/troubleshooting-expanded-raw")
 
 
 @pytest.mark.django_db
@@ -413,7 +418,7 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
     summary = page.get_by_text("Troubleshooting", exact=True)
     assert summary.is_visible()
     assert not panel.evaluate("el => el.open")
-    take_snapshot(page, "projects/suite-troubleshooting-collapsed")
+    take_page_snapshot(page, "projects/suite-troubleshooting-collapsed")
 
     summary.click()
     assert panel.evaluate("el => el.open")
@@ -451,7 +456,7 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
     caret = page.evaluate("() => Chart.getChart('suiteDurationChart').tooltip.caretY")
     assert abs(caret - center["y"]) < 5
 
-    take_snapshot(page, "projects/suite-troubleshooting-expanded")
+    take_page_snapshot(page, "projects/suite-troubleshooting-expanded")
 
     density.get_by_text("raw", exact=True).click()
     assert page.locator("details.suite-troubleshooting").evaluate("el => el.open")
@@ -470,7 +475,82 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
     page.wait_for_function(
         "() => Chart.getChart('suiteDurationChart').tooltip.opacity === 1"
     )
-    take_snapshot(page, "projects/suite-troubleshooting-expanded-raw")
+    take_page_snapshot(page, "projects/suite-troubleshooting-expanded-raw")
+
+
+@pytest.mark.django_db
+def test_preview_images(page: Page, live_server):
+    project = Project.objects.get(repository="https://github.com/foo/bar")
+    suite = Suite.objects.create(project=project, name="e2e-preview")
+    test = Test.objects.create(
+        project=project,
+        suite=suite,
+        name="flaky-preview-test",
+        failure_rate=0.55,
+        block_rate=0.2,
+        average_duration=1.5,
+    )
+    now = timezone.now()
+    # Point from yesterday so the preview can show today's delta
+    older = TestHistory.objects.create(
+        test=test,
+        failure_rate=0.12,
+        block_rate=0.05,
+        average_duration=1.0,
+    )
+    TestHistory.objects.filter(pk=older.pk).update(timestamp=now - timedelta(days=1))
+    # Mixed recent results → colored status squares (oldest → newest)
+    result_statuses = [
+        Status.PASSED,
+        Status.PASSED,
+        Status.FAILED,
+        Status.PASSED,
+        Status.ERROR,
+        Status.FAILED,
+        Status.PASSED,
+        Status.FAILED,
+        Status.TIMEDOUT,
+        Status.FAILED,
+        Status.PASSED,
+        Status.FAILED,
+        Status.XPASSED,
+        Status.FAILED,
+        Status.PASSED,
+        Status.FAILED,
+        Status.FAILED,
+        Status.SKIPPED,
+        Status.FAILED,
+        Status.FAILED,
+    ]
+    results = []
+    for index, status in enumerate(result_statuses):
+        result = test.results.create(
+            branch="main",
+            commit=f"abc{index:03d}",
+            status=status,
+            duration=1.0,
+        )
+        test.results.filter(pk=result.pk).update(
+            created_at=now - timedelta(hours=len(result_statuses) - index)
+        )
+        results.append(result)
+
+    snapshots = [
+        (f"/projects/foo/bar/tests/{test.id}.png", "core/preview/test"),
+        (
+            f"/projects/foo/bar/tests/{test.id}/results/{results[-1].id}.png",
+            "core/preview/result",
+        ),
+        ("/projects/foo/bar/metrics.png", "core/preview/metrics"),
+        (f"/projects/foo/bar/suite/{suite.id}.png", "core/preview/suite"),
+        ("/projects/foo/bar.png", "core/preview/project"),
+        ("/projects.png", "core/preview/default"),
+    ]
+    for path, snapshot_name in snapshots:
+        response = page.request.get(f"{live_server.url}{path}")
+        assert response.status == 200, path
+        assert response.headers["content-type"].startswith("image/png"), path
+        take_preview_snapshot(response.body(), snapshot_name)
 
 
 @pytest.mark.django_db
