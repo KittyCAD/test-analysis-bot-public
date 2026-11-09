@@ -77,7 +77,7 @@ coveragespace = "^6.2"
 
 # Utilities
 pixelmatch = "^0.4"
-watchdog = "^6"
+watchdog = "^7"
 
 [tool.poetry.group.docs.dependencies]
 
