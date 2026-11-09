@@ -24,8 +24,8 @@ django-debug-toolbar = "^8.0"
 django-tables2 = "^3.0.1"
 
 # API
-django-ninja = "^1.7.1"
-pydantic = "^2.13.5"
+django-ninja = "^1.7.3"
+pydantic = "^2.14.2"
 
 # Storage
 dj-database-url = "*"
@@ -35,7 +35,7 @@ redis = "^8.1"
 # Integrations
 mozilla-django-oidc = "^5.0.2"
 pygithub = "^2.10"
-slack-sdk = "^3.44.1"
+slack-sdk = "^3.46.0"
 
 # Utilities
 django-extensions = "*"
@@ -53,17 +53,17 @@ whitenoise = "^6.12"
 
 # Formatting
 black = "^26.10"
-isort = "^9.0.1"
+isort = "^9.0.2"
 djlint = "^1.44.2"
 
 # Linting
-mypy = "^2.3"
+mypy = "^2.4"
 django-stubs = { version = "^6.1.1", extras = ["compatible-mypy"] }
 types-markdown = "*"
 types-requests = "*"
 
 # Testing
-pytest = "^9.1.1"
+pytest = "^9.2.0"
 pytest-describe = "^3.2"
 pytest-expecter = "^3.1"
 pytest-mock = "*"
