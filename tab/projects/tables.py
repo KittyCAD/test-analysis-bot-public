@@ -441,7 +441,7 @@ class ResultTable(TestResultTable):
             "environment",
             "created_at",
         )
-        per_page = 100
+        per_page = 25
         order_by = "test", "target", "platform", "browser", "-created_at"
 
     def before_render(self, request):
