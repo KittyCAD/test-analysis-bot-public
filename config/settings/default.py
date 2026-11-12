@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "crispy_bootstrap5",
     "crispy_forms",
+    "debug_toolbar",
     "django_extensions",
     "django_tables2",
     "django_user_agents",
@@ -43,6 +44,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "tab.core.middleware.AuthentikSessionRefresh",
     "django_user_agents.middleware.UserAgentMiddleware",
     "tab.core.middleware.CrawlerPreviewMiddleware",
@@ -223,3 +225,35 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+
+
+###############################################################################
+# Debug Toolbar
+
+DEBUG_TOOLBAR_SESSION_KEY = "show_debug_toolbar"
+
+
+def show_debug_toolbar(request) -> bool:
+    user = getattr(request, "user", None)
+    if not getattr(user, "is_superuser", False):
+        return False
+
+    if request.path.startswith("/__debug__/"):
+        return True
+
+    debug_param = request.GET.get("debug")
+    if debug_param == "true":
+        request.session[DEBUG_TOOLBAR_SESSION_KEY] = True
+        return True
+    if debug_param == "false":
+        request.session.pop(DEBUG_TOOLBAR_SESSION_KEY, None)
+        return False
+
+    return bool(request.session.get(DEBUG_TOOLBAR_SESSION_KEY))
+
+
+DEBUG_TOOLBAR_CONFIG = {
+    "SHOW_TOOLBAR_CALLBACK": "config.settings.default.show_debug_toolbar",
+    "TOOLBAR_STORE_CLASS": "debug_toolbar.store.CacheStore",
+    "CACHE_BACKEND": "default",
+}

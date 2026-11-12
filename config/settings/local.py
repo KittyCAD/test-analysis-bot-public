@@ -16,19 +16,14 @@ ALLOWED_HOSTS = [
     ".ngrok.app",
 ]
 
-INTERNAL_IPS = [
-    "127.0.0.1",
-]
-
 INSTALLED_APPS += [
     "django_browser_reload",
-    "debug_toolbar",
 ]
 
 MIDDLEWARE += [
     "django_browser_reload.middleware.BrowserReloadMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
+
 if not OIDC_RP_CLIENT_ID:
     MIDDLEWARE.remove("tab.core.middleware.AuthentikSessionRefresh")
 
@@ -56,3 +51,8 @@ if "DATABASE_URL" not in os.environ:
 if "REDIS_URL" in os.environ:
     CACHES["default"]["BACKEND"] = "django.core.cache.backends.redis.RedisCache"
     CACHES["default"]["LOCATION"] = os.environ["REDIS_URL"]
+
+###############################################################################
+# Debug Toolbar
+
+DEBUG_TOOLBAR_CONFIG["SHOW_TOOLBAR_CALLBACK"] = lambda request: True  # type: ignore[assignment]

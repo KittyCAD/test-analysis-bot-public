@@ -6,6 +6,7 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 urlpatterns = [
+    path("__debug__/", include("debug_toolbar.urls")),
     path("", lambda _request: redirect("projects:index")),
     path("", include("tab.core.urls")),
     path("oidc/", include("mozilla_django_oidc.urls")),
@@ -23,6 +24,5 @@ urlpatterns = [
 ]
 if settings.DEBUG:
     urlpatterns = [
-        path("__debug__/", include("debug_toolbar.urls")),
         path("__reload__/", include("django_browser_reload.urls")),
     ] + urlpatterns

@@ -4,7 +4,23 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 from django.utils.timesince import timesince
 
+from .enums import Browser
 from .models import Project, Result, Run, Suite, Test
+
+
+class BrowserListFilter(admin.SimpleListFilter):
+    """Avoid DISTINCT across the entire Result table for browser choices."""
+
+    title = "browser"
+    parameter_name = "browser"
+
+    def lookups(self, request, model_admin):
+        return [(label, label) for _key, label in Browser.choices()]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(browser=self.value())
+        return queryset
 
 
 class SuiteAdminForm(forms.ModelForm):
@@ -343,6 +359,7 @@ class TestAdmin(admin.ModelAdmin):
 
 @admin.register(Result)
 class ResultAdmin(admin.ModelAdmin):
+    show_full_result_count = False
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("test__project")
@@ -352,7 +369,6 @@ class ResultAdmin(admin.ModelAdmin):
         "test__name",
         "branch",
         "commit",
-        "message",
     )
     list_display = (
         "id",
@@ -373,7 +389,7 @@ class ResultAdmin(admin.ModelAdmin):
         "status",
         "target",
         "platform",
-        "browser",
+        BrowserListFilter,
         "final",
         "created_at",
         "test__project__repository",
