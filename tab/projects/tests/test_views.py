@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import timedelta
+from datetime import datetime, timedelta
 from datetime import timezone as dt_timezone
 
 from django.conf import settings
@@ -12,6 +12,7 @@ from django.utils import timezone
 import pytest
 
 from tab.core.models import Organization
+from tab.metrics.managers import chart_bucket_hours
 
 from ..constants import (
     DEFAULT_SUITE,
@@ -476,20 +477,33 @@ def describe_tests(expect):
     @pytest.mark.django_db
     def it_downsamples_dense_suite_duration_history(admin_client, suite: Suite):
         suite.history.all().delete()
+        # Align to the default bucket grid so membership does not depend on
+        # wall clock (epoch boundaries can split nearby samples).
+        weeks = 1.5
+        bucket_seconds = chart_bucket_hours(weeks) * 3600
         now = timezone.now()
-        # Several samples inside one default downsample bucket (~4h at 1.5 weeks)
-        for minutes_ago, tests in ((50, 11.0), (40, 22.0), (30, 33.0), (20, 44.0)):
+        mid = datetime.fromtimestamp(
+            (int(now.timestamp() // bucket_seconds) + 0.5) * bucket_seconds,
+            tz=now.tzinfo,
+        )
+        # Several samples inside one default downsample bucket (~4.2h at 1.5 weeks)
+        for minutes_offset, tests in (
+            (-15, 11.0),
+            (-5, 22.0),
+            (5, 33.0),
+            (15, 44.0),
+        ):
             history = suite.history.create(
                 average_setup_duration=1.0,
                 average_tests_duration=tests,
                 average_teardown_duration=1.0,
             )
             suite.history.filter(pk=history.pk).update(
-                timestamp=now - timedelta(minutes=minutes_ago)
+                timestamp=mid + timedelta(minutes=minutes_offset)
             )
 
         url = f"/projects/foo/bar/suite/{suite.pk}"
-        html = admin_client.get(f"{url}?weeks=1.5").content.decode("utf-8")
+        html = admin_client.get(f"{url}?weeks={weeks}").content.decode("utf-8")
 
         expect(html).contains('"tests_duration": 44.0')
         expect(html).excludes('"tests_duration": 11.0')
@@ -499,7 +513,9 @@ def describe_tests(expect):
         expect(html).contains(">raw<")
         expect(html).contains("btn-group")
 
-        html = admin_client.get(f"{url}?weeks=1.5&all_points=1").content.decode("utf-8")
+        html = admin_client.get(f"{url}?weeks={weeks}&all_points=1").content.decode(
+            "utf-8"
+        )
         expect(html).contains('"tests_duration": 11.0')
         expect(html).contains('"tests_duration": 22.0')
         expect(html).contains('"tests_duration": 33.0')
