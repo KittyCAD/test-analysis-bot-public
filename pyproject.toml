@@ -25,7 +25,7 @@ django-tables2 = "^3.0.1"
 
 # API
 django-ninja = "^1.7.3"
-pydantic = "^2.14.2"
+pydantic = "^2.14.3"
 
 # Storage
 dj-database-url = "*"
