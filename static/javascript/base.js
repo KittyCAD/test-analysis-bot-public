@@ -126,4 +126,52 @@ document.addEventListener('DOMContentLoaded', function () {
         tabs.addEventListener('scroll', updateFades);
         window.addEventListener('resize', updateFades);
     });
+
+    function syncExpandParam(open) {
+        const url = new URL(window.location.href);
+        if (open) {
+            url.searchParams.set('expand', 'true');
+        } else {
+            url.searchParams.delete('expand');
+        }
+        window.history.replaceState(null, '', url);
+    }
+
+    function applyExpandToUrl(url, open) {
+        if (open) {
+            url.searchParams.set('expand', 'true');
+        } else {
+            url.searchParams.delete('expand');
+        }
+        return url;
+    }
+
+    document
+        .querySelectorAll(
+            'details.troubleshooting, details.suite-troubleshooting'
+        )
+        .forEach(function (panel) {
+            panel.addEventListener('toggle', function () {
+                syncExpandParam(panel.open);
+            });
+        });
+
+    // Suite tab hrefs are rendered from the initial request; stamp the live
+    // panel state on click so expand carries to the next suite.
+    document.querySelectorAll('.suite-tabs a.nav-link').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            const panel = document.querySelector(
+                'details.suite-troubleshooting, details.troubleshooting'
+            );
+            if (!panel) {
+                return;
+            }
+            event.preventDefault();
+            const url = applyExpandToUrl(
+                new URL(link.href, window.location.origin),
+                panel.open
+            );
+            window.location.assign(url.pathname + url.search + url.hash);
+        });
+    });
 });

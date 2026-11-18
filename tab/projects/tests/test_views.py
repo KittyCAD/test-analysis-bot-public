@@ -454,6 +454,9 @@ def describe_tests(expect):
         html = admin_client.get(f"{url}?weeks=6").content.decode("utf-8")
         expect(open_details.search(html)).is_not(None)
 
+        html = admin_client.get(f"{url}?weeks=6&expand=false").content.decode("utf-8")
+        expect(open_details.search(html)).is_(None)
+
     @pytest.mark.django_db
     def it_limits_suite_duration_history_by_weeks(admin_client, suite: Suite):
         recent = suite.history.get()

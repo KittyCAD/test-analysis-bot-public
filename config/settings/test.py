@@ -12,6 +12,9 @@ SECRET_KEY = "test"
 
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"  # needed for Playwright
 
+# Serve STATICFILES_DIRS without collectstatic (DEBUG is False in tests).
+WHITENOISE_USE_FINDERS = True
+
 ###############################################################################
 # Authentication
 

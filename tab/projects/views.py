@@ -213,10 +213,14 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView
             context["suite"] = suite
             if "weeks" in self.request.GET:
                 weeks = float(self.request.GET["weeks"])
-                expand = True
             else:
                 weeks = 1.5
-                expand = self.request.GET.get("expand") == "true"
+            if "expand" in self.request.GET:
+                expand = self.request.GET["expand"] == "true"
+            elif "weeks" in self.request.GET:
+                expand = True
+            else:
+                expand = False
             context["expand"] = expand
             context.update(_history_chart_points_context(self.request))
             context["suite_duration_history"] = suite.history.get_data(

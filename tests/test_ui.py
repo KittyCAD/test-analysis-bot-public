@@ -283,12 +283,13 @@ def test_releases(page: Page, live_server, admin_user):
 def test_troubleshooting_panel(page: Page, live_server, admin_user):
     project = Project.objects.get(repository="https://github.com/foo/bar")
     test = Test.objects.create(project=project, name="flaky-test")
-    test.results.create(
+    result = test.results.create(
         branch="main",
         commit="abc123",
-        status=Status.FAILED,
+        status=Status.PASSED,
         duration=1.0,
     )
+    Test.objects.filter(pk=test.pk).update(last_result=result, failure_rate=0.05)
     now = timezone.now()
     rates = [0.05, 0.08, 0.12, 0.18, 0.35, 0.55, 0.72, 0.80, 0.78, 0.82]
     for index, rate in enumerate(rates):
@@ -314,15 +315,17 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
     force_login(page, live_server, admin_user)
     url = f"{live_server.url}{reverse('projects:test-results', args=[project.path, test.id])}"
 
-    page.goto(f"{url}?expand=false")
+    page.goto(url)
     panel = page.locator("details.troubleshooting")
-    summary = page.get_by_text("Troubleshooting", exact=True)
+    summary = panel.locator("summary")
     assert summary.is_visible()
     assert not panel.evaluate("el => el.open")
+    assert "expand=" not in page.url
     take_page_snapshot(page, "projects/troubleshooting-collapsed")
 
     summary.click()
     assert panel.evaluate("el => el.open")
+    page.wait_for_url(re.compile(r"[?&]expand=true(?:&|$)"))
     assert page.get_by_text("Metrics History").is_visible()
     density = page.locator(".history-chart-density")
     assert density.get_by_text("sample", exact=True).is_visible()
@@ -413,15 +416,17 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
     force_login(page, live_server, admin_user)
     url = f"{live_server.url}{reverse('projects:suite-tests', args=[project.path, suite.id])}"
 
-    page.goto(f"{url}?expand=false")
+    page.goto(url)
     panel = page.locator("details.suite-troubleshooting")
-    summary = page.get_by_text("Troubleshooting", exact=True)
+    summary = panel.locator("summary")
     assert summary.is_visible()
     assert not panel.evaluate("el => el.open")
+    assert "expand=" not in page.url
     take_page_snapshot(page, "projects/suite-troubleshooting-collapsed")
 
     summary.click()
     assert panel.evaluate("el => el.open")
+    page.wait_for_url(re.compile(r"[?&]expand=true(?:&|$)"))
     assert page.get_by_text("Duration History").is_visible()
     assert page.get_by_text("Rerun Locally").is_visible()
     assert page.get_by_text("npm run test:e2e").is_visible()
@@ -476,6 +481,44 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
         "() => Chart.getChart('suiteDurationChart').tooltip.opacity === 1"
     )
     take_page_snapshot(page, "projects/suite-troubleshooting-expanded-raw")
+
+
+@pytest.mark.django_db
+def test_suite_troubleshooting_expand_persists_across_tabs(
+    page: Page, live_server, admin_user
+):
+    project = Project.objects.get(repository="https://github.com/foo/bar")
+    first = Suite.objects.create(
+        project=project,
+        name="unit",
+        local_command="npm test",
+    )
+    second = Suite.objects.create(
+        project=project,
+        name="e2e",
+        local_command="npm run e2e",
+    )
+    for suite in (first, second):
+        Test.objects.create(project=project, suite=suite, name=f"{suite.name}-test")
+        SuiteHistory.objects.create(
+            suite=suite,
+            average_setup_duration=1.0,
+            average_tests_duration=2.0,
+            average_teardown_duration=0.5,
+        )
+
+    force_login(page, live_server, admin_user)
+    page.goto(
+        f"{live_server.url}{reverse('projects:suite-tests', args=[project.path, first.id])}"
+    )
+
+    page.locator("details.suite-troubleshooting summary").click()
+    assert page.locator("details.suite-troubleshooting").evaluate("el => el.open")
+    page.wait_for_url(re.compile(r"[?&]expand=true(?:&|$)"))
+
+    page.locator(".suite-tabs a", has_text="e2e").click()
+    page.wait_for_url(re.compile(rf"/suite/{second.id}.*[?&]expand=true(?:&|$)"))
+    assert page.locator("details.suite-troubleshooting").evaluate("el => el.open")
 
 
 @pytest.mark.django_db
