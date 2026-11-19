@@ -892,6 +892,7 @@ class ExportAccessMixin(AccessMixin, View):
 class LeastReliableTestsMixin:
     def _least_reliable_tests(self, project: Project) -> list[Test]:
         week_ago = timezone.now() - timedelta(days=7)
+        five_days_ago = timezone.now() - timedelta(days=5)
         least_reliable = (
             Q(failure_rate__gt=0.25, block_rate__gt=0)
             | Q(block_rate__gt=0.05, failure_rate__gt=0.20)
@@ -903,7 +904,7 @@ class LeastReliableTestsMixin:
                 least_reliable,
                 created_at__lte=week_ago,
                 last_result__isnull=False,
-                last_result__created_at__gte=week_ago,
+                last_result__created_at__gte=five_days_ago,
                 disabled_at__isnull=True,
             )
             .exclude(last_result__status=Status.DISABLED)

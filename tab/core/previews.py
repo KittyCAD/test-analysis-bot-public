@@ -101,7 +101,8 @@ def _recent_statuses_for_project(
 
 
 def _least_reliable_count(project: Project) -> int:
-    week_ago = timezone.now() - timedelta(days=7)
+    created_cutoff = timezone.now() - timedelta(days=7)
+    results_cutoff = timezone.now() - timedelta(days=5)
     least_reliable = (
         Q(failure_rate__gt=0.25, block_rate__gt=0)
         | Q(block_rate__gt=0.05, failure_rate__gt=0.20)
@@ -111,9 +112,9 @@ def _least_reliable_count(project: Project) -> int:
     return (
         project.tests.filter(
             least_reliable,
-            created_at__lte=week_ago,
+            created_at__lte=created_cutoff,
             last_result__isnull=False,
-            last_result__created_at__gte=week_ago,
+            last_result__created_at__gte=results_cutoff,
             disabled_at__isnull=True,
         )
         .exclude(last_result__status=Status.DISABLED)
