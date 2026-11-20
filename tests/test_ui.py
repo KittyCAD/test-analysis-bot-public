@@ -17,6 +17,7 @@ from tab.releases.models import Environment, Release
 
 from .utils import (
     force_login,
+    take_element_snapshot,
     take_page_snapshot,
     take_preview_snapshot,
     wait_for_chart,
@@ -659,3 +660,109 @@ def test_export_button(page: Page, live_server, admin_user):
         reverse("projects:test-export-page", args=[project.path, test.id])
     )
     assert '"name": "flaky-test"' in page.locator("pre").inner_text()
+
+
+@pytest.mark.django_db
+def test_results_block_rate_permutations(page: Page, live_server, admin_user):
+    """Typically Blocks: badges, dash, and brightness colors for all cases."""
+    project = Project.objects.get(repository="https://github.com/foo/bar")
+    suite = Suite.objects.create(
+        project=project,
+        name="e2e",
+        block_rate_lower_threshold=0.01,
+        block_rate_upper_threshold=0.05,
+        failure_rate_lower_threshold=0.10,
+        failure_rate_upper_threshold=0.50,
+    )
+    branch = "feature-branch"
+    commit = "abc1234"
+
+    def add(
+        name: str,
+        *,
+        status: str,
+        original_branch: str,
+        failure_rate: float,
+        block_rate: float,
+    ):
+        test = Test.objects.create(
+            project=project,
+            suite=suite,
+            name=name,
+            original_branch=original_branch,
+        )
+        test.results.create(
+            suite=suite,
+            branch=branch,
+            commit=commit,
+            status=status,
+            duration=1.0,
+        )
+        # Lock display rates after Result.save() refreshes metrics.
+        Test.objects.filter(pk=test.pk).update(
+            failure_rate=failure_rate,
+            block_rate=block_rate,
+        )
+        return test
+
+    # Name prefixes keep table order stable (order_by test name).
+    add(
+        "a-originated-fail",
+        status=Status.FAILED,
+        original_branch=branch,
+        failure_rate=1.0,
+        block_rate=1.0,
+    )
+    add(
+        "b-originated-pass",
+        status=Status.PASSED,
+        original_branch=branch,
+        failure_rate=0.0,
+        block_rate=0.0,
+    )
+    add(
+        "c-likely-broke",
+        status=Status.FAILED,
+        original_branch="main",
+        failure_rate=0.05,
+        block_rate=0.005,
+    )
+    add(
+        "d-rate-low",
+        status=Status.PASSED,
+        original_branch="main",
+        failure_rate=0.1,
+        block_rate=0.0,
+    )
+    add(
+        "e-rate-mid",
+        status=Status.PASSED,
+        original_branch="main",
+        failure_rate=0.1,
+        block_rate=0.03,
+    )
+    add(
+        "f-rate-high",
+        status=Status.PASSED,
+        original_branch="main",
+        failure_rate=0.1,
+        block_rate=0.10,
+    )
+    add(
+        "g-new-fix",
+        status=Status.PASSED,
+        original_branch="main",
+        failure_rate=0.6,
+        block_rate=0.02,
+    )
+
+    force_login(page, live_server, admin_user)
+    page.goto(
+        f"{live_server.url}"
+        f"{reverse('projects:results', args=[project.path])}?branch={branch}"
+    )
+    assert page.get_by_text("Latest Branch Results: feature-branch").is_visible()
+    take_element_snapshot(
+        page.locator("table").first,
+        "projects/results",
+    )

@@ -134,6 +134,30 @@ def describe_results(expect, client):
         expect(test.original_branch) == "main"
         expect(test.original_commit) == "abc123"
 
+    @pytest.mark.django_db
+    def it_rejects_same_commit_reruns_for_new_branch_tests(payload):
+        payload["branch"] = "feature-branch"
+        payload["status"] = "failed"
+        response = post_json(client, url, payload)
+        expect(response.status_code) == 201
+        expect(response.json()["block"]) == True
+        expect(Result.objects.count()) == 1
+
+        payload["status"] = "passed"
+        response = post_json(client, url, payload)
+
+        expect(response.status_code) == 200
+        expect(response.json()) == {
+            "suite": "my-user > my-project > e2e",
+            "test": "e2e > my feature > my test",
+            "status": "failed",
+            "block": True,
+        }
+        expect(Result.objects.count()) == 2
+        expect(Result.objects.filter(final=True).count()) == 1
+        expect(Result.objects.get(final=True).status) == "failed"
+        expect(Result.objects.get(final=False).status) == "passed"
+
 
 def describe_bulk_results(expect, client):
     url = "/api/results/bulk"

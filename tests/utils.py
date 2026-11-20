@@ -7,7 +7,7 @@ from django.contrib.sessions.backends.db import SessionStore
 
 from PIL import Image
 from pixelmatch.contrib.PIL import pixelmatch
-from playwright.sync_api import Page
+from playwright.sync_api import Locator, Page
 from pytest_django.live_server_helper import LiveServer
 
 SNAPSHOT_DIR = Path("tests/snapshots")
@@ -81,5 +81,13 @@ def take_page_snapshot(page: Page, name: str):
     """Snapshot a full Playwright page."""
     _update_snapshot_baseline(
         page.screenshot(full_page=True, animations="disabled"),
+        name,
+    )
+
+
+def take_element_snapshot(locator: Locator, name: str):
+    """Snapshot a single Playwright locator."""
+    _update_snapshot_baseline(
+        locator.screenshot(animations="disabled"),
         name,
     )

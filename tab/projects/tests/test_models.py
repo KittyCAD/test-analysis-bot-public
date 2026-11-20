@@ -596,6 +596,7 @@ def describe_result(expect):
                 name="test",
                 original_branch="my-branch",
                 block_rate=0.5,  # high block rate is ignored
+                failure_rate=1.0,  # high failure rate is ignored
             )
             result = Result(test=test, status=Status.FAILED, branch="my-branch")
             expect(result.new_failure) == True
@@ -627,6 +628,22 @@ def describe_result(expect):
             result.created_at = timezone.now() - timedelta(minutes=15)
             expect(result.rerunnable) == True
 
+        def it_hides_rerun_for_tests_originated_on_branch():
+            project = Project()
+            test = Test(project=project, name="test", original_branch="my-branch")
+            result = Result(
+                test=test,
+                status=Status.FAILED,
+                branch="my-branch",
+                final=True,
+                metadata={"GITHUB_RUN_ID": "123"},
+                created_at=timezone.now() - timedelta(minutes=15),
+            )
+            expect(result.rerunnable) == False
+
+            result.branch = "other-branch"
+            expect(result.rerunnable) == True
+
     def describe_finalize(expect):
         @pytest.mark.django_db
         def it_demotes_results_for_same_commit():
@@ -643,6 +660,34 @@ def describe_result(expect):
 
             # Expect only one final result
             expect(test.results.filter(final=True).count()) == 1
+
+        @pytest.mark.django_db
+        def it_rejects_reruns_for_tests_originated_on_branch():
+            project = Project.objects.create(repository="https://github.com/foo/bar")
+            test = project.tests.create(
+                name="my-test", original_branch="feature-branch"
+            )
+            prior = test.results.create(
+                status=Status.FAILED,
+                branch="feature-branch",
+                commit="a1",
+            )
+            rerun = Result(
+                test=test,
+                status=Status.PASSED,
+                branch="feature-branch",
+                commit="a1",
+            )
+            rerun.save(finalize=False)
+            result = rerun.finalize(reject_originated_reruns=True)
+
+            expect(test.results.count()) == 2
+            expect(test.results.filter(final=True).count()) == 1
+            expect(test.results.get(final=True).pk) == prior.pk
+            expect(test.results.get(final=True).status) == Status.FAILED
+            expect(rerun.final) == False
+            expect(result.pk) == prior.pk
+            expect(result.status) == Status.FAILED
 
         @pytest.mark.django_db
         def it_demotes_bulk_created_duplicates_with_identical_timestamps():

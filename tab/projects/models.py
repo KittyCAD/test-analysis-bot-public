@@ -957,6 +957,8 @@ class Result(models.Model):
     def new_failure(self) -> bool:
         if self.status not in Status.merge_blocked():
             return False
+        if self.originated_from_branch:
+            return True
         failure_threshold = (
             self.suite.failure_rate_lower_threshold
             if self.suite
@@ -964,8 +966,6 @@ class Result(models.Model):
         )
         if self.test.failure_rate >= failure_threshold:
             return False
-        if self.originated_from_branch:
-            return True
         block_threshold = (
             self.suite.block_rate_lower_threshold
             if self.suite
@@ -997,6 +997,7 @@ class Result(models.Model):
             and bool(self.run_url)
             and self.status in Status.merge_blocked()
             and self.branch not in self.test.project.default_branches
+            and not self.originated_from_branch
             and age > PENDING_THRESHOLD
         )
 
@@ -1061,26 +1062,43 @@ class Result(models.Model):
             skipped_indicators=self.test.skipped_indicators,
         )
 
-    def finalize(self):
-        """Post-save logic to mark other results as reruns."""
-        if self.final:
-            Result.objects.filter(
-                test=self.test,
-                branch=self.branch,
-                commit=self.commit,
-                target=self.target,
-                platform=self.platform,
-                browser=self.browser,
-                final=True,
-                id__lt=self.id,
-            ).update(final=False)
+    def finalize(self, *, reject_originated_reruns: bool = False) -> "Result":
+        """Post-save logic to mark non-authoritative reruns."""
+        if not self.final:
+            return self
 
-    def save(self, *args, **kwargs):
+        priors = Result.objects.filter(
+            test=self.test,
+            branch=self.branch,
+            commit=self.commit,
+            target=self.target,
+            platform=self.platform,
+            browser=self.browser,
+            final=True,
+            id__lt=self.id,
+        )
+
+        if reject_originated_reruns and self.originated_from_branch:
+            prior = priors.order_by("-id").first()
+            if prior is not None:
+                log.info(
+                    f"Rejected rerun for test originated on {self.branch!r}: "
+                    f"{self.test.name}"
+                )
+                self.final = False
+                Result.objects.filter(pk=self.pk).update(final=False)
+                return prior
+
+        priors.update(final=False)
+        return self
+
+    def save(self, *args, finalize: bool = True, **kwargs):
         self.normalize()
         super().save(*args, **kwargs)
-        self.finalize()
-        self.test.update(self)
-        self.test.save()
+        if finalize:
+            self.finalize()
+            self.test.update(self)
+            self.test.save()
 
     def rerun(self) -> str | None:
         if not self.run_url:

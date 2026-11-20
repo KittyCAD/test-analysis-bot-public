@@ -129,13 +129,21 @@ def results(request, payload: ResultRequest):
         status = 200
         log.info(f"Found test: {test}")
 
-    result = Result.objects.create(
+    result = Result(
         test=test,
         suite=suite,
         **payload.get_model_fields(),
         metadata=metadata,
     )
-    log.info(f"Created result: {result}")
+    result.save(finalize=False)
+    reported = result.finalize(reject_originated_reruns=True)
+    if reported is result:
+        result.test.update(result)
+        result.test.save()
+        log.info(f"Created result: {result}")
+    else:
+        log.info(f"Found result: {reported}")
+        result = reported
     Environment.objects.process(project, payload.url, [result])
 
     Run.objects.track_step(

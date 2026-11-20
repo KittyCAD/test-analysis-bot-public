@@ -26,16 +26,23 @@ def color(
     icon: str = "",
     tooltip: str = "",
 ) -> str:
-    if value > upper_threshold:
-        brightness = 1.0
-    elif value < lower_threshold:
-        brightness = 0.0
-    else:
-        brightness = (value - lower_threshold) / (upper_threshold - lower_threshold)
-    html = f'<span class="text-danger" style="filter: brightness({brightness});">{text}</span>'
+    parts = []
+    if text:
+        if value > upper_threshold:
+            brightness = 1.0
+        elif value < lower_threshold:
+            brightness = 0.0
+        else:
+            brightness = (value - lower_threshold) / (upper_threshold - lower_threshold)
+        parts.append(
+            f'<span class="text-danger" style="filter: brightness({brightness});">'
+            f"{text}</span>"
+        )
     if icon and tooltip:
-        html += f' <span title="{tooltip}"><i class="fa-solid fa-{icon}"></i></span>'
-    return mark_safe(html)
+        parts.append(
+            f'<span title="{tooltip}"><i class="fa-solid fa-{icon}"></i></span>'
+        )
+    return mark_safe(" ".join(parts))
 
 
 class TestTable(tables.Table):
@@ -494,36 +501,29 @@ class ResultTable(TestResultTable):
         return html
 
     def _get_block_rate_label(self, record: Result):
-        if record.originated_from_branch and not record.new_failure:
-            return "—"
+        lower = (
+            record.suite.block_rate_lower_threshold
+            if record.suite
+            else Suite._meta.get_field("block_rate_lower_threshold").default
+        )
+        upper = (
+            record.suite.block_rate_upper_threshold
+            if record.suite
+            else Suite._meta.get_field("block_rate_upper_threshold").default
+        )
 
         text = record.test.block_rate_humanized
         tooltip = icon = ""
         if record.new_failure and record.originated_from_branch:
             tooltip = "Current branch added this broken test"
-            icon = "warning"
+            icon = "circle-xmark"
         elif record.new_failure:
             tooltip = "Current branch likely broke this test"
-            icon = "warning"
+            icon = "circle-exclamation"
         elif record.new_fix:
             tooltip = "Current branch may have fixed this test"
             icon = "star"
         if record.test.block_rate < 0 and icon:
             text = ""
 
-        return color(
-            text,
-            record.test.block_rate,
-            (
-                record.suite.block_rate_lower_threshold
-                if record.suite
-                else Suite._meta.get_field("block_rate_lower_threshold").default
-            ),
-            (
-                record.suite.block_rate_upper_threshold
-                if record.suite
-                else Suite._meta.get_field("block_rate_upper_threshold").default
-            ),
-            icon,
-            tooltip,
-        )
+        return color(text, record.test.block_rate, lower, upper, icon, tooltip)
