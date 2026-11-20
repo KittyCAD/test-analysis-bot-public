@@ -89,7 +89,10 @@ def get_suite_metrics(project: Project) -> list[dict]:
         suites.append(
             {
                 "name": suite.name,
-                "url": reverse("projects:suite-tests", args=[project.path, suite.id]),
+                "url": (
+                    reverse("projects:suite-tests", args=[project.path, suite.id])
+                    + "?expand=true"
+                ),
                 "setup_duration": None if setup < 0 else setup,
                 "tests_duration": None if tests < 0 else tests,
                 "teardown_duration": None if teardown < 0 else teardown,

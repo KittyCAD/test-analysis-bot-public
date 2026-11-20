@@ -1147,7 +1147,7 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
         expect(html).contains("suiteMetricsChart")
         expect(html).contains('"name": "e2e"')
         expect(html).contains(
-            f'"url": "/projects/{project.path}/suite/{suite.pk}"'
+            f'"url": "/projects/{project.path}/suite/{suite.pk}?expand=true"'
         )
         expect(html).contains('"setup_duration": 12.0')
         expect(html).contains('"tests_duration": 40.0')

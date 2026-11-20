@@ -675,7 +675,9 @@ def test_suite_metrics_chart(page: Page, live_server, admin_user):
         "() => Chart.getChart('suiteMetricsChart').data.datasets.map(d => d.backgroundColor)"
     ) == [SETUP_DURATION_FILL, TESTS_DURATION_FILL, TEARDOWN_DURATION_FILL]
     for suite in Suite.objects.filter(project=project).order_by("name"):
-        link = panel.locator(f'.suite-metrics-labels a[href*="/suite/{suite.id}"]')
+        link = panel.locator(
+            f'.suite-metrics-labels a[href*="/suite/{suite.id}?expand=true"]'
+        )
         assert link.is_visible()
         assert link.inner_text() == suite.name
 
