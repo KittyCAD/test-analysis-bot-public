@@ -175,7 +175,14 @@
             {% if suite_metrics %}
                 {% include "projects/_suite_metrics_chart.html" %}
             {% else %}
-                <div class="text-muted mb-4">No suite duration data is available yet.</div>
+                <div class="card mb-4" id="suite-durations">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0">Average Duration</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-muted">No suite duration data is available yet.</div>
+                    </div>
+                </div>
             {% endif %}
         </div>
     </div>
