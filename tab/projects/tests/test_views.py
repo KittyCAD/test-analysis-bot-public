@@ -6,6 +6,7 @@ from datetime import timezone as dt_timezone
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.humanize.templatetags.humanize import naturaltime
+from django.test import RequestFactory
 from django.urls import reverse
 from django.utils import timezone
 
@@ -28,6 +29,7 @@ from ..helpers import (
     build_metrics_json,
 )
 from ..models import Project, Result, Status, Suite, Test
+from ..views import ResultsView
 
 
 @pytest.fixture
@@ -1070,6 +1072,77 @@ def describe_results(expect, admin_client):
         expect(html).contains(f'title="{SETUP_DURATION_TIP}"')
         expect(html).contains(f'title="{TESTS_DURATION_TIP}"')
         expect(html).contains(f'title="{TEARDOWN_DURATION_TIP}"')
+
+    @pytest.mark.django_db
+    def it_warns_when_branch_has_no_results(project: Project):
+        Test.objects.create(project=project, name="test").results.create(
+            branch="main",
+            commit="abc123",
+            status=Status.PASSED,
+            duration=1.0,
+        )
+
+        response = admin_client.get(f"{url}?branch=foobar")
+        expect(response.status_code) == 200
+        html = response.content.decode("utf-8")
+        expect(html).contains("No results found")
+        expect(html).contains("(0 results)")
+
+    @pytest.mark.django_db
+    def it_caches_queryset_across_repeated_get_queryset_calls(
+        project: Project, admin_user, mocker
+    ):
+        Test.objects.create(project=project, name="test").results.create(
+            branch="main",
+            commit="abc123",
+            status=Status.PASSED,
+            duration=1.0,
+        )
+        get_latest_commit = mocker.patch(
+            "tab.projects.managers.ResultManager.get_latest_commit",
+            return_value="abc123",
+        )
+
+        request = RequestFactory().get(url)
+        request.user = admin_user
+        view = ResultsView()
+        view.setup(request, path="foo/bar")
+
+        first = view.get_queryset()
+        second = view.get_queryset()
+
+        expect(second) is first
+        expect(get_latest_commit.call_count) == 1
+
+    @pytest.mark.django_db
+    def it_reuses_cached_latest_commit_for_merge_url(
+        project: Project, admin_user, mocker
+    ):
+        Test.objects.create(project=project, name="test").results.create(
+            branch="main",
+            commit="abc123",
+            status=Status.PASSED,
+            duration=1.0,
+            metadata={"CI_PR_NUMBER": "42"},
+        )
+        get_latest_commit = mocker.patch(
+            "tab.projects.managers.ResultManager.get_latest_commit",
+            return_value="abc123",
+        )
+
+        request = RequestFactory().get(url)
+        request.user = admin_user
+        view = ResultsView()
+        view.setup(request, path="foo/bar")
+        view.get_queryset()
+
+        expect(view._cached_latest_commit) == "abc123"
+        expect(get_latest_commit.call_count) == 1
+
+        merge_url = view._get_merge_url(project, "main")
+
+        expect(merge_url) == f"{project.repository}/pull/42"
+        expect(get_latest_commit.call_count) == 1
 
     @pytest.mark.django_db
     def it_redirects_platform_search_to_query_param():

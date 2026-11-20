@@ -373,11 +373,22 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
     search_labels = ["platform", "target", "browser", "tag"]
 
     def get_queryset(self):
+        if hasattr(self, "_cached_queryset"):
+            return self._cached_queryset  # type: ignore[has-type]
+
         project = get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
-
         branch = self.request.GET.get("branch", project.default_branch)
+        self._cached_project = project
+        self._cached_branch = branch
+
+        latest_commit = Result.objects.get_latest_commit(project, branch)
+        self._cached_latest_commit = latest_commit
+        if not latest_commit:
+            self._cached_queryset = Result.objects.none()
+            return self._cached_queryset
+
         suite_id = self.kwargs.get("suite_id")
         search = self.request.GET.get("search")
         platform = self.request.GET.get("platform")
@@ -387,12 +398,12 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         show = self.request.GET.get("show", "all")
 
         queryset = (
-            Result.objects.filter(test__project=project, branch=branch)
+            Result.objects.filter(
+                test__project=project, branch=branch, commit=latest_commit
+            )
             .select_related("suite", "test", "test__project", "test__suite")
             .prefetch_related("test__project__suites")
         )
-        latest_commit = queryset.values_list("commit", flat=True).first()
-        queryset = queryset.filter(commit=latest_commit)
 
         if suite_id:
             queryset = queryset.filter(suite_id=suite_id)
@@ -418,16 +429,19 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
                 final=True
             )
 
+        self._cached_queryset = queryset
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        project = get_object_or_404(
+        project = getattr(self, "_cached_project", None) or get_object_or_404(
             Project, repository__iendswith=self.kwargs["path"].strip("/")
         )
-        branch = self.request.GET.get("branch", project.default_branch)
-        if not Result.objects.filter(test__project=project, branch=branch).exists():
+        branch = getattr(self, "_cached_branch", None) or self.request.GET.get(
+            "branch", project.default_branch
+        )
+        if not getattr(self, "_cached_latest_commit", None):
             messages.warning(
                 self.request,
                 "No results found. Stale data is pruned automatically. Try rerunning tests on this branch.",
@@ -523,13 +537,16 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         return redirect(request.get_full_path())
 
     def _get_merge_url(self, project: Project, branch: str) -> str:
+        latest_commit = getattr(self, "_cached_latest_commit", None)
+        if not latest_commit:
+            return ""
         result = (
             Result.objects.filter(
                 test__project=project,
                 branch=branch,
+                commit=latest_commit,
             )
             .select_related("test__project")
-            .order_by("-created_at")
             .first()
         )
         return result.merge_url if result else ""
