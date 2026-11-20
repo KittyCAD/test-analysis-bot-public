@@ -10,6 +10,11 @@ from playwright.sync_api import Page
 
 from tab.core.models import Organization
 from tab.metrics.models import SuiteHistory, TestHistory
+from tab.projects.constants import (
+    SETUP_DURATION_FILL,
+    TEARDOWN_DURATION_FILL,
+    TESTS_DURATION_FILL,
+)
 from tab.projects.enums import Status
 from tab.projects.models import Project, Suite, Test
 from tab.releases.enums import Type
@@ -22,6 +27,25 @@ from .utils import (
     take_preview_snapshot,
     wait_for_chart,
 )
+
+
+def _suite_with_metrics(
+    project: Project,
+    name: str,
+    *,
+    setup: float,
+    tests: float,
+    teardown: float,
+) -> Suite:
+    suite = Suite.objects.create(
+        project=project,
+        name=name,
+        average_setup_duration=setup,
+        average_tests_duration=tests,
+        average_teardown_duration=teardown,
+    )
+    Test.objects.create(project=project, suite=suite, name=f"{name}-test")
+    return suite
 
 
 @pytest.fixture(autouse=True)
@@ -621,6 +645,41 @@ def test_preview_images(page: Page, live_server):
         assert response.status == 200, path
         assert response.headers["content-type"].startswith("image/png"), path
         take_preview_snapshot(response.body(), snapshot_name)
+
+
+@pytest.mark.django_db
+def test_suite_metrics_chart(page: Page, live_server, admin_user):
+    project = Project.objects.get(repository="https://github.com/foo/bar")
+    _suite_with_metrics(project, "e2e", setup=120.0, tests=480.0, teardown=30.0)
+    _suite_with_metrics(project, "unit", setup=15.0, tests=90.0, teardown=-1.0)
+    _suite_with_metrics(project, "integration", setup=45.0, tests=210.0, teardown=12.0)
+
+    force_login(page, live_server, admin_user)
+    page.goto(f"{live_server.url}{reverse('projects:metrics', args=[project.path])}")
+
+    assert page.get_by_role("heading", name="Suite Metrics", exact=True).is_visible()
+    panel = page.locator("#suite-durations")
+    assert panel.get_by_role(
+        "heading", name="Average Duration", exact=True
+    ).is_visible()
+    wait_for_chart(page, "suiteMetricsChart", dataset=0, index=0)
+    assert page.evaluate("() => Chart.getChart('suiteMetricsChart').data.labels") == [
+        "e2e",
+        "integration",
+        "unit",
+    ]
+    assert page.evaluate(
+        "() => Chart.getChart('suiteMetricsChart').data.datasets.map(d => d.label)"
+    ) == ["Setup", "Tests", "Teardown"]
+    assert page.evaluate(
+        "() => Chart.getChart('suiteMetricsChart').data.datasets.map(d => d.backgroundColor)"
+    ) == [SETUP_DURATION_FILL, TESTS_DURATION_FILL, TEARDOWN_DURATION_FILL]
+    for suite in Suite.objects.filter(project=project).order_by("name"):
+        link = panel.locator(f'.suite-metrics-labels a[href*="/suite/{suite.id}"]')
+        assert link.is_visible()
+        assert link.inner_text() == suite.name
+
+    take_element_snapshot(panel, "metrics/suite-durations")
 
 
 @pytest.mark.django_db

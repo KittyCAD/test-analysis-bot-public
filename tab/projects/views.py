@@ -25,6 +25,7 @@ from tab.metrics.models import Alert
 from .constants import (
     FAILURE_RATE_EPSILON,
     SETUP_DURATION_TIP,
+    SUITE_DURATION_SERIES,
     TEARDOWN_DURATION_TIP,
     TESTS_DURATION_TIP,
 )
@@ -34,6 +35,7 @@ from .helpers import (
     EXPORT_TOKEN_PARAM,
     build_metrics_json,
     get_disabled_test_metrics,
+    get_suite_metrics,
     tokenize,
     valid_export_token,
 )
@@ -228,11 +230,7 @@ class TestsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListView
                 weeks,
                 bucket_hours=context["history_chart_bucket_hours"],
             )
-            context["suite_duration_tips"] = {
-                "Setup": SETUP_DURATION_TIP,
-                "Tests": TESTS_DURATION_TIP,
-                "Teardown": TEARDOWN_DURATION_TIP,
-            }
+            context["suite_duration_series"] = list(SUITE_DURATION_SERIES)
             if self.request.user.is_staff:
                 context["suite_admin_url"] = reverse(
                     "admin:projects_suite_change", args=[suite.pk]
@@ -954,6 +952,8 @@ class MetricsView(LeastReliableTestsMixin, LoginRequiredMixin, TemplateView):
         tests_sorted = self._least_reliable_tests(project)
         context["least_reliable_tests"] = tests_sorted
         context["disabled_test_metrics"] = get_disabled_test_metrics(project)
+        context["suite_metrics"] = get_suite_metrics(project)
+        context["suite_duration_series"] = list(SUITE_DURATION_SERIES)
         for field in Test._meta.get_fields():
             if hasattr(field, "help_text") and field.help_text:
                 context[f"{field.name}_help"] = field.help_text

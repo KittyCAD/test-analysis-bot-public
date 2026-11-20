@@ -1,0 +1,171 @@
+<div class="card mb-4" id="suite-durations">
+    <div class="card-header">
+        <h3 class="card-title mb-0">Average Duration</h3>
+    </div>
+    <div class="card-body">
+        <div class="suite-metrics-chart">
+            <div class="suite-metrics-labels">
+                {% for suite in suite_metrics %}
+                    <a href="{{ suite.url }}">{{ suite.name }}</a>
+                {% endfor %}
+            </div>
+            <div class="suite-metrics-plot">
+                <canvas id="suiteMetricsChart"></canvas>
+            </div>
+        </div>
+        {{ suite_metrics|json_script:"suite-metrics-data" }}
+        {{ suite_duration_series|json_script:"suite-duration-series" }}
+    </div>
+</div>
+<style>
+    .suite-metrics-chart {
+        display: flex;
+        align-items: stretch;
+        gap: 0.75rem;
+        height: calc(80px + 48px * {{ suite_metrics|length }});
+        min-height: 160px;
+    }
+
+    .suite-metrics-labels {
+        display: flex;
+        flex-direction: column;
+        justify-content: stretch;
+        flex: 0 0 auto;
+        /* Match Chart.js legend + top padding so labels line up with bars */
+        padding-top: 28px;
+        padding-bottom: 36px;
+    }
+
+    .suite-metrics-labels a {
+        flex: 1 1 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        white-space: nowrap;
+    }
+
+    .suite-metrics-plot {
+        position: relative;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('suiteMetricsChart');
+        const suites = JSON.parse(document.getElementById('suite-metrics-data').textContent);
+        const seriesConfig = JSON.parse(document.getElementById('suite-duration-series').textContent);
+        if (!canvas || !suites.length) return;
+
+        const legendTooltips = Object.fromEntries(
+            seriesConfig.map(item => [item.label, item.tip])
+        );
+        const active = seriesConfig.filter(item =>
+            suites.some(suite => suite[item.field] != null)
+        );
+        // Match tab.projects.helpers.humanize_duration
+        const formatDuration = seconds => {
+            if (seconds == null || seconds < 0) return '—';
+            if (seconds >= 100) {
+                return `${Math.floor(seconds / 60)}m${Math.floor(seconds % 60)}s`;
+            }
+            return `${seconds.toFixed(1).replace(/\.0$/, '')}s`;
+        };
+
+        const order = seriesConfig.map(item => item.label);
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: suites.map(suite => suite.name),
+                datasets: active.map(item => ({
+                    label: item.label,
+                    data: suites.map(suite => suite[item.field] ?? 0),
+                    // Match Duration History legend / area fills
+                    backgroundColor: item.fill,
+                    borderWidth: 0,
+                    barPercentage: 0.7,
+                })),
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        onHover: (event, legendItem) => {
+                            const target = event.native?.target;
+                            if (target) {
+                                target.title = legendTooltips[legendItem.text] || '';
+                            }
+                        },
+                        onLeave: event => {
+                            const target = event.native?.target;
+                            if (target) {
+                                target.title = '';
+                            }
+                        },
+                        labels: {
+                            sort: (a, b) => order.indexOf(a.text) - order.indexOf(b.text),
+                            generateLabels: chart => Chart.defaults.plugins.legend.labels
+                                .generateLabels(chart)
+                                .map(item => ({...item, lineWidth: 0})),
+                        },
+                    },
+                    tooltip: {
+                        filter: context => {
+                            const field = active[context.datasetIndex].field;
+                            return suites[context.dataIndex][field] != null;
+                        },
+                        itemSort: (a, b) =>
+                            order.indexOf(a.dataset.label) - order.indexOf(b.dataset.label),
+                        callbacks: {
+                            label: context => {
+                                const field = active[context.datasetIndex].field;
+                                const value = suites[context.dataIndex][field];
+                                return `${context.dataset.label}: ${formatDuration(value)}`;
+                            },
+                            footer: contexts => {
+                                const index = contexts[0]?.dataIndex;
+                                if (index == null) return '';
+                                const suite = suites[index];
+                                const total = active.reduce((sum, item) => {
+                                    return sum + (suite[item.field] ?? 0);
+                                }, 0);
+                                return `Total: ${formatDuration(total)}`;
+                            },
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Minutes',
+                        },
+                        ticks: {
+                            callback: value => (Number(value) / 60).toFixed(1),
+                        },
+                    },
+                    y: {
+                        stacked: true,
+                        grid: {
+                            display: false,
+                        },
+                        ticks: {
+                            display: false,
+                        },
+                        border: {
+                            display: false,
+                        },
+                    },
+                },
+            },
+        });
+    });
+</script>

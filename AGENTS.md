@@ -15,3 +15,7 @@
 - `take_page_snapshot` / `take_preview_snapshot` are for visual review in git, not a CI gate: mismatches rewrite the baseline and never fail the test.
 - `SNAPSHOT_DIFF_RATIO` only decides when a rewrite is worth writing; below that, leave the file alone.
 - The same snapshot path runs locally and on CI. CI rewrites stay in the job workspace and are not committed unless someone pulls them into a PR.
+
+## Documentation
+
+- Review if `docs/features.md` needs to be updated for new user-facing functionality.

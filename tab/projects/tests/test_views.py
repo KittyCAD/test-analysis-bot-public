@@ -16,6 +16,7 @@ from tab.metrics.managers import chart_bucket_hours
 
 from ..constants import (
     DEFAULT_SUITE,
+    SETUP_DURATION_FILL,
     SETUP_DURATION_TIP,
     TEARDOWN_DURATION_TIP,
     TESTS_DURATION_TIP,
@@ -1126,6 +1127,33 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
         expect(html).contains("Copy Agent URL")
         expect(html).contains("data-copy-agent-url")
         expect(html).contains("/export.json?token=")
+        expect(html).contains("Suite Metrics")
+        expect(html).contains("No suite duration data is available yet.")
+
+    @pytest.mark.django_db
+    def it_renders_suite_metrics_chart():
+        suite = Suite.objects.create(
+            project=project,
+            name="e2e",
+            average_setup_duration=12.0,
+            average_tests_duration=40.0,
+            average_teardown_duration=3.0,
+        )
+        project.tests.create(name="my-test", suite=suite)
+
+        html = admin_client.get(url).content.decode("utf-8")
+        expect(html).contains('<h2 class="mb-4">Suite Metrics</h2>')
+        expect(html).contains("Average Duration")
+        expect(html).contains("suiteMetricsChart")
+        expect(html).contains('"name": "e2e"')
+        expect(html).contains(
+            f'"url": "/projects/{project.path}/suite/{suite.pk}"'
+        )
+        expect(html).contains('"setup_duration": 12.0')
+        expect(html).contains('"tests_duration": 40.0')
+        expect(html).contains('"teardown_duration": 3.0')
+        expect(html).contains(SETUP_DURATION_TIP)
+        expect(html).contains(SETUP_DURATION_FILL)
 
     @pytest.mark.django_db
     def it_uses_field_help_text_as_column_tooltips():

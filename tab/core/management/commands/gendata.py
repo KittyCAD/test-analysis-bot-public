@@ -132,21 +132,7 @@ class Command(BaseCommand):
                     self._generate_history(test, days)
 
             self._generate_runs(project, suite, num_results, start, end)
-            if SAMPLE_TEST in test_names:
-                if suite.update():
-                    suite.save(
-                        update_fields=[
-                            "average_setup_duration",
-                            "average_tests_duration",
-                            "average_teardown_duration",
-                            "updated_at",
-                        ]
-                    )
-                self._generate_suite_history(suite, days)
-            else:
-                suite.average_setup_duration = -1
-                suite.average_tests_duration = -1
-                suite.average_teardown_duration = -1
+            if suite.update():
                 suite.save(
                     update_fields=[
                         "average_setup_duration",
@@ -155,6 +141,7 @@ class Command(BaseCommand):
                         "updated_at",
                     ]
                 )
+            self._generate_suite_history(suite, days)
 
     def _generate_suite(self, project, name):
         suite, created = Suite.objects.get_or_create(project=project, name=name)
@@ -254,9 +241,19 @@ class Command(BaseCommand):
         now = timezone.now()
         hours_ago = self._suite_history_hours(days)
         span = max(len(hours_ago) - 1, 1)
-        # Magnitudes closer to a long e2e suite (minutes on the chart axis)
-        setup_base = 480.0
-        tests_base = 900.0
+        # e2e stays on a minutes-long scale; unit is a shorter suite
+        if suite.name == "e2e":
+            setup_base, tests_base = 480.0, 900.0
+            setup_amp, tests_amp = 180.0, 900.0
+            setup_spike, tests_spike = 120.0, 700.0
+            setup_floor, tests_floor = 60.0, 120.0
+            teardown_range = (5.0, 45.0)
+        else:
+            setup_base, tests_base = 20.0, 90.0
+            setup_amp, tests_amp = 8.0, 40.0
+            setup_spike, tests_spike = 5.0, 25.0
+            setup_floor, tests_floor = 5.0, 30.0
+            teardown_range = (1.0, 8.0)
         latest = None
         for index, hours in enumerate(hours_ago):
             progress = index / span
@@ -266,18 +263,26 @@ class Command(BaseCommand):
                 -((progress - 0.35) ** 2) / 0.008
             ) + 0.35 * math.exp(-((progress - 0.72) ** 2) / 0.006)
             setup = max(
-                60.0,
-                setup_base + 180.0 * peak + 120.0 * spike + random.uniform(-40.0, 40.0),
+                setup_floor,
+                setup_base
+                + setup_amp * peak
+                + setup_spike * spike
+                + random.uniform(-setup_amp * 0.2, setup_amp * 0.2),
             )
             tests = max(
-                120.0,
-                tests_base + 900.0 * peak + 700.0 * spike + random.uniform(-80.0, 80.0),
+                tests_floor,
+                tests_base
+                + tests_amp * peak
+                + tests_spike * spike
+                + random.uniform(-tests_amp * 0.1, tests_amp * 0.1),
             )
-            # Teardown is often absent; when present it stays a thin band
-            if random.random() < 0.65:
+            # e2e always reports teardown; other suites often omit it
+            if suite.name == "e2e":
+                teardown = max(1.0, random.uniform(*teardown_range))
+            elif random.random() < 0.65:
                 teardown = -1.0
             else:
-                teardown = max(1.0, random.uniform(5.0, 45.0))
+                teardown = max(1.0, random.uniform(*teardown_range))
             history = SuiteHistory.objects.create(
                 suite=suite,
                 average_setup_duration=setup,
@@ -303,7 +308,8 @@ class Command(BaseCommand):
             )
         self.stdout.write(
             self.style.SUCCESS(
-                f"Generated sample suite duration history ({len(hours_ago)} points)"
+                f"Generated sample suite duration history for {suite.name} "
+                f"({len(hours_ago)} points)"
             )
         )
 

@@ -76,6 +76,28 @@ def get_disabled_test_metrics(project: Project) -> dict[User, dict[str, int]]:
     return data
 
 
+def get_suite_metrics(project: Project) -> list[dict]:
+    """Average setup / tests / teardown durations for suites that have data."""
+
+    suites: list[dict] = []
+    for suite in project.suites.active():
+        setup = suite.average_setup_duration
+        tests = suite.average_tests_duration
+        teardown = suite.average_teardown_duration
+        if setup < 0 and tests < 0 and teardown < 0:
+            continue
+        suites.append(
+            {
+                "name": suite.name,
+                "url": reverse("projects:suite-tests", args=[project.path, suite.id]),
+                "setup_duration": None if setup < 0 else setup,
+                "tests_duration": None if tests < 0 else tests,
+                "teardown_duration": None if teardown < 0 else teardown,
+            }
+        )
+    return suites
+
+
 def rerun_failed_jobs(
     organization: Organization, project: Project, run_id: int
 ) -> str | None:

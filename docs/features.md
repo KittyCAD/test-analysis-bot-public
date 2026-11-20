@@ -7,3 +7,8 @@ do not override the original outcome. The API keeps reporting that first result
 (including whether it should block the PR), so a flaky retry that passes cannot
 turn the status green. In the UI, those failures show an “added this broken
 test” badge and do not offer a rerun control.
+
+## Metrics
+
+The project metrics page has a Suite Metrics section with an Average Duration
+chart of horizontal bars for each suite’s setup, tests, and teardown time.

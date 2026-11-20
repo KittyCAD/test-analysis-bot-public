@@ -13,7 +13,7 @@
             <canvas id="suiteDurationChart"></canvas>
         </div>
         {{ suite_duration_history|json_script:"suite-duration-history-data" }}
-        {{ suite_duration_tips|json_script:"suite-duration-tips" }}
+        {{ suite_duration_series|json_script:"suite-duration-series" }}
     </div>
 </div>
 <style>
@@ -25,19 +25,21 @@
     document.addEventListener('DOMContentLoaded', function() {
         const canvas = document.getElementById('suiteDurationChart');
         const data = JSON.parse(document.getElementById('suite-duration-history-data').textContent);
-        const legendTooltips = JSON.parse(document.getElementById('suite-duration-tips').textContent);
+        const seriesConfig = JSON.parse(document.getElementById('suite-duration-series').textContent);
         if (!canvas) return;
 
+        const legendTooltips = Object.fromEntries(
+            seriesConfig.map(item => [item.label, item.tip])
+        );
         // Stacked from the bottom up, keeping the setup and teardown overhead together.
         // Skip a series with no values: Chart.js cannot fill Tests down to a null Teardown band.
-        const series = [
-            ['Setup', 'setup_duration', '#6f42c1', 'rgba(111, 66, 193, 0.35)'],
-            ['Teardown', 'teardown_duration', '#fd7e14', 'rgba(253, 126, 20, 0.35)'],
-            ['Tests', 'tests_duration', '#0dcaf0', 'rgba(13, 202, 240, 0.35)'],
-        ].filter(([, field]) => data.some(point => point[field] != null));
+        const stackFields = ['setup_duration', 'teardown_duration', 'tests_duration'];
+        const series = stackFields
+            .map(field => seriesConfig.find(item => item.field === field))
+            .filter(item => item && data.some(point => point[item.field] != null));
         const top = series.length - 1;
         // The legend and tooltip stay in the order the steps run
-        const order = ['Setup', 'Tests', 'Teardown'];
+        const order = seriesConfig.map(item => item.label);
         // Match tab.projects.helpers.humanize_duration
         const formatDuration = seconds => {
             if (seconds == null || seconds < 0) return '—';
@@ -49,15 +51,15 @@
         new Chart(canvas, {
             type: 'line',
             data: {
-                datasets: series.map(([label, field, color, fillColor], index) => ({
-                    label,
+                datasets: series.map((item, index) => ({
+                    label: item.label,
                     data: data.map(point => ({
                         x: point.date,
                         // Missing values stack as zero so later bands still have a fill target
-                        y: point[field] ?? 0,
+                        y: point[item.field] ?? 0,
                     })),
-                    borderColor: color,
-                    backgroundColor: fillColor,
+                    borderColor: item.color,
+                    backgroundColor: item.fill,
                     fill: index === 0 ? 'origin' : '-1',
                     // Only the top of the stack is outlined, marking the total
                     borderWidth: index === top ? 2 : 0,
@@ -98,7 +100,7 @@
                     tooltip: {
                         // Anchor to the hovered point instead of averaging the stack
                         position: 'nearest',
-                        filter: context => data[context.dataIndex][series[context.datasetIndex][1]] != null,
+                        filter: context => data[context.dataIndex][series[context.datasetIndex].field] != null,
                         itemSort: (a, b) => order.indexOf(a.dataset.label) - order.indexOf(b.dataset.label),
                         callbacks: {
                             label: context => `${context.dataset.label}: ${formatDuration(context.parsed.y)}`,

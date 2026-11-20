@@ -31,7 +31,7 @@ RESTORATION_THRESHOLD = timedelta(days=3)  # minimum duration to keep tests disa
 DURATION_CACHE_KEY = "projects:duration"
 DURATION_CACHE_TIMEOUT = timedelta(minutes=1).total_seconds()
 
-# Shared hover tips for suite setup / tests / teardown (results box + history chart)
+# Shared hover tips for suite setup / tests / teardown (results box + charts)
 SETUP_DURATION_TIP = (
     "Shared time spent on cache downloads, installs, and builds before tests run"
 )
@@ -41,6 +41,40 @@ TESTS_DURATION_TIP = (
 TEARDOWN_DURATION_TIP = (
     "Shared time spent on reports, archives, and cleanup after tests finish"
 )
+
+# Shared chart colors for suite setup / tests / teardown (history + metrics)
+SETUP_DURATION_COLOR = "#6f42c1"
+SETUP_DURATION_FILL = "rgba(111, 66, 193, 0.35)"
+TESTS_DURATION_COLOR = "#0dcaf0"
+TESTS_DURATION_FILL = "rgba(13, 202, 240, 0.35)"
+TEARDOWN_DURATION_COLOR = "#fd7e14"
+TEARDOWN_DURATION_FILL = "rgba(253, 126, 20, 0.35)"
+
+# Legend / run order. History chart may restack Setup+Teardown under Tests for fills.
+SUITE_DURATION_SERIES = (
+    {
+        "label": "Setup",
+        "field": "setup_duration",
+        "color": SETUP_DURATION_COLOR,
+        "fill": SETUP_DURATION_FILL,
+        "tip": SETUP_DURATION_TIP,
+    },
+    {
+        "label": "Tests",
+        "field": "tests_duration",
+        "color": TESTS_DURATION_COLOR,
+        "fill": TESTS_DURATION_FILL,
+        "tip": TESTS_DURATION_TIP,
+    },
+    {
+        "label": "Teardown",
+        "field": "teardown_duration",
+        "color": TEARDOWN_DURATION_COLOR,
+        "fill": TEARDOWN_DURATION_FILL,
+        "tip": TEARDOWN_DURATION_TIP,
+    },
+)
+
 
 ACTIVE_BRANCHES_CACHE_KEY = "projects:active_branches"
 ACTIVE_BRANCHES_CACHE_TIMEOUT = int(timedelta(hours=1).total_seconds())
