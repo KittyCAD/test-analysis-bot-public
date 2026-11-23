@@ -400,9 +400,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         show = self.request.GET.get("show", "all")
 
         queryset = (
-            Result.objects.filter(
-                test__project=project, branch=branch, commit=latest_commit
-            )
+            Result.objects.filter(project=project, branch=branch, commit=latest_commit)
             .select_related("suite", "test", "test__project", "test__suite")
             .prefetch_related("test__project__suites")
         )
@@ -520,7 +518,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         )
 
         if result_id := request.POST.get("rerun"):
-            result = get_object_or_404(Result, pk=result_id, test__project=project)
+            result = get_object_or_404(Result, pk=result_id, project=project)
             if url := result.rerun():
                 messages.success(
                     request,
@@ -544,7 +542,7 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
             return ""
         result = (
             Result.objects.filter(
-                test__project=project,
+                project=project,
                 branch=branch,
                 commit=latest_commit,
             )
@@ -554,7 +552,13 @@ class ResultsView(LoginRequiredMixin, SingleTableMixin, SearchLabelMixin, ListVi
         return result.merge_url if result else ""
 
     def _get_test_ids(self) -> list[str]:
-        return sorted({str(row.record.test_id) for row in self.get_table().rows})
+        return [
+            str(test_id)
+            for test_id in self.get_queryset()
+            .order_by("test_id")
+            .values_list("test_id", flat=True)
+            .distinct()
+        ]
 
 
 class ResultsRegexView(ResultsView):

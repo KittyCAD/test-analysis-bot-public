@@ -86,7 +86,7 @@ def _recent_statuses_for_project(
     project: Project, *, suite: Suite | None = None
 ) -> list[str]:
     queryset = Result.objects.filter(
-        test__project=project,
+        project=project,
         branch__in=project.default_branches,
     )
     if suite is not None:

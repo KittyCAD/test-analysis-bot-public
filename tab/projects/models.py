@@ -789,6 +789,9 @@ class Test(models.Model):
 
 
 class Result(models.Model):
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name="results"
+    )
     suite = models.ForeignKey(
         Suite, null=True, blank=True, on_delete=models.SET_NULL, related_name="results"
     )
@@ -821,10 +824,14 @@ class Result(models.Model):
         indexes = [
             # Optimizes Test._update_last_result()
             models.Index(fields=["test", "branch", "commit"]),
-            # Optimizes Test.update_*() and ResultManager.get_latest_commit()
+            # Optimizes Test.update_*()
             models.Index(fields=["test", "branch", "created_at"]),
             # Optimizes ResultManager.get_health()
             models.Index(fields=["test", "commit", "branch", "final"]),
+            # Optimizes ResultManager.get_latest_commit() / project+branch filters
+            models.Index(fields=["project", "branch", "-created_at"]),
+            # Optimizes ResultsView filter by latest commit
+            models.Index(fields=["project", "branch", "commit"]),
         ]
 
     def __str__(self):
@@ -1044,6 +1051,8 @@ class Result(models.Model):
 
     def normalize(self):
         """Pre-save logic to normalize payload values."""
+        if self.test_id:
+            self.project_id = self.test.project_id
         if self.duration:
             self.duration = round(self.duration, 3)
         if self.message:
@@ -1110,7 +1119,7 @@ class Result(models.Model):
         run_id = self.metadata["GITHUB_RUN_ID"]
         if url := rerun_failed_jobs(organization, self.test.project, int(run_id)):
             count = Result.objects.filter(
-                test__project=self.test.project,
+                project=self.test.project,
                 branch=self.branch,
                 commit=self.commit,
                 final=True,

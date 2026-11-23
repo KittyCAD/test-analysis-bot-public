@@ -219,6 +219,7 @@ class Command(BaseCommand):
             created_at = start + (end - start) * fraction
             results.append(
                 Result(
+                    project=test.project,
                     test=test,
                     suite=test.suite,
                     branch="main",

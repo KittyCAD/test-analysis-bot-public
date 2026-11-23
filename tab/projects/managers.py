@@ -138,7 +138,7 @@ class ResultManager(models.Manager):
         if cached is not None:
             return list(cached)
 
-        results = self.filter(test__project=project).distinct().order_by("branch")
+        results = self.filter(project=project).distinct().order_by("branch")
         if project.branch_inactive_threshold:
             results = results.filter(
                 created_at__gte=timezone.now() - project.branch_inactive_threshold
@@ -149,9 +149,7 @@ class ResultManager(models.Manager):
         return branches
 
     def get_latest_commit(self, project: Project, branch: str) -> str | None:
-        queryset = self.filter(test__project=project, branch=branch).order_by(
-            "-created_at"
-        )
+        queryset = self.filter(project=project, branch=branch).order_by("-created_at")
         return queryset.values_list("commit", flat=True).first()
 
     def get_health(
@@ -168,7 +166,7 @@ class ResultManager(models.Manager):
 
         latest_commit = self.get_latest_commit(project, project.default_branch)
         latest_aggregate = self.filter(
-            test__project=project,
+            project=project,
             commit=latest_commit,
             branch=project.default_branch,
             final=True,
@@ -181,7 +179,7 @@ class ResultManager(models.Manager):
 
         latest_result_ids = (
             self.filter(
-                test__project=project,
+                project=project,
                 branch=branch,
                 commit=commit,
                 final=True,

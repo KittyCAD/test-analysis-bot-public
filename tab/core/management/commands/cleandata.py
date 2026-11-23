@@ -151,7 +151,7 @@ class Command(BaseCommand):
         short_cutoff = timezone.now() - project.result_stale_threshold
         long_cutoff = timezone.now() - (project.result_stale_threshold * 5)
         results = (
-            Result.objects.filter(test__project=project)
+            Result.objects.filter(project=project)
             .filter(
                 # Delete non-default branch results older than the threshold
                 (

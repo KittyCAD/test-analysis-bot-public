@@ -697,6 +697,7 @@ def describe_result(expect):
             results = Result.objects.bulk_create(
                 [
                     Result(
+                        project=project,
                         test=test,
                         status=Status.PASSED,
                         branch="main",
@@ -705,6 +706,7 @@ def describe_result(expect):
                         created_at=now,
                     ),
                     Result(
+                        project=project,
                         test=test,
                         status=Status.PASSED,
                         branch="main",

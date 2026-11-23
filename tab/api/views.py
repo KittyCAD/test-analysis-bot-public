@@ -130,6 +130,7 @@ def results(request, payload: ResultRequest):
         log.info(f"Found test: {test}")
 
     result = Result(
+        project=project,
         test=test,
         suite=suite,
         **payload.get_model_fields(),

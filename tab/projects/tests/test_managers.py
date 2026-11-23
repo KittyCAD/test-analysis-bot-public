@@ -137,6 +137,44 @@ def describe_result_manager(expect, project: Project):
 
             expect(branches) == ["fresh"]
 
+    def describe_get_latest_commit(expect):
+        @pytest.mark.django_db
+        def it_returns_the_newest_commit_for_project_and_branch():
+            test = Test.objects.create(project=project, name="t")
+            older = Result.objects.create(
+                test=test,
+                branch="main",
+                commit="old",
+                status=Status.PASSED,
+                final=True,
+            )
+            Result.objects.create(
+                test=test,
+                branch="main",
+                commit="new",
+                status=Status.PASSED,
+                final=True,
+            )
+            Result.objects.filter(pk=older.pk).update(
+                created_at=timezone.now() - timedelta(hours=1)
+            )
+
+            expect(Result.objects.get_latest_commit(project, "main")) == "new"
+            expect(Result.objects.get_latest_commit(project, "missing")).is_(None)
+
+        @pytest.mark.django_db
+        def it_sets_denormalized_project_on_save():
+            test = Test.objects.create(project=project, name="t")
+            result = Result.objects.create(
+                test=test,
+                branch="main",
+                commit="abc",
+                status=Status.PASSED,
+                final=True,
+            )
+
+            expect(result.project_id) == project.pk
+
     def describe_get_health(expect):
         @pytest.mark.django_db
         def it_returns_health_metrics():
@@ -234,6 +272,7 @@ def describe_result_manager(expect, project: Project):
             for target in (Target.WEB, Target.DESKTOP):
                 results += [
                     Result(
+                        project=project,
                         test=test,
                         branch="feature",
                         commit="abc123",
@@ -241,6 +280,7 @@ def describe_result_manager(expect, project: Project):
                         target=target,
                     ),
                     Result(
+                        project=project,
                         test=test,
                         branch="feature",
                         commit="abc123",

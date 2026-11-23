@@ -145,6 +145,7 @@ def parse_junit_xml(
 
                 # Create result
                 result = Result.objects.create(
+                    project=project,
                     test=test,
                     suite=suite,
                     branch=branch,
@@ -205,6 +206,7 @@ def parse_junit_xml(
         for result_data_item in results_data_to_create:
             test = existing_tests[result_data_item["test_name"]]
             result = Result(
+                project=project,
                 test=test,
                 suite=result_data_item["suite"],
                 branch=result_data_item["branch"],

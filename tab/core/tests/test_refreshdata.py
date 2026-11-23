@@ -32,6 +32,7 @@ def describe_handle(expect):
         Result.objects.bulk_create(
             [
                 Result(
+                    project=project,
                     test=test,
                     suite=suite,
                     status=Status.FAILED,
@@ -39,6 +40,7 @@ def describe_handle(expect):
                     commit="feature1",
                 ),
                 Result(
+                    project=project,
                     test=test,
                     suite=suite,
                     status=Status.PASSED,
@@ -82,6 +84,7 @@ def describe_update_bulk_tests(expect):
         Result.objects.bulk_create(
             [
                 Result(
+                    project=project,
                     test=test,
                     status=Status.PASSED,
                     branch="main",
@@ -90,6 +93,7 @@ def describe_update_bulk_tests(expect):
                     created_at=now,
                 ),
                 Result(
+                    project=project,
                     test=test,
                     status=Status.PASSED,
                     branch="main",
@@ -112,6 +116,7 @@ def describe_update_bulk_tests(expect):
         Result.objects.bulk_create(
             [
                 Result(
+                    project=project,
                     test=test,
                     status=Status.PASSED,
                     branch="main",
@@ -121,6 +126,7 @@ def describe_update_bulk_tests(expect):
                     created_at=now,
                 ),
                 Result(
+                    project=project,
                     test=test,
                     status=Status.PASSED,
                     branch="main",
@@ -130,6 +136,7 @@ def describe_update_bulk_tests(expect):
                     created_at=now,
                 ),
                 Result(
+                    project=project,
                     test=test,
                     status=Status.PASSED,
                     branch="main",
@@ -139,6 +146,7 @@ def describe_update_bulk_tests(expect):
                     created_at=now,
                 ),
                 Result(
+                    project=project,
                     test=test,
                     status=Status.PASSED,
                     branch="main",
@@ -162,6 +170,7 @@ def describe_update_bulk_tests(expect):
         Result.objects.bulk_create(
             [
                 Result(
+                    project=project,
                     test=test,
                     status=Status.FAILED,
                     branch="main",
@@ -170,6 +179,7 @@ def describe_update_bulk_tests(expect):
                     created_at=now,
                 ),
                 Result(
+                    project=project,
                     test=test,
                     status=Status.PASSED,
                     branch="main",
@@ -178,6 +188,7 @@ def describe_update_bulk_tests(expect):
                     created_at=now - timedelta(seconds=1),
                 ),
                 Result(
+                    project=project,
                     test=test,
                     status=Status.PASSED,
                     branch="main",

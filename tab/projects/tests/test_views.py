@@ -987,8 +987,9 @@ def describe_results(expect, admin_client):
 
     @pytest.mark.django_db
     def it_renders_the_results_page(project: Project):
+        test = Test.objects.create(project=project, name="test")
         Result.objects.create(
-            test=Test.objects.create(project=project, name="test"),
+            test=test,
             branch="main",
             commit="abc123",
             status=Status.PASSED,
@@ -1013,6 +1014,7 @@ def describe_results(expect, admin_client):
         expect(html).contains(">Platform</h6>")
         expect(html).contains(">Browser</h6>")
         expect(html).contains("Filter tests by name or tag:LABEL...")
+        expect(response.context["preselect"]) == str(test.pk)
 
     @pytest.mark.django_db
     def it_filters_results_by_target_and_browser(project: Project):
