@@ -1,4 +1,4 @@
-FROM python:3.15.0-bookworm
+FROM python:3.15.2-bookworm
 
 RUN pip install poetry
 RUN poetry config virtualenvs.in-project true
