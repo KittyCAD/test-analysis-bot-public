@@ -19,6 +19,7 @@ from ..constants import (
     DEFAULT_SUITE,
     SETUP_DURATION_FILL,
     SETUP_DURATION_TIP,
+    SUITE_DURATION_OUTLINE,
     TEARDOWN_DURATION_TIP,
     TESTS_DURATION_TIP,
 )
@@ -1227,6 +1228,7 @@ def describe_metrics(expect, admin_client, admin_user, project: Project):
         expect(html).contains('"teardown_duration": 3.0')
         expect(html).contains(SETUP_DURATION_TIP)
         expect(html).contains(SETUP_DURATION_FILL)
+        expect(html).contains(SUITE_DURATION_OUTLINE)
 
     @pytest.mark.django_db
     def it_uses_field_help_text_as_column_tooltips():

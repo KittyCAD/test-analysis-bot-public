@@ -9,11 +9,13 @@
         </div>
     </div>
     <div class="card-body">
+        <div id="suiteDurationLegend" class="chart-legend"></div>
         <div class="suite-duration-chart">
             <canvas id="suiteDurationChart"></canvas>
         </div>
         {{ suite_duration_history|json_script:"suite-duration-history-data" }}
         {{ suite_duration_series|json_script:"suite-duration-series" }}
+        {{ suite_duration_outline|json_script:"suite-duration-outline" }}
     </div>
 </div>
 <style>
@@ -24,22 +26,29 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const canvas = document.getElementById('suiteDurationChart');
+        const legendEl = document.getElementById('suiteDurationLegend');
         const data = JSON.parse(document.getElementById('suite-duration-history-data').textContent);
         const seriesConfig = JSON.parse(document.getElementById('suite-duration-series').textContent);
-        if (!canvas) return;
+        const outline = JSON.parse(document.getElementById('suite-duration-outline').textContent);
+        if (!canvas || !legendEl) return;
 
-        const legendTooltips = Object.fromEntries(
-            seriesConfig.map(item => [item.label, item.tip])
-        );
-        // Stacked from the bottom up, keeping the setup and teardown overhead together.
-        // Skip a series with no values: Chart.js cannot fill Tests down to a null Teardown band.
+        // Restack short Teardown under Tests so the thin band sits between Setup and
+        // Tests (easier to spot). Gray total line/dots track the topmost visible series.
+        // Skip a series with no values so Chart.js fill targets stay contiguous.
         const stackFields = ['setup_duration', 'teardown_duration', 'tests_duration'];
         const series = stackFields
             .map(field => seriesConfig.find(item => item.field === field))
             .filter(item => item && data.some(point => point[item.field] != null));
-        const top = series.length - 1;
-        // The legend and tooltip stay in the order the steps run
+        // Legend / tooltip stay in run order (Setup → Tests → Teardown)
         const order = seriesConfig.map(item => item.label);
+        const visibleTopIndex = chart => {
+            let top = -1;
+            chart.data.datasets.forEach((_, index) => {
+                if (chart.isDatasetVisible(index)) top = index;
+            });
+            return top;
+        };
+        const isVisibleTop = ctx => visibleTopIndex(ctx.chart) === ctx.datasetIndex;
         // Match tab.projects.helpers.humanize_duration
         const formatDuration = seconds => {
             if (seconds == null || seconds < 0) return '—';
@@ -58,16 +67,17 @@
                         // Missing values stack as zero so later bands still have a fill target
                         y: point[item.field] ?? 0,
                     })),
-                    borderColor: item.color,
+                    // Light gray total line/dots follow whatever band is on top
+                    borderColor: ctx => (isVisibleTop(ctx) ? outline : item.color),
                     backgroundColor: item.fill,
                     fill: index === 0 ? 'origin' : '-1',
-                    // Only the top of the stack is outlined, marking the total
-                    borderWidth: index === top ? 2 : 0,
-                    pointRadius: index === top ? 2 : 0,
-                    pointHoverRadius: index === top ? 4 : 0,
+                    borderWidth: ctx => (isVisibleTop(ctx) ? 1 : 0),
+                    pointRadius: ctx => (isVisibleTop(ctx) ? 2 : 0),
+                    pointHoverRadius: ctx => (isVisibleTop(ctx) ? 4 : 0),
                     spanGaps: true,
                 })),
             },
+            plugins: [tabCharts.htmlLegendPlugin(legendEl, seriesConfig, order)],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -77,25 +87,7 @@
                 },
                 plugins: {
                     legend: {
-                        onHover: (event, legendItem) => {
-                            const target = event.native?.target;
-                            if (target) {
-                                target.title = legendTooltips[legendItem.text] || '';
-                            }
-                        },
-                        onLeave: event => {
-                            const target = event.native?.target;
-                            if (target) {
-                                target.title = '';
-                            }
-                        },
-                        labels: {
-                            sort: (a, b) => order.indexOf(a.text) - order.indexOf(b.text),
-                            // Drop the outlines so each swatch is only the shade used in the chart
-                            generateLabels: chart => Chart.defaults.plugins.legend.labels
-                                .generateLabels(chart)
-                                .map(item => ({...item, lineWidth: 0})),
-                        },
+                        display: false,
                     },
                     tooltip: {
                         // Anchor to the hovered point instead of averaging the stack

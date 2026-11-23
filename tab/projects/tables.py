@@ -39,8 +39,11 @@ def color(
             f"{text}</span>"
         )
     if icon and tooltip:
+        tip = escape(tooltip)
         parts.append(
-            f'<span title="{tooltip}"><i class="fa-solid fa-{icon}"></i></span>'
+            f'<span class="result-status-tip" data-bs-toggle="tooltip" '
+            f'data-bs-title="{tip}" tabindex="0" role="img" aria-label="{tip}">'
+            f'<i class="fa-solid fa-{icon}" aria-hidden="true"></i></span>'
         )
     return mark_safe(" ".join(parts))
 

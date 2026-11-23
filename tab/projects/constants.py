@@ -49,8 +49,10 @@ TESTS_DURATION_COLOR = "#0dcaf0"
 TESTS_DURATION_FILL = "rgba(13, 202, 240, 0.35)"
 TEARDOWN_DURATION_COLOR = "#fd7e14"
 TEARDOWN_DURATION_FILL = "rgba(253, 126, 20, 0.35)"
+# Total line (history) / bar outline (metrics)
+SUITE_DURATION_OUTLINE = "#adb5bd"
 
-# Legend / run order. History chart may restack Setup+Teardown under Tests for fills.
+# Legend / run order. History chart restacks Teardown under Tests for visibility.
 SUITE_DURATION_SERIES = (
     {
         "label": "Setup",

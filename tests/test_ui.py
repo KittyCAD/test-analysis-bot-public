@@ -12,6 +12,7 @@ from tab.core.models import Organization
 from tab.metrics.models import SuiteHistory, TestHistory
 from tab.projects.constants import (
     SETUP_DURATION_FILL,
+    SUITE_DURATION_OUTLINE,
     TEARDOWN_DURATION_FILL,
     TESTS_DURATION_FILL,
 )
@@ -369,12 +370,11 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
         )"""
     )
     assert legend == ["#0dcaf0", "#dee2e6"]
-    box = canvas.bounding_box()
+    assert page.locator("#failureRateLegend .chart-legend__tip").count() == 2
     center = canvas.evaluate(
         "el => Chart.getChart(el).getDatasetMeta(0).data[5].getCenterPoint()"
     )
-    assert box
-    page.mouse.move(box["x"] + center["x"], box["y"] + center["y"])
+    canvas.hover(position={"x": center["x"], "y": center["y"]})
     page.wait_for_function(
         "() => Chart.getChart('failureRateChart').tooltip.opacity === 1"
     )
@@ -389,12 +389,10 @@ def test_troubleshooting_panel(page: Page, live_server, admin_user):
         "() => Chart.getChart('failureRateChart').data.datasets[0].data.length"
     )
     assert raw_count > 10
-    box = canvas.bounding_box()
     center = canvas.evaluate(
         "el => Chart.getChart(el).getDatasetMeta(0).data[5].getCenterPoint()"
     )
-    assert box
-    page.mouse.move(box["x"] + center["x"], box["y"] + center["y"])
+    canvas.hover(position={"x": center["x"], "y": center["y"]})
     page.wait_for_function(
         "() => Chart.getChart('failureRateChart').tooltip.opacity === 1"
     )
@@ -462,6 +460,19 @@ def test_suite_troubleshooting_panel(page: Page, live_server, admin_user):
 
     canvas = page.locator("#suiteDurationChart")
     wait_for_chart(page, "suiteDurationChart", dataset=2, index=5)
+
+    # Visual stack puts short Teardown under Tests; legend/tooltip stay run-ordered
+    assert page.evaluate(
+        "() => Chart.getChart('suiteDurationChart').data.datasets.map(d => d.label)"
+    ) == ["Setup", "Teardown", "Tests"]
+    assert page.locator(
+        "#suiteDurationLegend .chart-legend__label"
+    ).all_inner_texts() == [
+        "Setup",
+        "Tests",
+        "Teardown",
+    ]
+    assert page.locator("#suiteDurationLegend .chart-legend__tip").count() == 3
 
     # A missing teardown stacks as zero so the tests band still fills to setup
     gap = page.evaluate("""() => {
@@ -674,6 +685,11 @@ def test_suite_metrics_chart(page: Page, live_server, admin_user):
     assert page.evaluate(
         "() => Chart.getChart('suiteMetricsChart').data.datasets.map(d => d.backgroundColor)"
     ) == [SETUP_DURATION_FILL, TESTS_DURATION_FILL, TEARDOWN_DURATION_FILL]
+    assert page.evaluate(
+        "() => Chart.getChart('suiteMetricsChart').config.plugins.some(p => p.id === 'suiteDurationOutline')"
+    )
+    assert SUITE_DURATION_OUTLINE in page.content()
+    assert page.locator("#suiteMetricsLegend .chart-legend__tip").count() == 3
     for suite in Suite.objects.filter(project=project).order_by("name"):
         link = panel.locator(
             f'.suite-metrics-labels a[href*="/suite/{suite.id}?expand=true"]'

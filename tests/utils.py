@@ -41,9 +41,16 @@ def wait_for_chart(page: Page, canvas_id: str, *, dataset: int = 0, index: int =
         """([id, dataset, index]) => {
             const chart = Chart.getChart(id);
             if (!chart) return false;
-            const y = chart.getDatasetMeta(dataset).data[index].y;
-            const settled = window.__chartPointY === y;
-            window.__chartPointY = y;
+            const el = chart.getDatasetMeta(dataset).data[index];
+            // Horizontal bars animate along x; y alone can look settled too early.
+            const current = el.getProps(['x', 'y', 'base'], false);
+            const final = el.getProps(['x', 'y', 'base'], true);
+            if (current.x !== final.x || current.y !== final.y || current.base !== final.base) {
+                return false;
+            }
+            const key = `${current.x},${current.y},${current.base}`;
+            const settled = window.__chartPointKey === key;
+            window.__chartPointKey = key;
             return settled;
         }""",
         arg=[canvas_id, dataset, index],

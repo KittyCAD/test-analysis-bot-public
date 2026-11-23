@@ -48,6 +48,7 @@
               href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.0/css/all.min.css"
               integrity="sha384-nMrp5ZsUTqQhbYtRk9ykIA4NlAIb530sj9RpfUkoGv/2gV+x0ZzFdUnT7Q8J8EgH"
               crossorigin="anonymous">
+        <link rel="stylesheet" href="{% static 'css/charts.css' %}">
 
         {% block extra_css %}
         {% endblock extra_css %}
@@ -89,6 +90,7 @@
                 crossorigin="anonymous"></script>
         <!-- Base JavaScript -->
         <script src="{% static 'javascript/base.js' %}"></script>
+        <script src="{% static 'javascript/chart-legend.js' %}"></script>
 
         {% block extra_js %}
         {% endblock extra_js %}

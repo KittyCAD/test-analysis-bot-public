@@ -1,6 +1,17 @@
 // Base JavaScript functionality for the application
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Match chart-legend tip popovers (Bootstrap, not native title tooltips)
+    if (window.bootstrap?.Tooltip) {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            window.bootstrap.Tooltip.getOrCreateInstance(el, {
+                container: 'body',
+                trigger: 'hover focus',
+                placement: 'top',
+            });
+        });
+    }
+
     function copyToClipboard(text) {
         try {
             const p = navigator.clipboard && navigator.clipboard.writeText(text);

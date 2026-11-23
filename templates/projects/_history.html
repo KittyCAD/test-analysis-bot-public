@@ -9,15 +9,25 @@
         </div>
     </div>
     <div class="card-body">
+        <div id="failureRateLegend" class="chart-legend"></div>
         <div style="height: 300px;">
             <canvas id="failureRateChart"></canvas>
         </div>
+        {{ failure_rate_help|json_script:"failure-rate-help" }}
+        {{ average_duration_help|json_script:"average-duration-help" }}
     </div>
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('failureRateChart');
-        if (ctx) {
+        const legendEl = document.getElementById('failureRateLegend');
+        if (ctx && legendEl) {
+            const failureRateTip = JSON.parse(
+                document.getElementById('failure-rate-help').textContent
+            );
+            const durationTip = JSON.parse(
+                document.getElementById('average-duration-help').textContent
+            );
             const chartData = {
                 datasets: [{
                     label: 'Failure Rate',
@@ -46,6 +56,10 @@
             const config = {
                 type: 'line',
                 data: chartData,
+                plugins: [tabCharts.htmlLegendPlugin(legendEl, {
+                    'Failure Rate': failureRateTip,
+                    'Duration': durationTip,
+                })],
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -55,7 +69,7 @@
                     },
                     plugins: {
                         legend: {
-                            display: true,
+                            display: false,
                         },
                         tooltip: {
                             callbacks: {
