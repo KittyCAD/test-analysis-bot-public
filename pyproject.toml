@@ -46,7 +46,7 @@ pillow = "^13.0"
 unidecode = "^1.4"
 
 # Deployment
-gunicorn = "^26.2"
+gunicorn = "^27.0"
 whitenoise = "^6.12"
 
 [tool.poetry.group.dev.dependencies]
