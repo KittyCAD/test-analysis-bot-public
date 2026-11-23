@@ -24,7 +24,7 @@ django-debug-toolbar = "^8.0"
 django-tables2 = "^3.0.1"
 
 # API
-django-ninja = "^1.7.3"
+django-ninja = "^1.8.0"
 pydantic = "^2.14.3"
 
 # Storage
@@ -35,7 +35,7 @@ redis = "^8.1"
 # Integrations
 mozilla-django-oidc = "^5.0.2"
 pygithub = "^2.10"
-slack-sdk = "^3.46.0"
+slack-sdk = "^3.47.0"
 
 # Utilities
 django-extensions = "*"
